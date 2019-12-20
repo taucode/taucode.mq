@@ -12,8 +12,10 @@
     <releaseNotes>
       TODO: Initial version
     </releaseNotes>
-    <tags>taucode message queue</tags>
+    <tags>taucode message queue easynetq rabbitmq</tags>
     <dependencies>
+      <dependency id="EasyNetQ" version="3.7.1" />
+      <dependency id="TauCode.Mq" version="1.0.0-dev-2019-12-20-13-29" />
     </dependencies>
   </metadata>
   <files>
