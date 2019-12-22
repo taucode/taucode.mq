@@ -22,6 +22,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{86DFAC41-2
 		misc\todo.txt = misc\todo.txt
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "taucode", "taucode", "{507DC030-C670-4AA5-A425-2BA80717BE14}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Working.Lab", "taucode\TauCode.Working.Lab\TauCode.Working.Lab.csproj", "{FCA3471E-70CC-4223-B71C-45CACFA0ED89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +40,10 @@ Global
 		{2D47096F-A671-4C71-8D95-8E78AE2CBD10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D47096F-A671-4C71-8D95-8E78AE2CBD10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D47096F-A671-4C71-8D95-8E78AE2CBD10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCA3471E-70CC-4223-B71C-45CACFA0ED89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCA3471E-70CC-4223-B71C-45CACFA0ED89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCA3471E-70CC-4223-B71C-45CACFA0ED89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCA3471E-70CC-4223-B71C-45CACFA0ED89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,6 +51,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{9A046AB7-AA65-48D4-85FD-48124F9A9D5F} = {709CF0D4-DBFE-46E7-B797-09B67BF95F87}
 		{2D47096F-A671-4C71-8D95-8E78AE2CBD10} = {585AC245-8B6E-4F5E-8EEF-D4125EF88880}
+		{FCA3471E-70CC-4223-B71C-45CACFA0ED89} = {507DC030-C670-4AA5-A425-2BA80717BE14}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CA6859C8-B1CF-4CDF-A5FE-24E4FF8F85B8}
