@@ -1,12 +1,17 @@
-﻿using System;
+﻿using Serilog;
+using System;
 
 namespace TauCode.Working.Lab
 {
+    // todo clean up
     public abstract class WorkerBase : IWorker
     {
         #region Fields
 
+        private string _name;
         private WorkerState _state;
+        private readonly object _stateLock;
+        private readonly object _controlLock;
 
         #endregion
 
@@ -14,8 +19,10 @@ namespace TauCode.Working.Lab
 
         protected WorkerBase()
         {
-            this.StateLock = new object();
-            _state = WorkerState.NotStarted;
+            _stateLock = new object();
+            _controlLock = new object();
+            
+            _state = WorkerState.Stopped;
         }
 
         #endregion
@@ -32,17 +39,43 @@ namespace TauCode.Working.Lab
 
         #region Protected
 
-        protected object StateLock { get; } // todo: maybe private? to ban ancestors from deadlocks.
+        //protected object StateLock { get; } // todo: maybe private? to ban ancestors from deadlocks.
+
+        protected void ChangeState(WorkerState state)
+        {
+            lock (_stateLock)
+            {
+                _state = state;
+            }
+        }
 
         #endregion
 
         #region IWorker Members
 
+        public string Name
+        {
+            get
+            {
+                lock (_stateLock)
+                {
+                    return _name;
+                }
+            }
+            set
+            {
+                lock (_stateLock)
+                {
+                    _name = value;
+                }
+            }
+        }
+
         public WorkerState State
         {
             get
             {
-                lock (this.StateLock)
+                lock (_stateLock)
                 {
                     return _state;
                 }
@@ -51,74 +84,141 @@ namespace TauCode.Working.Lab
 
         public void Start()
         {
-            lock (this.StateLock)
+            Log.Logger.Information($"[{this.Name}]: Start requested");
+
+            lock (_controlLock)
             {
-                if (_state == WorkerState.NotStarted)
+                if (this.State != WorkerState.Stopped)
                 {
-                    // ok.
-                }
-                else
-                {
-                    throw new NotImplementedException(); // wrong state.
+                    throw new NotImplementedException(); // todo: wrong state
                 }
 
                 this.StartImpl();
-                _state = WorkerState.Running;
+
+                if (this.State != WorkerState.Running)
+                {
+                    throw new NotImplementedException(); // todo: internal error in logic.
+                }
             }
+
+            //lock (this.StateLock)
+            //{
+            //    if (_state == WorkerState.NotStarted)
+            //    {
+            //        // ok.
+            //    }
+            //    else
+            //    {
+            //        throw new NotImplementedException(); // wrong state.
+            //    }
+
+            //    this.StartImpl();
+            //    _state = WorkerState.Running;
+            //}
         }
 
         public void Pause()
         {
-            lock (this.StateLock)
+            lock (_controlLock)
             {
-                if (_state == WorkerState.Running)
+                if (this.State != WorkerState.Running)
                 {
-                    // ok
-                }
-                else
-                {
-                    throw new NotImplementedException(); // wrong state.
+                    throw new NotImplementedException(); // todo: wrong state
                 }
 
                 this.PauseImpl();
-                _state = WorkerState.Paused;
+
+                if (this.State != WorkerState.Paused)
+                {
+                    throw new NotImplementedException(); // todo: internal error in logic.
+                }
             }
+
+            //lock (this.StateLock)
+            //{
+            //    if (_state == WorkerState.Running)
+            //    {
+            //        // ok
+            //    }
+            //    else
+            //    {
+            //        throw new NotImplementedException(); // wrong state.
+            //    }
+
+            //    this.PauseImpl();
+            //    _state = WorkerState.Paused;
+            //}
         }
 
         public void Resume()
         {
-            lock (this.StateLock)
+            lock (_controlLock)
             {
-                if (_state == WorkerState.Paused)
+                if (this.State != WorkerState.Paused)
                 {
-                    // ok
-                }
-                else
-                {
-                    throw new NotImplementedException(); // wrong state.
+                    throw new NotImplementedException(); // todo: wrong state
                 }
 
                 this.ResumeImpl();
-                _state = WorkerState.Running;
+
+                if (this.State != WorkerState.Running)
+                {
+                    throw new NotImplementedException(); // todo: internal error in logic.
+                }
             }
+
+            //lock (this.StateLock)
+            //{
+            //    if (_state == WorkerState.Paused)
+            //    {
+            //        // ok
+            //    }
+            //    else
+            //    {
+            //        throw new NotImplementedException(); // wrong state.
+            //    }
+
+            //    this.ResumeImpl();
+            //    _state = WorkerState.Running;
+            //}
         }
 
         public void Stop()
         {
-            lock (this.StateLock)
+            lock (_controlLock)
             {
-                if (_state == WorkerState.Paused)
+                var state = this.State;
+                var acceptableState =
+                    state == WorkerState.Running ||
+                    state == WorkerState.Paused;
+
+                if (!acceptableState)
                 {
-                    // ok
-                }
-                else
-                {
-                    throw new NotImplementedException(); // wrong state.
+                    throw new NotImplementedException(); // todo: wrong state
                 }
 
                 this.StopImpl();
-                _state = WorkerState.NotStarted;
+
+                if (this.State != WorkerState.Running)
+                {
+                    throw new NotImplementedException(); // todo: internal error in logic.
+                }
             }
+
+            //lock (this.StateLock)
+            //{
+            //    if (_state == WorkerState.Paused)
+            //    {
+            //        // ok
+            //    }
+            //    else
+            //    {
+            //        throw new NotImplementedException(); // wrong state.
+            //    }
+
+            //    this.StopImpl();
+            //    _state = WorkerState.NotStarted;
+            //}
         }
 
         #endregion
@@ -127,16 +227,37 @@ namespace TauCode.Working.Lab
 
         public void Dispose()
         {
-            lock (this.StateLock)
+            lock (_stateLock)
             {
-                if (_state == WorkerState.Disposed)
+                var state = this.State;
+                var acceptableState =
+                    state == WorkerState.Stopped ||
+                    state == WorkerState.Running ||
+                    state == WorkerState.Paused;
+
+                if (!acceptableState)
                 {
-                    throw new NotImplementedException(); // wrong state.
+                    throw new NotImplementedException(); // todo: wrong state
                 }
 
                 this.DisposeImpl();
-                _state = WorkerState.Disposed;
+
+                if (this.State != WorkerState.Disposed)
+                {
+                    throw new NotImplementedException(); // todo: internal error in logic.
+                }
             }
+
+            //lock (this.StateLock)
+            //{
+            //    if (_state == WorkerState.Disposed)
+            //    {
+            //        throw new NotImplementedException(); // wrong state.
+            //    }
+
+            //    this.DisposeImpl();
+            //    _state = WorkerState.Disposed;
+            //}
         }
 
         #endregion

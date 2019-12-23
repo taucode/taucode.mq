@@ -2,9 +2,18 @@
 {
     public enum WorkerState
     {
-        NotStarted = 1,
+        Stopping = 1,
+        Stopped,
+
+        Starting,
         Running,
+
+        Pausing,
         Paused,
+
+        Resuming,
+
+        Disposing,
         Disposed,
     }
 }
