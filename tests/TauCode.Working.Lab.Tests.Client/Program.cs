@@ -76,6 +76,8 @@ namespace TauCode.Working.Lab.Tests.Client
 
                     case "start":
                     case "stop":
+                    case "pause":
+                    case "resume":
                         this.SendCommand(first);
                         break;
 

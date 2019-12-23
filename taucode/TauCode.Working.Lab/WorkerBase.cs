@@ -1,6 +1,8 @@
 ﻿using Serilog;
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 
 namespace TauCode.Working.Lab
 {
@@ -22,7 +24,7 @@ namespace TauCode.Working.Lab
         {
             _stateLock = new object();
             _controlLock = new object();
-            
+
             _state = WorkerState.Stopped;
         }
 
@@ -42,20 +44,20 @@ namespace TauCode.Working.Lab
 
         //protected object StateLock { get; } // todo: maybe private? to ban ancestors from deadlocks.
 
-        protected void LogInformation(string message)
+        protected void LogVerbose(string message, int shiftFromCaller = 0)
         {
             StackTrace stackTrace = new StackTrace();
-            var frame = stackTrace.GetFrame(1);
+            var frame = stackTrace.GetFrame(1 + shiftFromCaller);
             var method = frame.GetMethod();
 
             var information = $"[{this.Name}][{method.Name}] {message}";
-            Log.Information(information);
+            Log.Verbose(information);
         }
 
-        protected void LogError(string message)
+        protected void LogError(string message, int shiftFromCaller = 0)
         {
             StackTrace stackTrace = new StackTrace();
-            var frame = stackTrace.GetFrame(1);
+            var frame = stackTrace.GetFrame(1 + shiftFromCaller);
             var method = frame.GetMethod();
 
             var information = $"[{this.Name}][{method.Name}] {message}";
@@ -67,6 +69,70 @@ namespace TauCode.Working.Lab
             lock (_stateLock)
             {
                 _state = state;
+            }
+        }
+
+        #endregion
+
+        #region Private
+
+        private void CheckStateTransition(params WorkerState[] acceptedStates)
+        {
+            var state = this.State;
+
+            if (!acceptedStates.Contains(state))
+            {
+                var sb = new StringBuilder();
+                sb.Append($"To perform this operation, '{nameof(State)}' must be ");
+
+                for (var i = 0; i < acceptedStates.Length; i++)
+                {
+                    var acceptedState = acceptedStates[i];
+                    sb.Append($"'{acceptedState}'");
+
+                    if (i < acceptedStates.Length - 2)
+                    {
+                        sb.Append(", ");
+                    }
+                    else if (i < acceptedStates.Length - 1)
+                    {
+                        sb.Append(" or ");
+                    }
+                }
+
+                sb.Append($" while actually it is '{state}'.");
+
+                throw new WorkingException(sb.ToString());
+            }
+        }
+
+        protected void CheckState(params WorkerState[] acceptedStates)
+        {
+            var state = this.State;
+
+            if (!acceptedStates.Contains(state))
+            {
+                var sb = new StringBuilder();
+                sb.Append($"'{nameof(State)}' is expected to be ");
+
+                for (var i = 0; i < acceptedStates.Length; i++)
+                {
+                    var acceptedState = acceptedStates[i];
+                    sb.Append($"'{acceptedState}'");
+
+                    if (i < acceptedStates.Length - 2)
+                    {
+                        sb.Append(", ");
+                    }
+                    else if (i < acceptedStates.Length - 1)
+                    {
+                        sb.Append(" or ");
+                    }
+                }
+
+                sb.Append($" while actually it is '{state}'.");
+
+                throw new WorkingException(sb.ToString());
             }
         }
 
@@ -105,141 +171,44 @@ namespace TauCode.Working.Lab
 
         public void Start()
         {
-            this.LogInformation("Start requested");
+            this.LogVerbose("Start requested");
 
             lock (_controlLock)
             {
-                if (this.State != WorkerState.Stopped)
-                {
-                    throw new NotImplementedException(); // todo: wrong state
-                }
-
+                this.CheckStateTransition(WorkerState.Stopped);
                 this.StartImpl();
-
-                if (this.State != WorkerState.Running)
-                {
-                    throw new NotImplementedException(); // todo: internal error in logic.
-                }
+                this.CheckState(WorkerState.Running);
             }
-
-            //lock (this.StateLock)
-            //{
-            //    if (_state == WorkerState.NotStarted)
-            //    {
-            //        // ok.
-            //    }
-            //    else
-            //    {
-            //        throw new NotImplementedException(); // wrong state.
-            //    }
-
-            //    this.StartImpl();
-            //    _state = WorkerState.Running;
-            //}
         }
 
         public void Pause()
         {
             lock (_controlLock)
             {
-                if (this.State != WorkerState.Running)
-                {
-                    throw new NotImplementedException(); // todo: wrong state
-                }
-
+                this.CheckStateTransition(WorkerState.Running);
                 this.PauseImpl();
-
-                if (this.State != WorkerState.Paused)
-                {
-                    throw new NotImplementedException(); // todo: internal error in logic.
-                }
+                this.CheckState(WorkerState.Paused);
             }
-
-            //lock (this.StateLock)
-            //{
-            //    if (_state == WorkerState.Running)
-            //    {
-            //        // ok
-            //    }
-            //    else
-            //    {
-            //        throw new NotImplementedException(); // wrong state.
-            //    }
-
-            //    this.PauseImpl();
-            //    _state = WorkerState.Paused;
-            //}
         }
 
         public void Resume()
         {
             lock (_controlLock)
             {
-                if (this.State != WorkerState.Paused)
-                {
-                    throw new NotImplementedException(); // todo: wrong state
-                }
-
+                this.CheckStateTransition(WorkerState.Paused);
                 this.ResumeImpl();
-
-                if (this.State != WorkerState.Running)
-                {
-                    throw new NotImplementedException(); // todo: internal error in logic.
-                }
+                this.CheckState(WorkerState.Running);
             }
-
-            //lock (this.StateLock)
-            //{
-            //    if (_state == WorkerState.Paused)
-            //    {
-            //        // ok
-            //    }
-            //    else
-            //    {
-            //        throw new NotImplementedException(); // wrong state.
-            //    }
-
-            //    this.ResumeImpl();
-            //    _state = WorkerState.Running;
-            //}
         }
 
         public void Stop()
         {
             lock (_controlLock)
             {
-                var state = this.State;
-                var acceptableState =
-                    state == WorkerState.Running ||
-                    state == WorkerState.Paused;
-
-                if (!acceptableState)
-                {
-                    throw new NotImplementedException(); // todo: wrong state
-                }
-
+                this.CheckStateTransition(WorkerState.Running, WorkerState.Paused);
                 this.StopImpl();
-
-                if (this.State != WorkerState.Stopped)
-                {
-                    throw new NotImplementedException(); // todo: internal error in logic.
-                }
+                this.CheckState(WorkerState.Stopped);
             }
-
-            //lock (this.StateLock)
-            //{
-            //    if (_state == WorkerState.Paused)
-            //    {
-            //        // ok
-            //    }
-            //    else
-            //    {
-            //        throw new NotImplementedException(); // wrong state.
-            //    }
-
-            //    this.StopImpl();
-            //    _state = WorkerState.NotStarted;
-            //}
         }
 
         #endregion
@@ -268,17 +237,6 @@ namespace TauCode.Working.Lab
                     throw new NotImplementedException(); // todo: internal error in logic.
                 }
             }
-
-            //lock (this.StateLock)
-            //{
-            //    if (_state == WorkerState.Disposed)
-            //    {
-            //        throw new NotImplementedException(); // wrong state.
-            //    }
-
-            //    this.DisposeImpl();
-            //    _state = WorkerState.Disposed;
-            //}
         }
 
         #endregion

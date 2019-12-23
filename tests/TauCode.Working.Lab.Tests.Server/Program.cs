@@ -16,6 +16,7 @@ namespace TauCode.Working.Lab.Tests.Server
         private static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
                 .WriteTo.Console()
                 .CreateLogger();
 
@@ -67,6 +68,14 @@ namespace TauCode.Working.Lab.Tests.Server
 
                     case "stop":
                         _worker.Stop();
+                        break;
+
+                    case "pause":
+                        _worker.Pause();
+                        break;
+
+                    case "resume":
+                        _worker.Resume();
                         break;
 
                     default:
