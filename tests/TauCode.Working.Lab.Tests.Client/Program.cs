@@ -68,9 +68,9 @@ namespace TauCode.Working.Lab.Tests.Client
                         {
                             this.SendStateRequest();
                         }
-                        catch (Exception e)
+                        catch (Exception ex)
                         {
-                            Console.WriteLine(e);
+                            Log.Error(ex, "Error");
                         }
                         break;
 
@@ -78,7 +78,21 @@ namespace TauCode.Working.Lab.Tests.Client
                     case "stop":
                     case "pause":
                     case "resume":
+                    case "dispose":
+                    case "shutdown":
                         this.SendCommand(first);
+                        break;
+
+                    case "a":
+                        try
+                        {
+                            this.GiveAssignments(int.Parse(parts[1]));
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error");
+                        }
+
                         break;
 
                     default:
@@ -88,6 +102,24 @@ namespace TauCode.Working.Lab.Tests.Client
             }
 
             _bus.Dispose();
+        }
+
+        private void GiveAssignments(int count)
+        {
+            var assignmentsResult = _bus.Request<Assignments, AssignmentsResult>(new Assignments
+            {
+                Count = count,
+            });
+
+            if (assignmentsResult.IsSuccessful)
+            {
+                Log.Information("Assignments were successful");
+            }
+            else
+            {
+                Log.Error(assignmentsResult.ExceptionType);
+                Log.Error(assignmentsResult.ExceptionMessage);
+            }
         }
 
         private void SendCommand(string verb)

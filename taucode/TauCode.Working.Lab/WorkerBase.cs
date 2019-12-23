@@ -1,12 +1,10 @@
 ﻿using Serilog;
-using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
 namespace TauCode.Working.Lab
 {
-    // todo clean up
     public abstract class WorkerBase : IWorker
     {
         #region Fields
@@ -42,8 +40,6 @@ namespace TauCode.Working.Lab
 
         #region Protected
 
-        //protected object StateLock { get; } // todo: maybe private? to ban ancestors from deadlocks.
-
         protected void LogVerbose(string message, int shiftFromCaller = 0)
         {
             StackTrace stackTrace = new StackTrace();
@@ -76,7 +72,7 @@ namespace TauCode.Working.Lab
 
         #region Private
 
-        private void CheckStateTransition(params WorkerState[] acceptedStates)
+        protected void CheckStateForOperation(params WorkerState[] acceptedStates)
         {
             var state = this.State;
 
@@ -175,7 +171,7 @@ namespace TauCode.Working.Lab
 
             lock (_controlLock)
             {
-                this.CheckStateTransition(WorkerState.Stopped);
+                this.CheckStateForOperation(WorkerState.Stopped);
                 this.StartImpl();
                 this.CheckState(WorkerState.Running);
             }
@@ -185,7 +181,7 @@ namespace TauCode.Working.Lab
         {
             lock (_controlLock)
             {
-                this.CheckStateTransition(WorkerState.Running);
+                this.CheckStateForOperation(WorkerState.Running);
                 this.PauseImpl();
                 this.CheckState(WorkerState.Paused);
             }
@@ -195,7 +191,7 @@ namespace TauCode.Working.Lab
         {
             lock (_controlLock)
             {
-                this.CheckStateTransition(WorkerState.Paused);
+                this.CheckStateForOperation(WorkerState.Paused);
                 this.ResumeImpl();
                 this.CheckState(WorkerState.Running);
             }
@@ -205,7 +201,7 @@ namespace TauCode.Working.Lab
         {
             lock (_controlLock)
             {
-                this.CheckStateTransition(WorkerState.Running, WorkerState.Paused);
+                this.CheckStateForOperation(WorkerState.Running, WorkerState.Paused);
                 this.StopImpl();
                 this.CheckState(WorkerState.Stopped);
             }
@@ -217,25 +213,11 @@ namespace TauCode.Working.Lab
 
         public void Dispose()
         {
-            lock (_stateLock)
+            lock (_controlLock)
             {
-                var state = this.State;
-                var acceptableState =
-                    state == WorkerState.Stopped ||
-                    state == WorkerState.Running ||
-                    state == WorkerState.Paused;
-
-                if (!acceptableState)
-                {
-                    throw new NotImplementedException(); // todo: wrong state
-                }
-
+                this.CheckStateForOperation(WorkerState.Stopped, WorkerState.Running, WorkerState.Paused);
                 this.DisposeImpl();
-
-                if (this.State != WorkerState.Disposed)
-                {
-                    throw new NotImplementedException(); // todo: internal error in logic.
-                }
+                this.CheckState(WorkerState.Disposed);
             }
         }
 

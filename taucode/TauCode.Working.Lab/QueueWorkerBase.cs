@@ -56,7 +56,7 @@ namespace TauCode.Working.Lab
 
         #region Abstract
 
-        protected abstract void DoAssignment(TAssignment assignment); // todo: catch
+        protected abstract void DoAssignment(TAssignment assignment);
 
         #endregion
 
@@ -74,7 +74,7 @@ namespace TauCode.Working.Lab
 
             this.LogVerbose("Creating task");
 
-            _task = new Task(this.Routine2);
+            _task = new Task(this.Routine);
             _task.Start();
 
             this.LogVerbose("Task started");
@@ -116,7 +116,7 @@ namespace TauCode.Working.Lab
             this.LogVerbose("Waiting task to terminate.");
             _task.Wait();
             this.LogVerbose("Task terminated.");
-            
+
             _task.Dispose();
             _task = null;
 
@@ -136,7 +136,41 @@ namespace TauCode.Working.Lab
 
         protected override void DisposeImpl()
         {
-            throw new NotImplementedException();
+            this.LogVerbose("Dispose requested");
+            var previousState = this.State;
+            this.ChangeState(WorkerState.Disposing);
+
+            if (previousState == WorkerState.Stopped)
+            {
+                this.LogVerbose("Worker was stopped, nothing to dispose");
+                this.ChangeState(WorkerState.Disposed);
+                return;
+            }
+
+            _controlSignal.Set();
+            _controlRequestAcknowledgedSignal.WaitOne();
+            this.ChangeState(WorkerState.Disposed);
+            _controlSignal.Set();
+
+            this.LogVerbose("Waiting task to terminate.");
+            _task.Wait();
+            this.LogVerbose("Task terminated.");
+
+            _task.Dispose();
+            _task = null;
+
+            _controlSignal.Dispose();
+            _controlSignal = null;
+
+            _dataSignal.Dispose();
+            _dataSignal = null;
+
+            _controlRequestAcknowledgedSignal.Dispose();
+            _controlRequestAcknowledgedSignal = null;
+
+            _handles = null;
+
+            this.LogVerbose("OS Resources disposed.");
         }
 
         #endregion
@@ -176,7 +210,14 @@ namespace TauCode.Working.Lab
                 var gotAssignment = this.TryGetAssignment(out var assignment);
                 if (gotAssignment)
                 {
-                    this.DoAssignment(assignment); // todo: try/catch
+                    try
+                    {
+                        this.DoAssignment(assignment);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogError($"Assignment {assignment} caused an exception: {ex}.");
+                    }
                 }
                 else
                 {
@@ -188,7 +229,7 @@ namespace TauCode.Working.Lab
             return reason;
         }
 
-        private void Routine2()
+        private void Routine()
         {
             this.CheckState(WorkerState.Starting);
 
@@ -206,27 +247,33 @@ namespace TauCode.Working.Lab
 
                 if (reason == NoProcessingReason.GotControlSignal)
                 {
-                    // todo: state must be 'Pausing', 'Stopping' or 'Disposing'
-                    throw new NotImplementedException();
-                    _controlRequestAcknowledgedSignal.Set(); // inform control thread that we are awaiting for 'stable' state (todo check out this comment)
+                    this.CheckState(WorkerState.Pausing, WorkerState.Stopping, WorkerState.Disposing);
+
+                    _controlRequestAcknowledgedSignal.Set();
                     _controlSignal.WaitOne();
 
                     var state = this.State;
 
-                    // todo: state must be 'Paused', 'Stopped' or 'Disposed'
+                    this.CheckState(WorkerState.Paused, WorkerState.Stopped, WorkerState.Disposed);
+
                     switch (state)
                     {
+                        case WorkerState.Disposed:
                         case WorkerState.Stopped:
                             goOn = false;
                             break;
 
                         case WorkerState.Paused:
                             this.PauseRoutine();
-                            throw new NotImplementedException();
-                            break;
-
-                        case WorkerState.Disposed:
-                            goOn = false;
+                            state = this.State;
+                            if (state == WorkerState.Stopped || state == WorkerState.Disposed)
+                            {
+                                goOn = false;
+                            }
+                            else
+                            {
+                                // simply go on.
+                            }
                             break;
 
                         default:
@@ -264,7 +311,7 @@ namespace TauCode.Working.Lab
                             break;
 
                         case IdleStateInterruptionReason.GotAssignment:
-                            throw new NotImplementedException();
+                            // nice, got some data
                             break;
 
                         default:
@@ -273,7 +320,7 @@ namespace TauCode.Working.Lab
                 }
                 else
                 {
-                    throw new NotImplementedException(); // error.
+                    throw new WorkingException("Internal error."); // should never happen
                 }
             }
 
@@ -299,8 +346,7 @@ namespace TauCode.Working.Lab
 
                     case DataSignalIndex:
                         this.LogVerbose("Got data");
-                        throw new NotImplementedException();
-                        break;
+                        return IdleStateInterruptionReason.GotAssignment;
                 }
             }
         }
@@ -323,22 +369,21 @@ namespace TauCode.Working.Lab
                 }
             }
         }
-        
+
         #endregion
 
         #region IQueueWorker<TAssignment> Members
 
         public void EnqueueAssignment(TAssignment assignment)
         {
-            var state = this.State;
-            var isAffordableState =
-                state == WorkerState.Running ||
-                state == WorkerState.Paused; // todo 'Pausing' is also ok, and others...
+            this.CheckStateForOperation(
+                WorkerState.Starting,
+                WorkerState.Running,
 
-            if (!isAffordableState)
-            {
-                throw new NotImplementedException();
-            }
+                WorkerState.Pausing,
+                WorkerState.Paused,
+
+                WorkerState.Resuming);
 
             lock (_dataLock)
             {

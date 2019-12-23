@@ -1,20 +1,27 @@
-﻿using System.Threading;
-using TauCode.Working.Lab.Tests.All;
+﻿using Serilog;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TauCode.Working.Lab.Tests.Server
 {
-    public class FooWorker : QueueWorkerBase<Assignment>
+    public class FooWorker : QueueWorkerBase<string>
     {
-        private readonly WaitHandle _disposedWaitHandle;
-
-        public FooWorker(AutoResetEvent disposedWaitHandle)
+        public FooWorker()
         {
-            _disposedWaitHandle = disposedWaitHandle;
         }
 
-        protected override void DoAssignment(Assignment assignment)
+        protected override void DoAssignment(string assignment)
         {
-            throw new System.NotImplementedException();
+            if (assignment.EndsWith("10"))
+            {
+                throw new AbandonedMutexException("ha ha ha");
+            }
+
+            Log.Information($"Performing '{assignment}'");
+
+            var timeout = 200;
+            Log.Information($"Waiting {timeout} ms.");
+            Task.Delay(timeout).Wait();
         }
     }
 }
