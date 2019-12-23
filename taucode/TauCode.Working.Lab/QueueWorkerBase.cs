@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,6 +15,12 @@ namespace TauCode.Working.Lab
         {
             NoAssignments = 1,
             GotControlSignal,
+        }
+
+        private enum IdleStateInterruptionReason
+        {
+            GotControlSignal = 1,
+            GotAssignment,
         }
 
         #endregion
@@ -72,10 +80,14 @@ namespace TauCode.Working.Lab
 
             _handles = new WaitHandle[] { _controlSignal, _dataSignal };
 
+            this.LogInformation("Creating task");
+
             _task = new Task(this.Routine2);
             _task.Start();
 
+            this.LogInformation("Task started");
             _controlRequestAcknowledgedSignal.WaitOne();
+            this.LogInformation("Got acknowledge signal from routine");
             this.ChangeState(WorkerState.Running);
             _controlSignal.Set();
         }
@@ -92,6 +104,16 @@ namespace TauCode.Working.Lab
 
         protected override void StopImpl()
         {
+            this.LogInformation("Stop requested");
+            this.ChangeState(WorkerState.Stopping);
+            _controlSignal.Set();
+            _controlRequestAcknowledgedSignal.WaitOne();
+            this.ChangeState(WorkerState.Stopped);
+            _controlSignal.Set();
+
+            this.LogInformation("Waiting task to terminate.");
+            _task.Wait();
+            this.LogInformation("Task terminated.");
             throw new NotImplementedException();
         }
 
@@ -163,6 +185,8 @@ namespace TauCode.Working.Lab
             _controlRequestAcknowledgedSignal.Set(); // inform control thread that routine has started.
             _controlSignal.WaitOne();
 
+            this.LogInformation("Got control signal from control thread");
+
             // todo: state must be 'Started'
 
             var goOn = true;
@@ -201,7 +225,31 @@ namespace TauCode.Working.Lab
                 }
                 else if (reason == NoProcessingReason.NoAssignments)
                 {
-                    this.EnterIdleState();
+                    var interruptionReason = this.IdleRoutine();
+
+                    switch (interruptionReason)
+                    {
+                        case IdleStateInterruptionReason.GotControlSignal:
+                            this.CheckExcpectedState(WorkerState.Stopped, WorkerState.Paused, WorkerState.Disposed);
+                            var state = this.State;
+                            if (state == WorkerState.Stopped || state == WorkerState.Disposed)
+                            {
+                                goOn = false;
+                            }
+                            else
+                            {
+                                throw new NotImplementedException();
+                            }
+
+                            break;
+
+                        case IdleStateInterruptionReason.GotAssignment:
+                            throw new NotImplementedException();
+                            break;
+
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
                 else
                 {
@@ -209,12 +257,60 @@ namespace TauCode.Working.Lab
                 }
             }
 
-            throw new NotImplementedException();
+            this.LogInformation($"Exiting task. State is '{this.State}'.");
         }
 
-        private void EnterIdleState()
+        private IdleStateInterruptionReason IdleRoutine()
         {
-            throw new NotImplementedException();
+            this.LogInformation("Entered idle state");
+
+
+            while (true)
+            {
+                var signalIndex = WaitHandle.WaitAny(_handles, Timeout);
+                switch (signalIndex)
+                {
+                    case ControlSignalIndex:
+                        this.LogInformation("Got control signal");
+                        this.CheckExcpectedState(WorkerState.Stopping, WorkerState.Pausing, WorkerState.Disposing);
+                        _controlRequestAcknowledgedSignal.Set();
+                        _controlSignal.WaitOne();
+                        this.CheckExcpectedState(WorkerState.Stopped, WorkerState.Paused, WorkerState.Disposed);
+                        return IdleStateInterruptionReason.GotControlSignal;
+
+
+                    case DataSignalIndex:
+                        this.LogInformation("Got data");
+                        throw new NotImplementedException();
+                        break;
+                }
+            }
+        }
+
+        private void CheckExcpectedState(params WorkerState[] acceptableStates)
+        {
+            var sb = new StringBuilder();
+            sb.Append("Acceptable states are: ");
+            for (var i = 0; i < acceptableStates.Length; i++)
+            {
+                sb.Append($"'{acceptableStates[i]}'");
+                if (i < acceptableStates.Length - 1)
+                {
+                    sb.Append(", ");
+                }
+            }
+            this.LogInformation(sb.ToString());
+
+            var state = this.State;
+            if (acceptableStates.Contains(state))
+            {
+                this.LogInformation($"Current state is '{state}', which is accepted");
+            }
+            else
+            {
+                this.LogError($"Current state is '{state}', which is not accepted. Throwing an exception.");
+                throw new NotImplementedException();
+            }
         }
 
         private void EnterPausedState()

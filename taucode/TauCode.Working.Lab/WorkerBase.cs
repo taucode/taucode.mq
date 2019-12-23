@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using System;
+using System.Diagnostics;
 
 namespace TauCode.Working.Lab
 {
@@ -40,6 +41,26 @@ namespace TauCode.Working.Lab
         #region Protected
 
         //protected object StateLock { get; } // todo: maybe private? to ban ancestors from deadlocks.
+
+        protected void LogInformation(string message)
+        {
+            StackTrace stackTrace = new StackTrace();
+            var frame = stackTrace.GetFrame(1);
+            var method = frame.GetMethod();
+
+            var information = $"[{this.Name}][{method.Name}] {message}";
+            Log.Information(information);
+        }
+
+        protected void LogError(string message)
+        {
+            StackTrace stackTrace = new StackTrace();
+            var frame = stackTrace.GetFrame(1);
+            var method = frame.GetMethod();
+
+            var information = $"[{this.Name}][{method.Name}] {message}";
+            Log.Error(information);
+        }
 
         protected void ChangeState(WorkerState state)
         {
@@ -84,7 +105,7 @@ namespace TauCode.Working.Lab
 
         public void Start()
         {
-            Log.Logger.Information($"[{this.Name}]: Start requested");
+            this.LogInformation("Start requested");
 
             lock (_controlLock)
             {
@@ -199,7 +220,7 @@ namespace TauCode.Working.Lab
 
                 this.StopImpl();
 
-                if (this.State != WorkerState.Running)
+                if (this.State != WorkerState.Stopped)
                 {
                     throw new NotImplementedException(); // todo: internal error in logic.
                 }
