@@ -81,7 +81,7 @@ namespace TauCode.Mq
 
                 if (_messagePublisher == null)
                 {
-                    Log.Warning("'MessagePublisher' is null. Message hase been dequeued and discarded.");
+                    Log.Warning("'MessagePublisher' is null. Message has been dequeued and discarded.");
                     continue;
                 }
 
