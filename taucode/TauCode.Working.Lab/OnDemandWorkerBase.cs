@@ -6,11 +6,7 @@ namespace TauCode.Working.Lab
     {
         protected void CheckCanDoJob()
         {
-            var state = this.State;
-            if (state != WorkerState.Running)
-            {
-                throw new NotImplementedException(); // todo wrong state
-            }
+            this.CheckStateForOperation(WorkerState.Running);
         }
 
         protected override void StartImpl()
@@ -20,12 +16,12 @@ namespace TauCode.Working.Lab
 
         protected override void PauseImpl()
         {
-            throw new NotSupportedException("todo");
+            throw new NotSupportedException("Pausing is not supported.");
         }
 
         protected override void ResumeImpl()
         {
-            throw new NotSupportedException("todo");
+            throw new NotSupportedException("Resuming is not supported.");
         }
 
         protected override void StopImpl()

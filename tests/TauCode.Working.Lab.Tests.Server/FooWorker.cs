@@ -12,16 +12,16 @@ namespace TauCode.Working.Lab.Tests.Server
 
         protected override void DoAssignment(string assignment)
         {
-            if (assignment.EndsWith("10"))
-            {
-                throw new AbandonedMutexException("ha ha ha");
-            }
+            //if (assignment.EndsWith("10"))
+            //{
+            //    throw new AbandonedMutexException("ha ha ha");
+            //}
 
-            Log.Information($"Performing '{assignment}'");
+            //Log.Information($"Performing '{assignment}'");
 
-            var timeout = 200;
-            Log.Information($"Waiting {timeout} ms.");
-            Task.Delay(timeout).Wait();
+            //var timeout = 200;
+            //Log.Information($"Waiting {timeout} ms.");
+            //Task.Delay(timeout).Wait();
         }
     }
 }
