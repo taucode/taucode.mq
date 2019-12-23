@@ -80,6 +80,26 @@ namespace TauCode.Working.Lab
             _controlSignal.Set();
         }
 
+        protected override void PauseImpl()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void ResumeImpl()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void StopImpl()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void DisposeImpl()
+        {
+            throw new NotImplementedException();
+        }
+
         //protected override void PauseImpl()
         //{
         //    this.ChangeState(WorkerState.Pausing);
