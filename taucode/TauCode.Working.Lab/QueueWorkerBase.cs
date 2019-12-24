@@ -374,7 +374,7 @@ namespace TauCode.Working.Lab
 
         #region IQueueWorker<TAssignment> Members
 
-        public void EnqueueAssignment(TAssignment assignment)
+        public void Enqueue(TAssignment assignment)
         {
             this.CheckStateForOperation(
                 WorkerState.Starting,

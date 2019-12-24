@@ -4,5 +4,6 @@ namespace TauCode.Mq.Lab
 {
     public interface IMessageQueueLab : IQueueWorker<IMessageLab>
     {
+        IMessagePublisherLab MessagePublisher { get; }
     }
 }

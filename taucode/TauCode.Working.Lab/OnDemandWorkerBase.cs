@@ -4,10 +4,10 @@ namespace TauCode.Working.Lab
 {
     public abstract class OnDemandWorkerBase : WorkerBase
     {
-        protected void CheckCanDoJob()
-        {
-            this.CheckStateForOperation(WorkerState.Running);
-        }
+        //protected void CheckCanDoJob()
+        //{
+        //    this.CheckStateForOperation(WorkerState.Running);
+        //}
 
         protected override void StartImpl()
         {

@@ -4,6 +4,6 @@ namespace TauCode.Mq.Lab
 {
     public interface IMessagePublisherLab : IWorker
     {
-        void Dispatch(IMessageLab message);
+        void Publish(IMessageLab message);
     }
 }

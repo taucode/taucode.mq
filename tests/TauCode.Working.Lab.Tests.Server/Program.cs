@@ -134,7 +134,7 @@ namespace TauCode.Working.Lab.Tests.Server
                 for (int i = 0; i < assignments.Count; i++)
                 {
                     var number = Interlocked.Increment(ref _assignmentNumber);
-                    _worker.EnqueueAssignment($"Assignment # {number}");
+                    _worker.Enqueue($"Assignment # {number}");
                 }
 
                 return new AssignmentsResult

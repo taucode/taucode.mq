@@ -2,7 +2,7 @@
 {
     public interface IQueueWorker<in TAssignment> : IWorker
     {
-        void EnqueueAssignment(TAssignment assignment);
+        void Enqueue(TAssignment assignment);
 
         int Backlog { get; }
     }
