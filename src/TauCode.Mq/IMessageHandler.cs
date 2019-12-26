@@ -1,7 +1,7 @@
 ﻿namespace TauCode.Mq
 {
-    public interface IMessageHandler<in TMessage>
+    public interface IMessageHandler
     {
-        void Handle(TMessage message);
+        void Handle(object message);
     }
 }

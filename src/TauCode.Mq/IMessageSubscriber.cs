@@ -1,19 +1,12 @@
 ﻿using System;
+using TauCode.Working;
 
 namespace TauCode.Mq
 {
-    public interface IMessageSubscriber : IDisposable
+    public interface IMessageSubscriber : IWorker
     {
-        string Name { get; }
-
-        string State { get; }
-
         void Subscribe(Type messageHandlerType);
 
-        SubscriptionInfo[] Subscriptions { get; }
-
-        IMessageHandlerWrapperFactory MessageHandlerWrapperFactory { get; set; }
-
-        void Start();
+        void Subscribe(Type messageHandlerType, string topic);
     }
 }
