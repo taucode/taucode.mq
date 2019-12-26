@@ -1,10 +1,12 @@
 ﻿using EasyNetQ;
+using EasyNetQ.NonGeneric;
 using System;
 using TauCode.Mq.Lab;
 using TauCode.Working.Lab;
 
 namespace TauCode.Mq.EasyNetQ.Lab
 {
+    // todo: clean up
     public class EasyNetQMessageSubscriberLab : MessageSubscriberBaseLab, IEasyNetQMessageSubscriberLab
     {
         private string _connectionString;
@@ -25,7 +27,24 @@ namespace TauCode.Mq.EasyNetQ.Lab
 
         private void SubscribeBus()
         {
-            throw new System.NotImplementedException();
+            foreach (var pair in this.Bundles)
+            {
+                var subId = Guid.NewGuid().ToString(); // todo
+                var bundle = pair.Value;
+                var topic = bundle.Topic;
+
+                if (topic == null)
+                {
+                    _bus.Subscribe(bundle.MessageType, subId, bundle.Handle);
+                }
+                else
+                {
+                    _bus.Subscribe(bundle.MessageType, subId, bundle.Handle, configuration => configuration.WithTopic(topic));
+                }
+            }
+
+
+            //_bus.Subscribe()
 
             //_bus.Subscribe("wat", this.Wat, configuration => configuration.WithTopic(topic));
             //_bus.Subscribe()

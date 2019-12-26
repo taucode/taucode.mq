@@ -5,7 +5,7 @@ using TauCode.Working.Lab;
 
 namespace TauCode.Mq.Lab
 {
-    // todo: nice regions.
+    // todo: nice regions, clean up
     public abstract class MessageSubscriberBaseLab : OnDemandWorkerBase, IMessageSubscriberLab
     {
         #region Nested
@@ -52,6 +52,11 @@ namespace TauCode.Mq.Lab
             }
 
             public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
+
+            public void Handle(object message)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         #endregion
@@ -84,11 +89,24 @@ namespace TauCode.Mq.Lab
 
         #endregion
 
+        #region Overridden
+
+        //protected override void StopImpl()
+        //{
+        //    base.StopImpl();
+        //    _bundles.Clear();
+        //}
+
+        protected override void DisposeImpl()
+        {
+            base.DisposeImpl();
+            _bundles.Clear();
+        }
 
 
+        #endregion
 
-
-
+        #region Private
 
         private Bundle GetBundle(Type messageType, string topic)
         {
@@ -104,15 +122,8 @@ namespace TauCode.Mq.Lab
             return bundle;
         }
 
-        public IMessageHandlerFactoryLab Factory => _factory ?? (_factory = this.CreateFactory());
-
-        public void Subscribe(Type messageHandlerType)
+        private void SubscribeImpl(Type messageHandlerType, string topic)
         {
-            if (messageHandlerType == null)
-            {
-                throw new ArgumentNullException(nameof(messageHandlerType));
-            }
-
             this.CheckStateForOperation(WorkerState.Stopped);
 
             var interfaces = messageHandlerType.GetInterfaces();
@@ -149,36 +160,104 @@ namespace TauCode.Mq.Lab
             if (messageHandlerInterfaces.Count == 1)
             {
                 // ok.
+                // todo: check message.
             }
             else
             {
                 throw new NotImplementedException(); // message handler must implement exactly one IMessageHandlerLab<FooMessage>
             }
 
-            var bundle = this.GetBundle(messageType, null);
+            var bundle = this.GetBundle(messageType, topic);
             if (bundle == null)
             {
-                bundle = this.AddBundle(messageType, null);
+                bundle = this.AddBundle(messageType, topic);
             }
 
             bundle.AddHandlerType(messageHandlerType);
         }
 
+
+        #endregion
+
+        #region IMessageSubscriberLab Members
+
+        public IMessageHandlerFactoryLab Factory => _factory ?? (_factory = this.CreateFactory());
+
+        public void Subscribe(Type messageHandlerType)
+        {
+            if (messageHandlerType == null)
+            {
+                throw new ArgumentNullException(nameof(messageHandlerType));
+            }
+
+            this.SubscribeImpl(messageHandlerType, null);
+
+            //this.CheckStateForOperation(WorkerState.Stopped);
+
+            //var interfaces = messageHandlerType.GetInterfaces();
+
+            //var messageHandlerInterfaces = new List<Type>();
+            //Type messageType = null;
+
+            //foreach (var @interface in interfaces)
+            //{
+            //    if (@interface.IsConstructedGenericType)
+            //    {
+            //        var generic = @interface.GetGenericTypeDefinition();
+            //        if (generic == typeof(IMessageHandlerLab<>))
+            //        {
+            //            var genericArgs = @interface.GetGenericArguments();
+            //            // actually, redundant check, but let it be.
+            //            if (genericArgs.Length == 1)
+            //            {
+            //                messageType = genericArgs.Single();
+            //                var messageTypeInterfaces = messageType.GetInterfaces();
+
+            //                if (messageTypeInterfaces.Length == 1 &&
+            //                    messageTypeInterfaces.Single() == typeof(IMessageLab))
+            //                {
+            //                    // looks like handler is valid.
+            //                }
+            //                messageHandlerInterfaces.Add(@interface);
+            //            }
+            //        }
+            //    }
+            //}
+
+
+            //if (messageHandlerInterfaces.Count == 1)
+            //{
+            //    // ok.
+            //}
+            //else
+            //{
+            //    throw new NotImplementedException(); // message handler must implement exactly one IMessageHandlerLab<FooMessage>
+            //}
+
+            //var bundle = this.GetBundle(messageType, null);
+            //if (bundle == null)
+            //{
+            //    bundle = this.AddBundle(messageType, null);
+            //}
+
+            //bundle.AddHandlerType(messageHandlerType);
+        }
+
         public void Subscribe(Type messageHandlerType, string topic)
         {
-            throw new NotImplementedException();
+            if (messageHandlerType == null)
+            {
+                throw new ArgumentNullException(nameof(messageHandlerType));
+            }
+
+            if (topic == null)
+            {
+                throw new ArgumentNullException(nameof(topic));
+            }
+
+            this.SubscribeImpl(messageHandlerType, topic);
         }
 
-        protected override void StopImpl()
-        {
-            base.StopImpl();
-            _bundles.Clear();
-        }
-
-        protected override void DisposeImpl()
-        {
-            base.DisposeImpl();
-            _bundles.Clear();
-        }
+        #endregion
     }
 }
