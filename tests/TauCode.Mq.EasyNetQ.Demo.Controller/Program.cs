@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TauCode.Mq.EasyNetQ.Demo.Transceiver
+namespace TauCode.Mq.EasyNetQ.Demo.Controller
 {
     class Program
     {

@@ -35,6 +35,11 @@ namespace TauCode.Mq.EasyNetQ.Lab
             _bus.Publish(message.GetType(), message);
         }
 
+        protected override void PublishImpl(IMessageLab message, string topic)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public string ConnectionString
         {
             get => _connectionString;

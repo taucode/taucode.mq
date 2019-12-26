@@ -16,5 +16,10 @@ namespace TauCode.Mq.Lab
 
             throw new NotImplementedException();
         }
+
+        public void Subscribe(Type messageHandlerType, string topic)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

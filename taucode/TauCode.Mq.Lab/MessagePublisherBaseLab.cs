@@ -7,6 +7,8 @@ namespace TauCode.Mq.Lab
     {
         protected abstract void PublishImpl(IMessageLab message);
 
+        protected abstract void PublishImpl(IMessageLab message, string topic);
+
         public void Publish(IMessageLab message)
         {
             if (message == null)
@@ -16,6 +18,21 @@ namespace TauCode.Mq.Lab
 
             this.CheckStateForOperation(WorkerState.Running);
             this.PublishImpl(message);
+        }
+
+        public void Publish(IMessageLab message, string topic)
+        {
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentException("Topic cannot be empty or white-space.", nameof(topic));
+            }
+
+            this.PublishImpl(message, topic);
         }
     }
 }
