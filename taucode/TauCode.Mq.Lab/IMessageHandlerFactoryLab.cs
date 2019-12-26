@@ -1,9 +1,9 @@
-﻿using System;
+﻿//using System;
 
-namespace TauCode.Mq.Lab
-{
-    public interface IMessageHandlerFactoryLab
-    {
-        IMessageHandlerLab Create(Type messageHandlerType);
-    }
-}
+//namespace TauCode.Mq.Lab
+//{
+//    public interface IMessageHandlerFactoryLab
+//    {
+//        IMessageHandlerLab Create(Type messageHandlerType);
+//    }
+//}

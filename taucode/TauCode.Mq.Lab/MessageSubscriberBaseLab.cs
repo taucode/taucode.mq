@@ -60,8 +60,19 @@ namespace TauCode.Mq.Lab
             {
                 foreach (var messageHandlerType in this.MessageHandlerTypes)
                 {
-                    var messageHandler = _host.Factory.Create(messageHandlerType);
-                    messageHandler.Handle(message); // todo: try/catch, must not throw.
+                    var contextFactory = _host.ContextFactory;
+                    using (var context = contextFactory.CreateContext())
+                    {
+                        context.Begin();
+
+                        var handler = contextFactory.CreateHandler(context, messageHandlerType);
+                        handler.Handle(message);
+
+                        context.End();
+                    }
+
+                    //var messageHandler = _host.Factory.Create(messageHandlerType);
+                    //messageHandler.Handle(message); // todo: try/catch, must not throw.
                 }
             }
         }
@@ -71,14 +82,15 @@ namespace TauCode.Mq.Lab
         #region Fields
 
         private readonly Dictionary<string, Bundle> _bundles;
-        private IMessageHandlerFactoryLab _factory;
+        //private IMessageHandlerFactoryLab _factory;
 
         #endregion
 
         #region Constructor
 
-        protected MessageSubscriberBaseLab()
+        protected MessageSubscriberBaseLab(IMessageHandlerContextFactoryLab contextFactory)
         {
+            this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _bundles = new Dictionary<string, Bundle>();
         }
 
@@ -86,13 +98,19 @@ namespace TauCode.Mq.Lab
 
         #region Abstract
 
-        protected abstract IMessageHandlerFactoryLab CreateFactory();
+        //protected abstract IMessageHandlerFactoryLab CreateFactory();
 
         #endregion
 
         #region Protected
 
         protected IReadOnlyDictionary<string, Bundle> Bundles => _bundles;
+
+        #endregion
+
+        #region Internal
+
+        internal IMessageHandlerContextFactoryLab ContextFactory { get; }
 
         #endregion
 
@@ -188,7 +206,9 @@ namespace TauCode.Mq.Lab
 
         #region IMessageSubscriberLab Members
 
-        public IMessageHandlerFactoryLab Factory => _factory ?? (_factory = this.CreateFactory());
+        //public IMessageHandlerFactoryLab Factory => _factory ?? (_factory = this.CreateFactory());
+
+        //public abstract IMessageHandlerContextFactoryLab ContextFactory { get; protected set; }
 
         public void Subscribe(Type messageHandlerType)
         {

@@ -30,9 +30,16 @@ namespace TauCode.Mq.EasyNetQ.Demo.Node
             containerBuilder.RegisterType<NodeGreetingResponseHandler>().AsSelf().InstancePerLifetimeScope();
             containerBuilder.RegisterType<NodeNotificationHandler>().AsSelf().InstancePerLifetimeScope();
 
+            containerBuilder.RegisterType<EasyNetQMessageSubscriberLab>().As<IMessageSubscriberLab>().SingleInstance();
+
+            //containerBuilder
+            //    .Register(context => new AutofacMessageHandlerFactoryLab(context.Resolve<ILifetimeScope>()))
+            //    .As<IMessageHandlerFactoryLab>().SingleInstance();
+
             containerBuilder
-                .Register(context => new AutofacMessageHandlerFactoryLab(context.Resolve<ILifetimeScope>()))
-                .As<IMessageHandlerFactoryLab>().SingleInstance();
+                .Register(context => new AutofacMessageHandlerContextFactoryLab(context.Resolve<ILifetimeScope>()))
+                .As<IMessageHandlerContextFactoryLab>()
+                .SingleInstance();
 
             _container = containerBuilder.Build();
 
@@ -67,11 +74,16 @@ namespace TauCode.Mq.EasyNetQ.Demo.Node
                 ConnectionString = "host=localhost",
             };
 
-            _subscriber = new EasyNetQMessageSubscriberLab(_container.Resolve<IMessageHandlerFactoryLab>())
-            {
-                Name = _name,
-                ConnectionString = "host=localhost",
-            };
+            _subscriber = _container.Resolve<IMessageSubscriberLab>();
+            _subscriber.Name = _name;
+            ((EasyNetQMessageSubscriberLab) _subscriber).ConnectionString = "host=localhost";
+
+
+            //_subscriber = new EasyNetQMessageSubscriberLab(_container.Resolve<IMessageHandlerFactoryLab>())
+            //{
+            //    Name = _name,
+            //    ConnectionString = "host=localhost",
+            //};
 
             _publisher.Start();
             
