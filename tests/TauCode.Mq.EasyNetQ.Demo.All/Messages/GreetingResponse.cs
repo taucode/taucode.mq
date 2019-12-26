@@ -1,7 +1,7 @@
 ﻿using System;
 using TauCode.Mq.Lab;
 
-namespace TauCode.Mq.EasyNetQ.Demo.All
+namespace TauCode.Mq.EasyNetQ.Demo.All.Messages
 {
     public class GreetingResponse : IMessageLab
     {

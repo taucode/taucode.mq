@@ -59,6 +59,8 @@ namespace TauCode.Mq.EasyNetQ.Demo.Node
                 }
             }
 
+            Console.WriteLine($"Node started with name '{_name}'.");
+
             _publisher = new EasyNetQMessagePublisherLab
             {
                 Name = _name,
@@ -81,7 +83,7 @@ namespace TauCode.Mq.EasyNetQ.Demo.Node
 
             while (true)
             {
-                Console.Write("Type 'exit' to exit");
+                Console.Write($"{_name} >");
                 var cmd = Console.ReadLine();
                 if (cmd == "exit")
                 {

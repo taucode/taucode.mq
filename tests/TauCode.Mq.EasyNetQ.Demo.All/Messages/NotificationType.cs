@@ -1,4 +1,4 @@
-﻿namespace TauCode.Mq.EasyNetQ.Demo.All
+﻿namespace TauCode.Mq.EasyNetQ.Demo.All.Messages
 {
     public class NotificationType
     {

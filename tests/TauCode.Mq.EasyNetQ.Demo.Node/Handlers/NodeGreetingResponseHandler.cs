@@ -1,19 +1,13 @@
-﻿using TauCode.Mq.EasyNetQ.Demo.All;
+﻿using TauCode.Mq.EasyNetQ.Demo.All.Messages;
 using TauCode.Mq.Lab;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Node.Handlers
 {
-    public class NodeGreetingResponseHandler : IMessageHandlerLab<GreetingResponse>
+    public class NodeGreetingResponseHandler : MessageHandlerBaseLab<GreetingResponse>
     {
-        public void Handle(GreetingResponse message)
+        public override void Handle(GreetingResponse message)
         {
             throw new System.NotImplementedException();
-        }
-
-
-        public void Handle(object message)
-        {
-            this.Handle((GreetingResponse)message);
         }
     }
 }

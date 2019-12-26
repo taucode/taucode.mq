@@ -40,6 +40,8 @@ namespace TauCode.Mq.EasyNetQ.Demo.Logger
         {
             const string name = "logger";
 
+            Console.WriteLine($"App '{name}' started.");
+
             while (true)
             {
                 _publisher = new EasyNetQMessagePublisherLab
@@ -64,7 +66,7 @@ namespace TauCode.Mq.EasyNetQ.Demo.Logger
 
                 while (true)
                 {
-                    Console.Write("Type 'exit' to exit");
+                    Console.Write($"{name} >");
                     var cmd = Console.ReadLine();
                     if (cmd == "exit")
                     {

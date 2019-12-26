@@ -1,21 +1,16 @@
 ﻿using Newtonsoft.Json;
 using System;
-using TauCode.Mq.EasyNetQ.Demo.All;
+using TauCode.Mq.EasyNetQ.Demo.All.Messages;
 using TauCode.Mq.Lab;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Logger.Handlers
 {
-    public class LoggerGreetingHandler : IMessageHandlerLab<Greeting>
+    public class LoggerGreetingHandler : MessageHandlerBaseLab<Greeting>
     {
-        public void Handle(Greeting message)
+        public override void Handle(Greeting message)
         {
             var json = JsonConvert.SerializeObject(message);
             Console.WriteLine(json);
-        }
-
-        public void Handle(object message)
-        {
-            this.Handle((Greeting)message);
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using EasyNetQ;
 using Serilog;
 using System;
-using TauCode.Mq.EasyNetQ.Demo.All;
+using TauCode.Mq.EasyNetQ.Demo.All.Messages;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Controller
 {

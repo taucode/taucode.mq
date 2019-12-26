@@ -1,20 +1,14 @@
 ﻿using System;
-using TauCode.Mq.EasyNetQ.Demo.All;
+using TauCode.Mq.EasyNetQ.Demo.All.Messages;
 using TauCode.Mq.Lab;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Logger.Handlers
 {
-    public class LoggerNotificationHandler : IMessageHandlerLab<Notification>
+    public class LoggerNotificationHandler : MessageHandlerBaseLab<Notification>
     {
-        public void Handle(Notification message)
+        public override void Handle(Notification message)
         {
             throw new NotImplementedException();
-        }
-
-
-        public void Handle(object message)
-        {
-            this.Handle((Notification)message);
         }
     }
 }
