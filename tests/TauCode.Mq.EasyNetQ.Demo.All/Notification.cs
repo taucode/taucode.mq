@@ -8,10 +8,12 @@ namespace TauCode.Mq.EasyNetQ.Demo.All
         // For serialization/deserialization
         public Notification()
         {
+            throw new NotImplementedException(); // todo
         }
 
-        public Notification(string correlationId, )
+        public Notification(string correlationId)
         {
+            throw new NotImplementedException(); // todo
         }
 
         public string CorrelationId { get; set; }
