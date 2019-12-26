@@ -1,17 +1,9 @@
-﻿using System;
+﻿using TauCode.Working;
 
 namespace TauCode.Mq
 {
-    public interface IMessageQueue : IDisposable
+    public interface IMessageQueue : IQueueWorker<IMessage>
     {
-        IMessagePublisher MessagePublisher { get; set; }
-
-        void Start();
-
-        string State { get; }
-
-        void Enqueue(object message);
-
-        int Backlog { get; }
+        IMessagePublisher MessagePublisher { get; }
     }
 }

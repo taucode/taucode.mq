@@ -1,15 +1,11 @@
-﻿using System;
+﻿using TauCode.Working;
 
 namespace TauCode.Mq
 {
-    public interface IMessagePublisher : IDisposable
+    public interface IMessagePublisher : IWorker
     {
-        void Start(Type[] messageTypes);
+        void Publish(IMessage message);
 
-        Type[] MessageTypes { get; }
-
-        string State { get; }
-
-        void Publish(object message);
+        void Publish(IMessage message, string topic);
     }
 }

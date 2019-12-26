@@ -1,198 +1,202 @@
-﻿using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TauCode.Mq.Exceptions;
+using TauCode.Working;
 
 namespace TauCode.Mq
 {
-    public abstract class MessageSubscriberBase : IMessageSubscriber
+    // todo: nice regions, clean up
+    public abstract class MessageSubscriberBase : OnDemandWorkerBase, IMessageSubscriber
     {
-        #region Nested Types
+        #region Nested
 
-        private class Bundle
+        protected class Bundle
         {
+            // todo: need thread safety? I suppose not.
+
             private readonly List<Type> _messageHandlerTypes;
+            private readonly MessageSubscriberBase _host;
 
-            internal Bundle(Type messageType, string subscriptionId)
+            internal Bundle(MessageSubscriberBase host, Type messageType, string topic)
             {
-                this.MessageType = messageType;
-                _messageHandlerTypes = new List<Type>();
-                this.SubscriptionId = subscriptionId;
-            }
+                _host = host;
 
-            internal Type MessageType { get; }
+                this.MessageType = messageType ?? throw new ArgumentNullException();
 
-            internal string SubscriptionId { get; private set; }
-
-            internal IDisposable Handle { get; set; }
-
-            internal void Add(Type messageHandlerType)
-            {
-                if (_messageHandlerTypes.Contains(messageHandlerType))
+                if (topic != null)
                 {
-                    var msg =
-                        $"There is already a handler of type '{messageHandlerType.FullName}' registered for message type '{MessageType.FullName}'";
-                    throw new InvalidOperationException(msg);
+                    if (string.IsNullOrWhiteSpace(topic))
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
 
+                this.Topic = topic;
+                this.BundleTag = MakeTag(this.MessageType, this.Topic);
+
+                _messageHandlerTypes = new List<Type>();
+            }
+
+            public static string MakeTag(Type messageType, string topic)
+            {
+                topic = topic ?? string.Empty;
+
+                return $"{messageType.FullName}:{topic}";
+            }
+
+            public Type MessageType { get; }
+            public string Topic { get; }
+            public string BundleTag { get; }
+            public override string ToString() => this.BundleTag;
+
+            public void AddHandlerType(Type messageHandlerType)
+            {
                 _messageHandlerTypes.Add(messageHandlerType);
             }
 
-            internal IEnumerable<Type> GetMessageHandlerTypes() => _messageHandlerTypes;
-        }
+            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
 
-        private enum MessageSubscriberState
-        {
-            NotStarted = 1,
-            Started,
-            Disposed,
+            public void Handle(object message)
+            {
+                foreach (var messageHandlerType in this.MessageHandlerTypes)
+                {
+                    // todo: try/catch, must not throw.
+                    var contextFactory = _host.ContextFactory;
+                    using (var context = contextFactory.CreateContext())
+                    {
+                        context.Begin();
+
+                        var handler = contextFactory.CreateHandler(context, messageHandlerType);
+                        handler.Handle(message); // todo
+
+                        context.End();
+                    }
+                }
+            }
         }
 
         #endregion
 
         #region Fields
 
-        private readonly Dictionary<Type, Bundle> _bundles;
-        private readonly object _lock;
-        private MessageSubscriberState _state;
+        private readonly Dictionary<string, Bundle> _bundles;
 
         #endregion
 
         #region Constructor
 
-        protected MessageSubscriberBase(string name)
+        protected MessageSubscriberBase(IMessageHandlerContextFactory contextFactory)
         {
-            this.Name = name ?? throw new ArgumentNullException(nameof(name));
-            _bundles = new Dictionary<Type, Bundle>();
-            _lock = new object();
-            _state = MessageSubscriberState.NotStarted;
+            this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _bundles = new Dictionary<string, Bundle>();
         }
+
+        #endregion
+
+        #region Protected
+
+        protected IReadOnlyDictionary<string, Bundle> Bundles => _bundles;
+
+        #endregion
+
+        #region Internal
+
+        internal IMessageHandlerContextFactory ContextFactory { get; }
+
+        #endregion
+
+        #region Overridden
+
+        //protected override void StopImpl()
+        //{
+        //    base.StopImpl();
+        //    _bundles.Clear();
+        //}
+
+        protected override void DisposeImpl()
+        {
+            base.DisposeImpl();
+            _bundles.Clear();
+        }
+
 
         #endregion
 
         #region Private
 
-        private void Dispatch(object message)
+        private Bundle GetBundle(Type messageType, string topic)
         {
-            IEnumerable<Type> messageHandlerTypes;
-
-            lock (_lock)
-            {
-                Exception messageRelatedException = null; // we may not throw in this method since it is called by an outside system (such as an MQ implementation)
-                Bundle bundle = null;
-
-                if (_state != MessageSubscriberState.Started)
-                {
-                    return; // won't process any messages since we're not in the 'Started' state
-                }
-
-                // check out if we can handle this message at all
-                do
-                {
-                    if (message == null)
-                    {
-                        messageRelatedException = new ArgumentNullException(nameof(message));
-                        break;
-                    }
-
-                    var type = message.GetType();
-                    _bundles.TryGetValue(type, out bundle);
-
-                    if (bundle == null)
-                    {
-                        messageRelatedException = new ArgumentException($"Non-supported message type: {message.GetType().FullName}.", nameof(message));
-                        break;
-                    }
-                } while (false);
-
-                if (messageRelatedException != null)
-                {
-                    Log.Error(messageRelatedException, $"Subscription '{this.Name}' caused an error. Exception message: {messageRelatedException.Message}.");
-                    return;
-                }
-
-                messageHandlerTypes = bundle.GetMessageHandlerTypes();
-            }
-
-            // pass the message through handles
-
-            foreach (var messageHandlerType in messageHandlerTypes)
-            {
-                Exception handlerRelatedException = null;
-
-                do
-                {
-                    IMessageHandlerWrapper handlerWrapper;
-
-                    if (this.MessageHandlerWrapperFactory == null)
-                    {
-                        handlerRelatedException = new MqException($"'MessageHandlerWrapperFactory' is null. Message is accepted but won't be handled.");
-                        break; // out of the "do" cycle
-                    }
-
-                    try
-                    {
-                        handlerWrapper = this.MessageHandlerWrapperFactory.Create(messageHandlerType);
-                    }
-                    catch (Exception e)
-                    {
-                        handlerRelatedException = new MqException($"Failed to create message handler wrapper for '{messageHandlerType.FullName}'", e);
-                        break; // out of the "do" cycle
-                    }
-
-                    if (handlerWrapper == null)
-                    {
-                        handlerRelatedException = new MqException($"Created message handler wrapper was null for type '{messageHandlerType.FullName}'");
-                        break; // out of the "do" cycle
-                    }
-
-                    try
-                    {
-                        handlerWrapper.Handle(message);
-                    }
-                    catch (Exception e)
-                    {
-                        handlerRelatedException = new MqException($"Wrapped handler of type '{messageHandlerType}' caused an exception", e);
-                        break; // out of the "do" cycle
-                    }
-                } while (false);
-
-                if (handlerRelatedException != null)
-                {
-                    var msg =
-                        $"Subscription '{this.Name}' caused an error. Handler type: {messageHandlerType.FullName}. Exception message: {handlerRelatedException.Message}.";
-                    Log.Error(handlerRelatedException, msg);
-                }
-            }
+            var bundleTag = Bundle.MakeTag(messageType, topic);
+            _bundles.TryGetValue(bundleTag, out var bundle);
+            return bundle;
         }
 
-        #endregion
+        private Bundle AddBundle(Type messageType, string topic)
+        {
+            var bundle = new Bundle(this, messageType, topic);
+            _bundles.Add(bundle.BundleTag, bundle);
+            return bundle;
+        }
 
-        #region Abstract
+        private void SubscribeImpl(Type messageHandlerType, string topic)
+        {
+            this.CheckStateForOperation(WorkerState.Stopped);
 
-        protected abstract IDisposable SubscribeImpl(Type messageType, string subscriptionId, Action<object> callback);
+            var interfaces = messageHandlerType.GetInterfaces();
 
-        protected abstract void StartImpl();
+            var messageHandlerInterfaces = new List<Type>();
+            Type messageType = null;
 
-        protected abstract void DisposeImpl();
+            foreach (var @interface in interfaces)
+            {
+                if (@interface.IsConstructedGenericType)
+                {
+                    var generic = @interface.GetGenericTypeDefinition();
+                    if (generic == typeof(IMessageHandler<>))
+                    {
+                        var genericArgs = @interface.GetGenericArguments();
+                        // actually, redundant check, but let it be.
+                        if (genericArgs.Length == 1)
+                        {
+                            messageType = genericArgs.Single();
+                            var messageTypeInterfaces = messageType.GetInterfaces();
+
+                            if (messageTypeInterfaces.Length == 1 &&
+                                messageTypeInterfaces.Single() == typeof(IMessage))
+                            {
+                                // looks like handler is valid.
+                            }
+                            messageHandlerInterfaces.Add(@interface);
+                        }
+                    }
+                }
+            }
+
+
+            if (messageHandlerInterfaces.Count == 1)
+            {
+                // ok.
+                // todo: check message.
+            }
+            else
+            {
+                throw new NotImplementedException(); // message handler must implement exactly one IMessageHandler<FooMessage>
+            }
+
+            var bundle = this.GetBundle(messageType, topic);
+            if (bundle == null)
+            {
+                bundle = this.AddBundle(messageType, topic);
+            }
+
+            bundle.AddHandlerType(messageHandlerType);
+        }
+
 
         #endregion
 
         #region IMessageSubscriber Members
 
-        public string Name { get; }
-
-        public string State
-        {
-            get
-            {
-                lock (_lock)
-                {
-                    return _state.ToString();
-                }
-            }
-        }
 
         public void Subscribe(Type messageHandlerType)
         {
@@ -201,133 +205,22 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(messageHandlerType));
             }
 
-            var interfaces = messageHandlerType.GetInterfaces();
-
-            if (interfaces.Length == 0)
-            {
-                throw new ArgumentException(
-                    $"Type '{messageHandlerType.FullName}' does not implement the 'IMessageHandler<TMessage>' interface.",
-                    nameof(messageHandlerType));
-            }
-
-            var handlerInterfaces = interfaces
-                .Where(x =>
-                    x.IsGenericType &&
-                    x.GetGenericTypeDefinition() == typeof(IMessageHandler<>))
-                .ToArray();
-
-            if (handlerInterfaces.Length != 1)
-            {
-                throw new ArgumentException(
-                    $"Type '{messageHandlerType.FullName}' does not implement a single 'IMessageHandler<TMessage>' interface.",
-                    nameof(messageHandlerType));
-            }
-
-            var messageType = handlerInterfaces.Single().GetGenericArguments().Single();
-
-            lock (_lock)
-            {
-                if (_state != MessageSubscriberState.NotStarted)
-                {
-                    throw new InvalidOperationException("Not in the 'NotStarted' state.");
-                }
-
-                _bundles.TryGetValue(messageType, out var bundle);
-                if (bundle == null)
-                {
-                    // new message type
-                    var subscriptionId = $"{this.Name}.{messageType.FullName}";
-
-                    bundle = new Bundle(messageType, subscriptionId);
-                    _bundles.Add(messageType, bundle);
-                }
-
-                bundle.Add(messageHandlerType);
-            }
+            this.SubscribeImpl(messageHandlerType, null);
         }
 
-        public SubscriptionInfo[] Subscriptions
+        public void Subscribe(Type messageHandlerType, string topic)
         {
-            get
+            if (messageHandlerType == null)
             {
-                var infos = new List<SubscriptionInfo>();
-
-                foreach (var bundle in _bundles.Values)
-                {
-                    var subscriptionInfo = new SubscriptionInfo
-                    {
-                        SubscriptionId = bundle.SubscriptionId,
-                        MessageType = bundle.MessageType,
-                        MessageHandlerTypes = bundle.GetMessageHandlerTypes().ToArray(),
-                    };
-
-                    infos.Add(subscriptionInfo);
-                }
-
-                return infos.ToArray();
+                throw new ArgumentNullException(nameof(messageHandlerType));
             }
-        }
 
-        public IMessageHandlerWrapperFactory MessageHandlerWrapperFactory { get; set; }
-
-        public void Start()
-        {
-            lock (_lock)
+            if (topic == null)
             {
-                if (_state != MessageSubscriberState.NotStarted)
-                {
-                    throw new InvalidOperationException("Not in the 'NotStarted' state.");
-                }
-
-                _state = MessageSubscriberState.Started;
-                this.StartImpl();
-
-                foreach (var bundle in _bundles.Values)
-                {
-                    var handle = this.SubscribeImpl(bundle.MessageType, bundle.SubscriptionId, this.Dispatch);
-                    bundle.Handle = handle;
-                }
-
-                if (_bundles.Count == 0)
-                {
-                    Log.Warning($"'{this.GetType().FullName}' instance starts without subscriptions. No messages will be dispatched");
-                }
+                throw new ArgumentNullException(nameof(topic));
             }
-        }
 
-        #endregion
-
-        #region IDisposable Members
-
-        public void Dispose()
-        {
-            lock (_lock)
-            {
-                if (_state == MessageSubscriberState.Disposed)
-                {
-                    throw new InvalidOperationException("Already in the 'Disposed' state.");
-                }
-
-                _state = MessageSubscriberState.Disposed;
-
-                foreach (var pair in _bundles)
-                {
-                    var value = pair.Value;
-
-                    try
-                    {
-                        value.Handle?.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Exception occured while trying to dispose subscription handle.", ex);
-                    }
-                }
-
-                _bundles.Clear();
-
-                this.DisposeImpl();
-            }
+            this.SubscribeImpl(messageHandlerType, topic);
         }
 
         #endregion
