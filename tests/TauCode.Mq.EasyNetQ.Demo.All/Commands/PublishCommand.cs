@@ -1,9 +1,9 @@
 ﻿namespace TauCode.Mq.EasyNetQ.Demo.All.Commands
 {
+    // todo: can be contained in Node app itself.
     public class PublishCommand
     {
-        public string NodeName { get; set; }
-        public string MessageType { get; set; }
-        public string MessageJson { get; set; }
+        public string To { get; set; }
+        public string MessageText { get; set; }
     }
 }

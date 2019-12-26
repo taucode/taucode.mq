@@ -60,19 +60,17 @@ namespace TauCode.Mq.Lab
             {
                 foreach (var messageHandlerType in this.MessageHandlerTypes)
                 {
+                    // todo: try/catch, must not throw.
                     var contextFactory = _host.ContextFactory;
                     using (var context = contextFactory.CreateContext())
                     {
                         context.Begin();
 
                         var handler = contextFactory.CreateHandler(context, messageHandlerType);
-                        handler.Handle(message);
+                        handler.Handle(message); // todo
 
                         context.End();
                     }
-
-                    //var messageHandler = _host.Factory.Create(messageHandlerType);
-                    //messageHandler.Handle(message); // todo: try/catch, must not throw.
                 }
             }
         }

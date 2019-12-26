@@ -1,4 +1,6 @@
-﻿using TauCode.Mq.EasyNetQ.Demo.All.Messages;
+﻿using Newtonsoft.Json;
+using System;
+using TauCode.Mq.EasyNetQ.Demo.All.Messages;
 using TauCode.Mq.Lab;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Logger.Handlers
@@ -7,7 +9,8 @@ namespace TauCode.Mq.EasyNetQ.Demo.Logger.Handlers
     {
         public override void Handle(GreetingResponse message)
         {
-            throw new System.NotImplementedException();
+            var json = JsonConvert.SerializeObject(message);
+            Console.WriteLine(json);
         }
     }
 }

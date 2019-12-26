@@ -37,7 +37,7 @@ namespace TauCode.Mq.EasyNetQ.Lab
 
         protected override void PublishImpl(IMessageLab message, string topic)
         {
-            throw new System.NotImplementedException();
+            _bus.Publish(message.GetType(), message, topic);
         }
 
         public string ConnectionString

@@ -6,9 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Grammar.lisp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TauCode.Cli" Version="1.0.0-dev-2019-12-25-20-59" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\taucode\TauCode.Mq.Autofac.Lab\TauCode.Mq.Autofac.Lab.csproj" />
     <ProjectReference Include="..\..\taucode\TauCode.Mq.EasyNetQ.Lab\TauCode.Mq.EasyNetQ.Lab.csproj" />
     <ProjectReference Include="..\TauCode.Mq.EasyNetQ.Demo.All\TauCode.Mq.EasyNetQ.Demo.All.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Grammar.lisp" />
   </ItemGroup>
 
 </Project>
