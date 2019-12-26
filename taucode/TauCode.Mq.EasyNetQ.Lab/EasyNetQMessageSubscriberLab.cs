@@ -1,4 +1,5 @@
 ﻿using EasyNetQ;
+using System;
 using TauCode.Mq.Lab;
 using TauCode.Working.Lab;
 
@@ -8,6 +9,12 @@ namespace TauCode.Mq.EasyNetQ.Lab
     {
         private string _connectionString;
         private IBus _bus;
+        private readonly IMessageHandlerFactoryLab _factory;
+
+        public EasyNetQMessageSubscriberLab(IMessageHandlerFactoryLab factory)
+        {
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+        }
 
         protected override void StartImpl()
         {
@@ -19,7 +26,12 @@ namespace TauCode.Mq.EasyNetQ.Lab
         private void SubscribeBus()
         {
             throw new System.NotImplementedException();
+
+            //_bus.Subscribe("wat", this.Wat, configuration => configuration.WithTopic(topic));
+            //_bus.Subscribe()
         }
+
+        protected override IMessageHandlerFactoryLab CreateFactory() => _factory;
 
         protected override void StopImpl()
         {

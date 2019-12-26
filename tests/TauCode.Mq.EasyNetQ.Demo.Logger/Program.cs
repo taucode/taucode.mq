@@ -1,12 +1,80 @@
-﻿using System;
+﻿using Autofac;
+using System;
+using TauCode.Mq.Autofac.Lab;
+using TauCode.Mq.EasyNetQ.Demo.Logger.Handlers;
+using TauCode.Mq.EasyNetQ.Lab;
+using TauCode.Mq.Lab;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Logger
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private IMessagePublisherLab _publisher;
+        private IMessageSubscriberLab _subscriber;
+
+        private readonly IContainer _container;
+
+        private static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var program = new Program();
+            program.Run();
+        }
+
+        public Program()
+        {
+            var containerBuilder = new ContainerBuilder();
+
+            // todo: register them at once.
+            containerBuilder.RegisterType<GreetingHandler>().AsSelf().InstancePerLifetimeScope();
+            containerBuilder.RegisterType<GreetingResponseHandler>().AsSelf().InstancePerLifetimeScope();
+            containerBuilder.RegisterType<NotificationHandler>().AsSelf().InstancePerLifetimeScope();
+
+            containerBuilder
+                .Register(context => new AutofacMessageHandlerFactoryLab(context.Resolve<ILifetimeScope>()))
+                .As<IMessageHandlerFactoryLab>().SingleInstance();
+
+            _container = containerBuilder.Build();
+        }
+
+        public void Run()
+        {
+            const string name = "logger";
+
+            while (true)
+            {
+                _publisher = new EasyNetQMessagePublisherLab
+                {
+                    Name = name,
+                    ConnectionString = "host=localhost",
+                };
+
+                _subscriber = new EasyNetQMessageSubscriberLab(_container.Resolve<IMessageHandlerFactoryLab>())
+                {
+                    Name = name,
+                    ConnectionString = "host=localhost",
+                };
+
+                _publisher.Start();
+
+                _subscriber.Subscribe(typeof(GreetingHandler));
+                _subscriber.Subscribe(typeof(GreetingResponseHandler));
+                _subscriber.Subscribe(typeof(NotificationHandler));
+
+                _subscriber.Start();
+
+                while (true)
+                {
+                    Console.Write("Type 'exit' to exit");
+                    var cmd = Console.ReadLine();
+                    if (cmd == "exit")
+                    {
+                        break;
+                    }
+                }
+
+                _subscriber.Dispose();
+                _publisher.Dispose();
+            }
         }
     }
 }

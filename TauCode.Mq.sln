@@ -38,11 +38,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.EasyNetQ.Lab", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.EasyNetQ.Demo.All", "tests\TauCode.Mq.EasyNetQ.Demo.All\TauCode.Mq.EasyNetQ.Demo.All.csproj", "{B57EA822-AE64-4925-8F5C-1077C437CB9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.EasyNetQ.Demo.Node", "tests\TauCode.Mq.EasyNetQ.Demo.Node\TauCode.Mq.EasyNetQ.Demo.Node.csproj", "{F98D61C8-9E7F-4E90-955E-EFBF397728DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.EasyNetQ.Demo.Node", "tests\TauCode.Mq.EasyNetQ.Demo.Node\TauCode.Mq.EasyNetQ.Demo.Node.csproj", "{F98D61C8-9E7F-4E90-955E-EFBF397728DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.EasyNetQ.Demo.Controller", "tests\TauCode.Mq.EasyNetQ.Demo.Controller\TauCode.Mq.EasyNetQ.Demo.Controller.csproj", "{27B2DEA5-E83A-4A42-B430-D5BAB34F8A72}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.EasyNetQ.Demo.Controller", "tests\TauCode.Mq.EasyNetQ.Demo.Controller\TauCode.Mq.EasyNetQ.Demo.Controller.csproj", "{27B2DEA5-E83A-4A42-B430-D5BAB34F8A72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.EasyNetQ.Demo.Logger", "tests\TauCode.Mq.EasyNetQ.Demo.Logger\TauCode.Mq.EasyNetQ.Demo.Logger.csproj", "{EF9B7956-22C0-4CFA-9CFF-BFC9EEEC74D7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.EasyNetQ.Demo.Logger", "tests\TauCode.Mq.EasyNetQ.Demo.Logger\TauCode.Mq.EasyNetQ.Demo.Logger.csproj", "{EF9B7956-22C0-4CFA-9CFF-BFC9EEEC74D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.Autofac.Lab", "taucode\TauCode.Mq.Autofac.Lab\TauCode.Mq.Autofac.Lab.csproj", "{BFD0C11F-389F-405E-816C-10BBEAF8B4B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -98,6 +100,10 @@ Global
 		{EF9B7956-22C0-4CFA-9CFF-BFC9EEEC74D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF9B7956-22C0-4CFA-9CFF-BFC9EEEC74D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF9B7956-22C0-4CFA-9CFF-BFC9EEEC74D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFD0C11F-389F-405E-816C-10BBEAF8B4B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFD0C11F-389F-405E-816C-10BBEAF8B4B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFD0C11F-389F-405E-816C-10BBEAF8B4B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFD0C11F-389F-405E-816C-10BBEAF8B4B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -115,6 +121,7 @@ Global
 		{F98D61C8-9E7F-4E90-955E-EFBF397728DC} = {585AC245-8B6E-4F5E-8EEF-D4125EF88880}
 		{27B2DEA5-E83A-4A42-B430-D5BAB34F8A72} = {585AC245-8B6E-4F5E-8EEF-D4125EF88880}
 		{EF9B7956-22C0-4CFA-9CFF-BFC9EEEC74D7} = {585AC245-8B6E-4F5E-8EEF-D4125EF88880}
+		{BFD0C11F-389F-405E-816C-10BBEAF8B4B2} = {507DC030-C670-4AA5-A425-2BA80717BE14}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CA6859C8-B1CF-4CDF-A5FE-24E4FF8F85B8}

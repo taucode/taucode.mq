@@ -1,8 +1,7 @@
 ﻿namespace TauCode.Mq.Lab
 {
-    public interface IMessageHandlerLab<in TMessage>
-        where TMessage : IMessageLab
+    public interface IMessageHandlerLab
     {
-        void Handle(TMessage message);
+        void Handle(object message);
     }
 }

@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\TauCode.Mq\TauCode.Mq.csproj" />
+    <ProjectReference Include="..\..\taucode\TauCode.Mq.Autofac.Lab\TauCode.Mq.Autofac.Lab.csproj" />
+    <ProjectReference Include="..\..\taucode\TauCode.Mq.EasyNetQ.Lab\TauCode.Mq.EasyNetQ.Lab.csproj" />
     <ProjectReference Include="..\TauCode.Mq.EasyNetQ.Demo.All\TauCode.Mq.EasyNetQ.Demo.All.csproj" />
   </ItemGroup>
 
