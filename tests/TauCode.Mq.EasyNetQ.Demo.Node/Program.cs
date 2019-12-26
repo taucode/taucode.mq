@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using System;
 using TauCode.Mq.Autofac.Lab;
+using TauCode.Mq.EasyNetQ.Demo.All.Messages;
+using TauCode.Mq.EasyNetQ.Demo.Node.CommandLine;
 using TauCode.Mq.EasyNetQ.Demo.Node.Handlers;
 using TauCode.Mq.EasyNetQ.Lab;
 using TauCode.Mq.Lab;
@@ -31,10 +33,7 @@ namespace TauCode.Mq.EasyNetQ.Demo.Node
             containerBuilder.RegisterType<NodeNotificationHandler>().AsSelf().InstancePerLifetimeScope();
 
             containerBuilder.RegisterType<EasyNetQMessageSubscriberLab>().As<IMessageSubscriberLab>().SingleInstance();
-
-            //containerBuilder
-            //    .Register(context => new AutofacMessageHandlerFactoryLab(context.Resolve<ILifetimeScope>()))
-            //    .As<IMessageHandlerFactoryLab>().SingleInstance();
+            containerBuilder.RegisterType<EasyNetQMessagePublisherLab>().As<IMessagePublisherLab>().SingleInstance();
 
             containerBuilder
                 .Register(context => new AutofacMessageHandlerContextFactoryLab(context.Resolve<ILifetimeScope>()))
@@ -68,39 +67,42 @@ namespace TauCode.Mq.EasyNetQ.Demo.Node
 
             Console.WriteLine($"Node started with name '{_name}'.");
 
-            _publisher = new EasyNetQMessagePublisherLab
-            {
-                Name = _name,
-                ConnectionString = "host=localhost",
-            };
-
-            _subscriber = _container.Resolve<IMessageSubscriberLab>();
-            _subscriber.Name = _name;
-            ((EasyNetQMessageSubscriberLab) _subscriber).ConnectionString = "host=localhost";
-
-
-            //_subscriber = new EasyNetQMessageSubscriberLab(_container.Resolve<IMessageHandlerFactoryLab>())
+            //_publisher = new EasyNetQMessagePublisherLab
             //{
             //    Name = _name,
             //    ConnectionString = "host=localhost",
             //};
 
+            _publisher = _container.Resolve<IMessagePublisherLab>();
+            ((EasyNetQMessagePublisherLab)_publisher).ConnectionString = "host=localhost";
+
+            _subscriber = _container.Resolve<IMessageSubscriberLab>();
+            _subscriber.Name = _name;
+            ((EasyNetQMessageSubscriberLab)_subscriber).ConnectionString = "host=localhost";
+
+
             _publisher.Start();
-            
+
             _subscriber.Subscribe(typeof(NodeGreetingHandler), _name);
             _subscriber.Subscribe(typeof(NodeGreetingResponseHandler), _name);
             _subscriber.Subscribe(typeof(NodeNotificationHandler), _name);
 
             _subscriber.Start();
 
+            var parser = new CliParser();
+
+
             while (true)
             {
                 Console.Write($"{_name} >");
-                var cmd = Console.ReadLine();
-                if (cmd == "exit")
+                var txt = Console.ReadLine();
+                if (txt == "exit")
                 {
                     break;
                 }
+
+                var command = parser.Parse(txt);
+                _publisher.Publish(new Greeting(_name, command.To, command.MessageText), command.To);
             }
 
             _subscriber.Dispose();
