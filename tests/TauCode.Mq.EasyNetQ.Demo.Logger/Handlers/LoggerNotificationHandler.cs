@@ -4,7 +4,7 @@ using TauCode.Mq.Lab;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Logger.Handlers
 {
-    public class NotificationHandler : IMessageHandlerLab<Notification>
+    public class LoggerNotificationHandler : IMessageHandlerLab<Notification>
     {
         public void Handle(Notification message)
         {

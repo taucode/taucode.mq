@@ -25,9 +25,9 @@ namespace TauCode.Mq.EasyNetQ.Demo.Logger
             var containerBuilder = new ContainerBuilder();
 
             // todo: register them at once.
-            containerBuilder.RegisterType<GreetingHandler>().AsSelf().InstancePerLifetimeScope();
-            containerBuilder.RegisterType<GreetingResponseHandler>().AsSelf().InstancePerLifetimeScope();
-            containerBuilder.RegisterType<NotificationHandler>().AsSelf().InstancePerLifetimeScope();
+            containerBuilder.RegisterType<LoggerGreetingHandler>().AsSelf().InstancePerLifetimeScope();
+            containerBuilder.RegisterType<LoggerGreetingResponseHandler>().AsSelf().InstancePerLifetimeScope();
+            containerBuilder.RegisterType<LoggerNotificationHandler>().AsSelf().InstancePerLifetimeScope();
 
             containerBuilder
                 .Register(context => new AutofacMessageHandlerFactoryLab(context.Resolve<ILifetimeScope>()))
@@ -56,9 +56,9 @@ namespace TauCode.Mq.EasyNetQ.Demo.Logger
 
                 _publisher.Start();
 
-                _subscriber.Subscribe(typeof(GreetingHandler));
-                _subscriber.Subscribe(typeof(GreetingResponseHandler));
-                _subscriber.Subscribe(typeof(NotificationHandler));
+                _subscriber.Subscribe(typeof(LoggerGreetingHandler));
+                _subscriber.Subscribe(typeof(LoggerGreetingResponseHandler));
+                _subscriber.Subscribe(typeof(LoggerNotificationHandler));
 
                 _subscriber.Start();
 

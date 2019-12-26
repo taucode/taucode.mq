@@ -1,7 +1,7 @@
 ﻿using EasyNetQ;
 using Serilog;
 using System;
-using System.Linq;
+using TauCode.Mq.EasyNetQ.Demo.All;
 
 namespace TauCode.Mq.EasyNetQ.Demo.Controller
 {
@@ -32,7 +32,7 @@ namespace TauCode.Mq.EasyNetQ.Demo.Controller
 
             while (goOn)
             {
-                Console.Write("client>");
+                Console.Write("ctrl >");
 
                 var txt = Console.ReadLine();
                 if (txt == null)
@@ -40,64 +40,66 @@ namespace TauCode.Mq.EasyNetQ.Demo.Controller
                     continue;
                 }
 
-                var parts = txt
-                    .Split(' ')
-                    .Select(x => x.Trim().ToLower())
-                    .Where(x => x != string.Empty)
-                    .ToList();
+                _bus.Publish(new Greeting("olia", "ira", "hi"), "ira");
 
-                if (parts.Count == 0)
-                {
-                    continue;
-                }
+                //var parts = txt
+                //    .Split(' ')
+                //    .Select(x => x.Trim().ToLower())
+                //    .Where(x => x != string.Empty)
+                //    .ToList();
 
-                var first = parts[0];
+                //if (parts.Count == 0)
+                //{
+                //    continue;
+                //}
 
-                switch (first)
-                {
-                    case "exit":
-                        goOn = false;
-                        break;
+                //var first = parts[0];
 
-                    case "":
-                        break;
+                //switch (first)
+                //{
+                //    case "exit":
+                //        goOn = false;
+                //        break;
 
-                    case "state":
-                        try
-                        {
-                            this.SendStateRequest();
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error");
-                        }
-                        break;
+                //    case "":
+                //        break;
 
-                    case "start":
-                    case "stop":
-                    case "pause":
-                    case "resume":
-                    case "dispose":
-                    case "shutdown":
-                        this.SendCommand(first);
-                        break;
+                //    case "state":
+                //        try
+                //        {
+                //            this.SendStateRequest();
+                //        }
+                //        catch (Exception ex)
+                //        {
+                //            Log.Error(ex, "Error");
+                //        }
+                //        break;
 
-                    case "a":
-                        try
-                        {
-                            this.GiveAssignments(int.Parse(parts[1]));
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error");
-                        }
+                //    case "start":
+                //    case "stop":
+                //    case "pause":
+                //    case "resume":
+                //    case "dispose":
+                //    case "shutdown":
+                //        this.SendCommand(first);
+                //        break;
 
-                        break;
+                //    case "a":
+                //        try
+                //        {
+                //            this.GiveAssignments(int.Parse(parts[1]));
+                //        }
+                //        catch (Exception ex)
+                //        {
+                //            Log.Error(ex, "Error");
+                //        }
 
-                    default:
-                        Console.WriteLine("Unknown command");
-                        break;
-                }
+                //        break;
+
+                //    default:
+                //        Console.WriteLine("Unknown command");
+                //        break;
+                //}
             }
 
             _bus.Dispose();

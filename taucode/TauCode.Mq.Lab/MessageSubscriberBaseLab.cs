@@ -15,9 +15,12 @@ namespace TauCode.Mq.Lab
             // todo: need thread safety? I suppose not.
 
             private readonly List<Type> _messageHandlerTypes;
+            private readonly MessageSubscriberBaseLab _host;
 
-            public Bundle(Type messageType, string topic)
+            internal Bundle(MessageSubscriberBaseLab host, Type messageType, string topic)
             {
+                _host = host;
+
                 this.MessageType = messageType ?? throw new ArgumentNullException();
 
                 if (topic != null)
@@ -55,7 +58,11 @@ namespace TauCode.Mq.Lab
 
             public void Handle(object message)
             {
-                throw new NotImplementedException();
+                foreach (var messageHandlerType in this.MessageHandlerTypes)
+                {
+                    var messageHandler = _host.Factory.Create(messageHandlerType);
+                    messageHandler.Handle(message); // todo: try/catch, must not throw.
+                }
             }
         }
 
@@ -117,7 +124,7 @@ namespace TauCode.Mq.Lab
 
         private Bundle AddBundle(Type messageType, string topic)
         {
-            var bundle = new Bundle(messageType, topic);
+            var bundle = new Bundle(this, messageType, topic);
             _bundles.Add(bundle.BundleTag, bundle);
             return bundle;
         }
