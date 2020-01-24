@@ -1,2 +1,2 @@
 # taucode.mq
-TauCode MQ support
+Basic functionality for message queue support
