@@ -1,11 +1,9 @@
-﻿using System;
-using TauCode.Mq.Abstractions;
-
-namespace TauCode.Mq
+﻿namespace TauCode.Mq
 {
+    // todo clean
     public interface IMessageHandlerContextFactory
     {
         IMessageHandlerContext CreateContext();
-        IMessageHandler CreateHandler(IMessageHandlerContext context, Type handlerType);
+        //IMessageHandler CreateHandler(IMessageHandlerContext context, Type handlerType);
     }
 }
