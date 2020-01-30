@@ -67,7 +67,8 @@ namespace TauCode.Mq
                     {
                         context.Begin();
 
-                        var handler = contextFactory.CreateHandler(context, messageHandlerType);
+                        //var handler = contextFactory.CreateHandler(context, messageHandlerType);
+                        var handler = (IMessageHandler)context.GetService(messageHandlerType); // todo checks
                         handler.Handle(message); // todo
 
                         context.End();
@@ -108,18 +109,11 @@ namespace TauCode.Mq
 
         #region Overridden
 
-        //protected override void StopImpl()
-        //{
-        //    base.StopImpl();
-        //    _bundles.Clear();
-        //}
-
         protected override void DisposeImpl()
         {
             base.DisposeImpl();
             _bundles.Clear();
         }
-
 
         #endregion
 
@@ -139,7 +133,7 @@ namespace TauCode.Mq
             return bundle;
         }
 
-        private void SubscribeImpl(Type messageHandlerType, string topic)
+        private void RegisterSubscription(Type messageHandlerType, string topic)
         {
             this.CheckStateForOperation(WorkerState.Stopped);
 
@@ -206,7 +200,7 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(messageHandlerType));
             }
 
-            this.SubscribeImpl(messageHandlerType, null);
+            this.RegisterSubscription(messageHandlerType, null);
         }
 
         public void Subscribe(Type messageHandlerType, string topic)
@@ -221,7 +215,7 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(topic));
             }
 
-            this.SubscribeImpl(messageHandlerType, topic);
+            this.RegisterSubscription(messageHandlerType, topic);
         }
 
         #endregion

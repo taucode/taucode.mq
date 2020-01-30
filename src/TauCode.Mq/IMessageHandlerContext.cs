@@ -6,5 +6,6 @@ namespace TauCode.Mq
     {
         void Begin();
         void End();
+        object GetService(Type serviceType);
     }
 }
