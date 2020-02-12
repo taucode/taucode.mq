@@ -14,7 +14,7 @@
     </releaseNotes>
     <tags>taucode message queue</tags>
     <dependencies>
-      <dependency id="TauCode.Mq.Abstractions" version="1.0.0-dev-2019-12-29-15-19" />
+      <dependency id="TauCode.Mq.Abstractions" version="1.0.0-dev-2020-02-12-17-17" />
       <dependency id="TauCode.Working" version="1.0.0-dev-2019-12-26-17-04" />
     </dependencies>
   </metadata>
