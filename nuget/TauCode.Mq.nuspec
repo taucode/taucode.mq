@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/taucode/taucode.mq</projectUrl>
     <description>Basic functionality for message queue support</description>
     <releaseNotes>
-      Moving to nuget.org
+      Added 'UnsubscribeAll' feature.
     </releaseNotes>
     <tags>taucode message queue</tags>
     <dependencies>

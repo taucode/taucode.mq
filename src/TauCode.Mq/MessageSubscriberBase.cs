@@ -3,14 +3,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TauCode.Mq.Abstractions;
+using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
 namespace TauCode.Mq
 {
-    // todo: nice regions, clean up
     public abstract class MessageSubscriberBase : OnDemandWorkerBase, IMessageSubscriber
     {
         #region Nested
+
+        protected interface ISubscriptionRequest
+        {
+            Type MessageType { get; }
+            string Topic { get; }
+            Action<object> Handler { get; }
+        }
 
         private class Bundle : ISubscriptionRequest
         {
@@ -52,6 +59,8 @@ namespace TauCode.Mq
 
             public string BundleTag { get; }
             public override string ToString() => this.BundleTag;
+
+            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
 
             public void AddHandlerType(Type messageHandlerType)
             {
@@ -104,21 +113,22 @@ namespace TauCode.Mq
 
         #region Abstract
 
+        /// <summary>
+        /// Implementation-specific subscription
+        /// </summary>
+        /// <param name="requests">Subscription requests to satisfy</param>
         protected abstract void SubscribeImpl(IEnumerable<ISubscriptionRequest> requests);
 
+        /// <summary>
+        /// Implementation-specific cancellation of subscription
+        /// </summary>
         protected abstract void UnsubscribeImpl();
-
-        #endregion
-
-        #region Protected
-
-        //protected IReadOnlyDictionary<string, Bundle> Bundles => _bundles;
 
         #endregion
 
         #region Internal
 
-        internal IMessageHandlerContextFactory ContextFactory { get; }
+        protected IMessageHandlerContextFactory ContextFactory { get; }
 
         #endregion
 
@@ -196,15 +206,13 @@ namespace TauCode.Mq
                 }
             }
 
-
             if (messageHandlerInterfaces.Count == 1)
             {
                 // ok.
-                // todo: check message.
             }
             else
             {
-                throw new NotImplementedException(); // message handler must implement exactly one IMessageHandler<FooMessage>
+                throw new MqException("Message handler must implement 'IMessageHandler<TMessage>'; multiple implementation is not allowed.");
             }
 
             var bundle = this.GetBundle(messageType, topic);
@@ -214,6 +222,11 @@ namespace TauCode.Mq
             }
 
             bundle.AddHandlerType(messageHandlerType);
+        }
+
+        private void UnregisterSubscription(Type messageHandlerType)
+        {
+            throw new NotImplementedException();
         }
 
 
@@ -248,6 +261,25 @@ namespace TauCode.Mq
             }
 
             this.RegisterSubscription(messageHandlerType, topic);
+        }
+
+        public void UnsubscribeAll()
+        {
+            this.CheckStateForOperation(WorkerState.Stopped);
+            _bundles.Clear();
+        }
+
+        public ISubscriptionInfo[] GetSubscriptions()
+        {
+            var list = new List<ISubscriptionInfo>();
+
+            foreach (var bundle in _bundles.Values)
+            {
+                list.AddRange(bundle.MessageHandlerTypes
+                    .Select(x => new SubscriptionInfo(bundle.MessageType, bundle.Topic, x)));
+            }
+
+            return list.ToArray();
         }
 
         #endregion

@@ -2,10 +2,10 @@
 
 namespace TauCode.Mq
 {
-    public interface ISubscriptionRequest
+    public interface ISubscriptionInfo
     {
         Type MessageType { get; }
         string Topic { get; }
-        Action<object> Handler { get; }
+        Type HandlerType { get; }
     }
 }
