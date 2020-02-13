@@ -28,7 +28,7 @@ namespace TauCode.Mq.Tests
             // Assert
             Assert.That(subscriptions, Has.Length.EqualTo(4));
 
-            var subs1 = subscriptions.Where(x => x.HandlerType == typeof(SmartHelloMessageHandler)).ToList();
+            var subs1 = subscriptions.Where(x => x.MessageHandlerType == typeof(SmartHelloMessageHandler)).ToList();
             Assert.That(subs1, Has.Count.EqualTo(2));
 
             var sub = subs1.SingleOrDefault(x => x.Topic == null);
@@ -39,7 +39,7 @@ namespace TauCode.Mq.Tests
             Assert.That(sub, Is.Not.Null);
             Assert.That(sub.MessageType, Is.SameAs(typeof(HelloMessage)));
 
-            var subs2 = subscriptions.Where(x => x.HandlerType == typeof(DumbPersonMessageHandler)).ToList();
+            var subs2 = subscriptions.Where(x => x.MessageHandlerType == typeof(DumbPersonMessageHandler)).ToList();
             Assert.That(subs2, Has.Count.EqualTo(2));
             Assert.That(subs2.All(x => x.Topic == null && x.MessageType == typeof(PersonMessage)), Is.True);
         }

@@ -6,6 +6,6 @@ namespace TauCode.Mq
     {
         Type MessageType { get; }
         string Topic { get; }
-        Type HandlerType { get; }
+        Type MessageHandlerType { get; }
     }
 }

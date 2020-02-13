@@ -21,8 +21,6 @@ namespace TauCode.Mq
 
         private class Bundle : ISubscriptionRequest
         {
-            // todo: need thread safety? I suppose not.
-
             private readonly List<Type> _messageHandlerTypes;
             private readonly MessageSubscriberBase _host;
 
@@ -36,7 +34,7 @@ namespace TauCode.Mq
                 {
                     if (string.IsNullOrWhiteSpace(topic))
                     {
-                        throw new NotImplementedException();
+                        throw new ArgumentException($"'{nameof(topic)}' cannot be empty or white-space.");
                     }
                 }
 
@@ -126,7 +124,7 @@ namespace TauCode.Mq
 
         #endregion
 
-        #region Internal
+        #region Protected
 
         protected IMessageHandlerContextFactory ContextFactory { get; }
 
@@ -144,7 +142,6 @@ namespace TauCode.Mq
         {
             base.StopImpl();
             this.UnsubscribeImpl();
-            _bundles.Clear();
         }
 
         protected override void DisposeImpl()
@@ -223,12 +220,6 @@ namespace TauCode.Mq
 
             bundle.AddHandlerType(messageHandlerType);
         }
-
-        private void UnregisterSubscription(Type messageHandlerType)
-        {
-            throw new NotImplementedException();
-        }
-
 
         #endregion
 

@@ -8,11 +8,11 @@ namespace TauCode.Mq
         {
             this.MessageType = messageType;
             this.Topic = topic;
-            this.HandlerType = handlerType;
+            this.MessageHandlerType = handlerType;
         }
 
         public Type MessageType { get; }
         public string Topic { get; }
-        public Type HandlerType { get; }
+        public Type MessageHandlerType { get; }
     }
 }
