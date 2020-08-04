@@ -1,20 +1,26 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TauCode.Mq.Abstractions;
+using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
 namespace TauCode.Mq
 {
-    // todo: nice regions, clean up
     public abstract class MessageSubscriberBase : OnDemandWorkerBase, IMessageSubscriber
     {
         #region Nested
 
-        protected class Bundle
+        protected interface ISubscriptionRequest
         {
-            // todo: need thread safety? I suppose not.
+            Type MessageType { get; }
+            string Topic { get; }
+            Action<object> Handler { get; }
+        }
 
+        private class Bundle : ISubscriptionRequest
+        {
             private readonly List<Type> _messageHandlerTypes;
             private readonly MessageSubscriberBase _host;
 
@@ -28,7 +34,7 @@ namespace TauCode.Mq
                 {
                     if (string.IsNullOrWhiteSpace(topic))
                     {
-                        throw new NotImplementedException();
+                        throw new ArgumentException($"'{nameof(topic)}' cannot be empty or white-space.");
                     }
                 }
 
@@ -47,30 +53,39 @@ namespace TauCode.Mq
 
             public Type MessageType { get; }
             public string Topic { get; }
+            public Action<object> Handler => Handle;
+
             public string BundleTag { get; }
             public override string ToString() => this.BundleTag;
+
+            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
 
             public void AddHandlerType(Type messageHandlerType)
             {
                 _messageHandlerTypes.Add(messageHandlerType);
             }
 
-            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
-
-            public void Handle(object message)
+            private void Handle(object message)
             {
-                foreach (var messageHandlerType in this.MessageHandlerTypes)
+                var contextFactory = _host.ContextFactory;
+
+                foreach (var messageHandlerType in _messageHandlerTypes)
                 {
-                    // todo: try/catch, must not throw.
-                    var contextFactory = _host.ContextFactory;
-                    using (var context = contextFactory.CreateContext())
+                    try
                     {
-                        context.Begin();
+                        using (var context = contextFactory.CreateContext())
+                        {
+                            context.Begin();
 
-                        var handler = contextFactory.CreateHandler(context, messageHandlerType);
-                        handler.Handle(message); // todo
+                            var handler = (IMessageHandler)context.GetService(messageHandlerType);
+                            handler.Handle(message);
 
-                        context.End();
+                            context.End();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error occured while running the handler.");
                     }
                 }
             }
@@ -94,32 +109,47 @@ namespace TauCode.Mq
 
         #endregion
 
-        #region Protected
+        #region Abstract
 
-        protected IReadOnlyDictionary<string, Bundle> Bundles => _bundles;
+        /// <summary>
+        /// Implementation-specific subscription
+        /// </summary>
+        /// <param name="requests">Subscription requests to satisfy</param>
+        protected abstract void SubscribeImpl(IEnumerable<ISubscriptionRequest> requests);
+
+        /// <summary>
+        /// Implementation-specific cancellation of subscription
+        /// </summary>
+        protected abstract void UnsubscribeImpl();
 
         #endregion
 
-        #region Internal
+        #region Protected
 
-        internal IMessageHandlerContextFactory ContextFactory { get; }
+        protected IMessageHandlerContextFactory ContextFactory { get; }
 
         #endregion
 
         #region Overridden
 
-        //protected override void StopImpl()
-        //{
-        //    base.StopImpl();
-        //    _bundles.Clear();
-        //}
+        protected override void StartImpl()
+        {
+            base.StartImpl();
+            this.SubscribeImpl(_bundles.Values);
+        }
+
+        protected override void StopImpl()
+        {
+            base.StopImpl();
+            this.UnsubscribeImpl();
+        }
 
         protected override void DisposeImpl()
         {
             base.DisposeImpl();
+            this.UnsubscribeImpl();
             _bundles.Clear();
         }
-
 
         #endregion
 
@@ -139,7 +169,7 @@ namespace TauCode.Mq
             return bundle;
         }
 
-        private void SubscribeImpl(Type messageHandlerType, string topic)
+        private void RegisterSubscription(Type messageHandlerType, string topic)
         {
             this.CheckStateForOperation(WorkerState.Stopped);
 
@@ -173,15 +203,13 @@ namespace TauCode.Mq
                 }
             }
 
-
             if (messageHandlerInterfaces.Count == 1)
             {
                 // ok.
-                // todo: check message.
             }
             else
             {
-                throw new NotImplementedException(); // message handler must implement exactly one IMessageHandler<FooMessage>
+                throw new MqException("Message handler must implement 'IMessageHandler<TMessage>'; multiple implementation is not allowed.");
             }
 
             var bundle = this.GetBundle(messageType, topic);
@@ -193,24 +221,26 @@ namespace TauCode.Mq
             bundle.AddHandlerType(messageHandlerType);
         }
 
-
         #endregion
 
         #region IMessageSubscriber Members
 
-
         public void Subscribe(Type messageHandlerType)
         {
+            this.CheckStateForOperation(WorkerState.Stopped);
+
             if (messageHandlerType == null)
             {
                 throw new ArgumentNullException(nameof(messageHandlerType));
             }
 
-            this.SubscribeImpl(messageHandlerType, null);
+            this.RegisterSubscription(messageHandlerType, null);
         }
 
         public void Subscribe(Type messageHandlerType, string topic)
         {
+            this.CheckStateForOperation(WorkerState.Stopped);
+
             if (messageHandlerType == null)
             {
                 throw new ArgumentNullException(nameof(messageHandlerType));
@@ -221,7 +251,26 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(topic));
             }
 
-            this.SubscribeImpl(messageHandlerType, topic);
+            this.RegisterSubscription(messageHandlerType, topic);
+        }
+
+        public void UnsubscribeAll()
+        {
+            this.CheckStateForOperation(WorkerState.Stopped);
+            _bundles.Clear();
+        }
+
+        public ISubscriptionInfo[] GetSubscriptions()
+        {
+            var list = new List<ISubscriptionInfo>();
+
+            foreach (var bundle in _bundles.Values)
+            {
+                list.AddRange(bundle.MessageHandlerTypes
+                    .Select(x => new SubscriptionInfo(bundle.MessageType, bundle.Topic, x)));
+            }
+
+            return list.ToArray();
         }
 
         #endregion
