@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/taucode/taucode.mq</projectUrl>
     <description>Basic functionality for message queue support</description>
     <releaseNotes>
-      Migrating to Azure DevOps.
+      Complete refactoring of the TauCode MQ stack.
     </releaseNotes>
     <tags>taucode message queue</tags>
     <dependencies>
