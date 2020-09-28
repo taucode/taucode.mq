@@ -175,12 +175,6 @@ namespace TauCode.Mq
             this.SubscribeImpl(_bundles.Values);
         }
 
-        //protected override void StartImpl()
-        //{
-        //    base.StartImpl();
-        //    this.SubscribeImpl(_bundles.Values);
-        //}
-
         protected override void OnStopping()
         {
             this.UnsubscribeImpl();
@@ -273,8 +267,7 @@ namespace TauCode.Mq
                 bundle = this.AddBundle(messageType, topic);
             }
 
-            throw new NotImplementedException();
-            //bundle.AddHandlerType(messageHandlerType);
+            bundle.AddHandlerType(messageHandlerType, false);
         }
 
         #endregion
@@ -315,15 +308,18 @@ namespace TauCode.Mq
 
         private void CheckNotStarted()
         {
-            throw new NotImplementedException();
+            if (this.State == WorkerState.Running)
+            {
+                throw new NotImplementedException();
+            }
         }
 
-        public void UnsubscribeAll()
-        {
-            //this.CheckStateForOperation(WorkerState.Stopped);
-            this.CheckNotStarted();
-            _bundles.Clear();
-        }
+        //public void UnsubscribeAll()
+        //{
+        //    //this.CheckStateForOperation(WorkerState.Stopped);
+        //    this.CheckNotStarted();
+        //    _bundles.Clear();
+        //}
 
         public ISubscriptionInfo[] GetSubscriptions()
         {

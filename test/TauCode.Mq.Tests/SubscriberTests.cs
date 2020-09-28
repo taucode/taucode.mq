@@ -5,6 +5,7 @@ using TauCode.Mq.Exceptions;
 using TauCode.Mq.Tests.MessageHandlers;
 using TauCode.Mq.Tests.Messages;
 
+// todo clean up
 namespace TauCode.Mq.Tests
 {
     [TestFixture]
@@ -68,24 +69,24 @@ namespace TauCode.Mq.Tests
                 Is.True);
         }
 
-        [Test]
-        public void UnsubscribeAll_NoArguments_RemovesAllSubscriptions()
-        {
-            // Arrange
-            IMessageSubscriber messageSubscriber = new TestMessageSubscriber();
-            messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler));
-            messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler), "some-topic");
+        //[Test]
+        //public void UnsubscribeAll_NoArguments_RemovesAllSubscriptions()
+        //{
+        //    // Arrange
+        //    IMessageSubscriber messageSubscriber = new TestMessageSubscriber();
+        //    messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler));
+        //    messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler), "some-topic");
 
-            messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
-            messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
+        //    messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
+        //    messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
 
-            // Act
-            messageSubscriber.UnsubscribeAll();
+        //    // Act
+        //    messageSubscriber.UnsubscribeAll();
 
-            var subscriptions = messageSubscriber.GetSubscriptions();
+        //    var subscriptions = messageSubscriber.GetSubscriptions();
 
-            // Assert
-            Assert.That(subscriptions, Is.Empty);
-        }
+        //    // Assert
+        //    Assert.That(subscriptions, Is.Empty);
+        //}
     }
 }
