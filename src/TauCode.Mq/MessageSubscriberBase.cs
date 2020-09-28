@@ -2,13 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
+// todo clean up
 namespace TauCode.Mq
 {
-    public abstract class MessageSubscriberBase : OnDemandWorkerBase, IMessageSubscriber
+    public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
     {
         #region Nested
 
@@ -17,7 +19,20 @@ namespace TauCode.Mq
             Type MessageType { get; }
             string Topic { get; }
             Action<object> Handler { get; }
+            Func<object, Task> AsyncHandler { get; }
         }
+
+        //private readonly struct MessageHandlerEntry
+        //{
+        //    internal MessageHandlerEntry(Type messageHandlerType, bool isAsync)
+        //    {
+        //        this.MessageHandlerType = messageHandlerType;
+        //        this.IsAsync = isAsync;
+        //    }
+
+        //    internal Type MessageHandlerType { get; }
+        //    internal bool IsAsync { get; }
+        //}
 
         private class Bundle : ISubscriptionRequest
         {
@@ -46,7 +61,7 @@ namespace TauCode.Mq
 
             public static string MakeTag(Type messageType, string topic)
             {
-                topic = topic ?? string.Empty;
+                topic ??= string.Empty;
 
                 return $"{messageType.FullName}:{topic}";
             }
@@ -54,13 +69,14 @@ namespace TauCode.Mq
             public Type MessageType { get; }
             public string Topic { get; }
             public Action<object> Handler => Handle;
+            public Func<object, Task> AsyncHandler => HandleAsync;
 
             public string BundleTag { get; }
             public override string ToString() => this.BundleTag;
 
             public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
 
-            public void AddHandlerType(Type messageHandlerType)
+            public void AddHandlerType(Type messageHandlerType, bool isAsync)
             {
                 _messageHandlerTypes.Add(messageHandlerType);
             }
@@ -73,21 +89,43 @@ namespace TauCode.Mq
                 {
                     try
                     {
-                        using (var context = contextFactory.CreateContext())
-                        {
-                            context.Begin();
+                        using var context = contextFactory.CreateContext();
+                        context.Begin();
 
-                            var handler = (IMessageHandler)context.GetService(messageHandlerType);
-                            handler.Handle(message);
+                        var handler = (IMessageHandler)context.GetService(messageHandlerType);
+                        handler.Handle(message);
 
-                            context.End();
-                        }
+                        context.End();
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error occured while running the handler.");
+                        Log.Error(ex, "Error occurred while running the handler.");
                     }
                 }
+            }
+
+            private async Task HandleAsync(object message)
+            {
+                throw new NotImplementedException();
+                //var contextFactory = _host.ContextFactory;
+
+                //foreach (var messageHandlerType in _messageHandlerTypes)
+                //{
+                //    try
+                //    {
+                //        using var context = contextFactory.CreateContext();
+                //        context.Begin();
+
+                //        var handler = (IMessageHandler)context.GetService(messageHandlerType);
+                //        await handler.HandleAsync(message);
+
+                //        context.End();
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Log.Error(ex, "Error occurred while running the handler.");
+                //    }
+                //}
             }
         }
 
@@ -132,24 +170,40 @@ namespace TauCode.Mq
 
         #region Overridden
 
-        protected override void StartImpl()
+        protected override void OnStarting()
         {
-            base.StartImpl();
             this.SubscribeImpl(_bundles.Values);
         }
 
-        protected override void StopImpl()
+        //protected override void StartImpl()
+        //{
+        //    base.StartImpl();
+        //    this.SubscribeImpl(_bundles.Values);
+        //}
+
+        protected override void OnStopping()
         {
-            base.StopImpl();
             this.UnsubscribeImpl();
         }
 
-        protected override void DisposeImpl()
+        //protected override void StopImpl()
+        //{
+        //    base.StopImpl();
+        //    this.UnsubscribeImpl();
+        //}
+
+        protected override void OnDisposed()
         {
-            base.DisposeImpl();
             this.UnsubscribeImpl();
             _bundles.Clear();
         }
+
+        //protected override void DisposeImpl()
+        //{
+        //    base.DisposeImpl();
+        //    this.UnsubscribeImpl();
+        //    _bundles.Clear();
+        //}
 
         #endregion
 
@@ -171,7 +225,8 @@ namespace TauCode.Mq
 
         private void RegisterSubscription(Type messageHandlerType, string topic)
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
+            this.CheckNotStarted();
+            //this.CheckStateForOperation(WorkerState.Stopped);
 
             var interfaces = messageHandlerType.GetInterfaces();
 
@@ -218,7 +273,8 @@ namespace TauCode.Mq
                 bundle = this.AddBundle(messageType, topic);
             }
 
-            bundle.AddHandlerType(messageHandlerType);
+            throw new NotImplementedException();
+            //bundle.AddHandlerType(messageHandlerType);
         }
 
         #endregion
@@ -227,7 +283,8 @@ namespace TauCode.Mq
 
         public void Subscribe(Type messageHandlerType)
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
+            this.CheckNotStarted();
+            //this.CheckStateForOperation(WorkerState.Stopped);
 
             if (messageHandlerType == null)
             {
@@ -239,7 +296,9 @@ namespace TauCode.Mq
 
         public void Subscribe(Type messageHandlerType, string topic)
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
+            this.CheckNotStarted();
+
+            //this.CheckStateForOperation(WorkerState.Stopped);
 
             if (messageHandlerType == null)
             {
@@ -254,9 +313,15 @@ namespace TauCode.Mq
             this.RegisterSubscription(messageHandlerType, topic);
         }
 
+        private void CheckNotStarted()
+        {
+            throw new NotImplementedException();
+        }
+
         public void UnsubscribeAll()
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
+            //this.CheckStateForOperation(WorkerState.Stopped);
+            this.CheckNotStarted();
             _bundles.Clear();
         }
 

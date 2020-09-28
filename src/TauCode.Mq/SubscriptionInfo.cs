@@ -2,6 +2,7 @@
 
 namespace TauCode.Mq
 {
+    // todo: use readonly struct?
     internal class SubscriptionInfo : ISubscriptionInfo
     {
         internal SubscriptionInfo(Type messageType, string topic, Type handlerType)

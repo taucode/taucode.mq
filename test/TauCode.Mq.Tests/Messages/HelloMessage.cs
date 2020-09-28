@@ -7,6 +7,6 @@ namespace TauCode.Mq.Tests.Messages
     {
         public string Greeting { get; set; }
         public string CorrelationId { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
     }
 }

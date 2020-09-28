@@ -2,9 +2,10 @@
 using TauCode.Mq.Abstractions;
 using TauCode.Working;
 
+// todo clean
 namespace TauCode.Mq
 {
-    public abstract class MessagePublisherBase : OnDemandWorkerBase, IMessagePublisher
+    public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
     {
         protected abstract void PublishImpl(IMessage message);
 
@@ -17,8 +18,16 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(message));
             }
 
-            this.CheckStateForOperation(WorkerState.Running);
+            //this.CheckStateForOperation(WorkerState.Running);
+
+            this.CheckStarted();
+
             this.PublishImpl(message);
+        }
+
+        private void CheckStarted()
+        {
+            throw new NotImplementedException();
         }
 
         public void Publish(IMessage message, string topic)
