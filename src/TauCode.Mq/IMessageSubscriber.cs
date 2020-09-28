@@ -9,6 +9,6 @@ namespace TauCode.Mq
 
         void Subscribe(Type messageHandlerType, string topic);
 
-        ISubscriptionInfo[] GetSubscriptions();
+        SubscriptionInfo[] GetSubscriptions();
     }
 }

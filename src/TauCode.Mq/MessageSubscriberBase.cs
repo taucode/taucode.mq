@@ -1,13 +1,8 @@
-﻿using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using TauCode.Mq.Abstractions;
-using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
-// todo clean up
 namespace TauCode.Mq
 {
     public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
@@ -18,115 +13,33 @@ namespace TauCode.Mq
         {
             Type MessageType { get; }
             string Topic { get; }
+            string Tag { get; }
             Action<object> Handler { get; }
             Func<object, Task> AsyncHandler { get; }
+            IReadOnlyList<Type> MessageHandlers { get; }
         }
-
-        //private readonly struct MessageHandlerEntry
-        //{
-        //    internal MessageHandlerEntry(Type messageHandlerType, bool isAsync)
-        //    {
-        //        this.MessageHandlerType = messageHandlerType;
-        //        this.IsAsync = isAsync;
-        //    }
-
-        //    internal Type MessageHandlerType { get; }
-        //    internal bool IsAsync { get; }
-        //}
 
         private class Bundle : ISubscriptionRequest
         {
-            private readonly List<Type> _messageHandlerTypes;
-            private readonly MessageSubscriberBase _host;
+            #region Constructor
 
-            internal Bundle(MessageSubscriberBase host, Type messageType, string topic)
+            internal Bundle()
             {
-                _host = host;
-
-                this.MessageType = messageType ?? throw new ArgumentNullException();
-
-                if (topic != null)
-                {
-                    if (string.IsNullOrWhiteSpace(topic))
-                    {
-                        throw new ArgumentException($"'{nameof(topic)}' cannot be empty or white-space.");
-                    }
-                }
-
-                this.Topic = topic;
-                this.BundleTag = MakeTag(this.MessageType, this.Topic);
-
-                _messageHandlerTypes = new List<Type>();
+                
             }
 
-            public static string MakeTag(Type messageType, string topic)
-            {
-                topic ??= string.Empty;
+            #endregion
 
-                return $"{messageType.FullName}:{topic}";
-            }
+            #region ISubscriptionRequest Members
 
             public Type MessageType { get; }
             public string Topic { get; }
-            public Action<object> Handler => Handle;
-            public Func<object, Task> AsyncHandler => HandleAsync;
+            public string Tag { get; }
+            public Action<object> Handler { get; }
+            public Func<object, Task> AsyncHandler { get; }
+            public IReadOnlyList<Type> MessageHandlers { get; }
 
-            public string BundleTag { get; }
-            public override string ToString() => this.BundleTag;
-
-            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
-
-            public void AddHandlerType(Type messageHandlerType, bool isAsync)
-            {
-                _messageHandlerTypes.Add(messageHandlerType);
-            }
-
-            private void Handle(object message)
-            {
-                var contextFactory = _host.ContextFactory;
-
-                foreach (var messageHandlerType in _messageHandlerTypes)
-                {
-                    try
-                    {
-                        using var context = contextFactory.CreateContext();
-                        context.Begin();
-
-                        var handler = (IMessageHandler)context.GetService(messageHandlerType);
-                        handler.Handle(message);
-
-                        context.End();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error occurred while running the handler.");
-                    }
-                }
-            }
-
-            private async Task HandleAsync(object message)
-            {
-                throw new NotImplementedException();
-                //var contextFactory = _host.ContextFactory;
-
-                //foreach (var messageHandlerType in _messageHandlerTypes)
-                //{
-                //    try
-                //    {
-                //        using var context = contextFactory.CreateContext();
-                //        context.Begin();
-
-                //        var handler = (IMessageHandler)context.GetService(messageHandlerType);
-                //        await handler.HandleAsync(message);
-
-                //        context.End();
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        Log.Error(ex, "Error occurred while running the handler.");
-                //    }
-                //}
-            }
+            #endregion
         }
 
         #endregion
@@ -139,32 +52,20 @@ namespace TauCode.Mq
 
         #region Constructor
 
-        protected MessageSubscriberBase(IMessageHandlerContextFactory contextFactory)
+        protected MessageSubscriberBase()
         {
-            this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _bundles = new Dictionary<string, Bundle>();
         }
 
-        #endregion
+        #endregion-
 
         #region Abstract
 
-        /// <summary>
-        /// Implementation-specific subscription
-        /// </summary>
-        /// <param name="requests">Subscription requests to satisfy</param>
-        protected abstract void SubscribeImpl(IEnumerable<ISubscriptionRequest> requests);
+        protected abstract void InitImpl();
 
-        /// <summary>
-        /// Implementation-specific cancellation of subscription
-        /// </summary>
-        protected abstract void UnsubscribeImpl();
+        protected abstract void ShutdownImpl();
 
-        #endregion
-
-        #region Protected
-
-        protected IMessageHandlerContextFactory ContextFactory { get; }
+        
 
         #endregion
 
@@ -172,102 +73,12 @@ namespace TauCode.Mq
 
         protected override void OnStarting()
         {
-            this.SubscribeImpl(_bundles.Values);
+            this.InitImpl();
         }
 
         protected override void OnStopping()
         {
-            this.UnsubscribeImpl();
-        }
-
-        //protected override void StopImpl()
-        //{
-        //    base.StopImpl();
-        //    this.UnsubscribeImpl();
-        //}
-
-        protected override void OnDisposed()
-        {
-            this.UnsubscribeImpl();
-            _bundles.Clear();
-        }
-
-        //protected override void DisposeImpl()
-        //{
-        //    base.DisposeImpl();
-        //    this.UnsubscribeImpl();
-        //    _bundles.Clear();
-        //}
-
-        #endregion
-
-        #region Private
-
-        private Bundle GetBundle(Type messageType, string topic)
-        {
-            var bundleTag = Bundle.MakeTag(messageType, topic);
-            _bundles.TryGetValue(bundleTag, out var bundle);
-            return bundle;
-        }
-
-        private Bundle AddBundle(Type messageType, string topic)
-        {
-            var bundle = new Bundle(this, messageType, topic);
-            _bundles.Add(bundle.BundleTag, bundle);
-            return bundle;
-        }
-
-        private void RegisterSubscription(Type messageHandlerType, string topic)
-        {
-            this.CheckNotStarted();
-            //this.CheckStateForOperation(WorkerState.Stopped);
-
-            var interfaces = messageHandlerType.GetInterfaces();
-
-            var messageHandlerInterfaces = new List<Type>();
-            Type messageType = null;
-
-            foreach (var @interface in interfaces)
-            {
-                if (@interface.IsConstructedGenericType)
-                {
-                    var generic = @interface.GetGenericTypeDefinition();
-                    if (generic == typeof(IMessageHandler<>))
-                    {
-                        var genericArgs = @interface.GetGenericArguments();
-                        // actually, redundant check, but let it be.
-                        if (genericArgs.Length == 1)
-                        {
-                            messageType = genericArgs.Single();
-                            var messageTypeInterfaces = messageType.GetInterfaces();
-
-                            if (messageTypeInterfaces.Length == 1 &&
-                                messageTypeInterfaces.Single() == typeof(IMessage))
-                            {
-                                // looks like handler is valid.
-                            }
-                            messageHandlerInterfaces.Add(@interface);
-                        }
-                    }
-                }
-            }
-
-            if (messageHandlerInterfaces.Count == 1)
-            {
-                // ok.
-            }
-            else
-            {
-                throw new MqException("Message handler must implement 'IMessageHandler<TMessage>'; multiple implementation is not allowed.");
-            }
-
-            var bundle = this.GetBundle(messageType, topic);
-            if (bundle == null)
-            {
-                bundle = this.AddBundle(messageType, topic);
-            }
-
-            bundle.AddHandlerType(messageHandlerType, false);
+            this.ShutdownImpl();
         }
 
         #endregion
@@ -276,62 +87,34 @@ namespace TauCode.Mq
 
         public void Subscribe(Type messageHandlerType)
         {
-            this.CheckNotStarted();
-            //this.CheckStateForOperation(WorkerState.Stopped);
-
             if (messageHandlerType == null)
             {
                 throw new ArgumentNullException(nameof(messageHandlerType));
             }
 
-            this.RegisterSubscription(messageHandlerType, null);
+            throw new NotImplementedException();
         }
 
         public void Subscribe(Type messageHandlerType, string topic)
         {
-            this.CheckNotStarted();
-
-            //this.CheckStateForOperation(WorkerState.Stopped);
-
             if (messageHandlerType == null)
             {
                 throw new ArgumentNullException(nameof(messageHandlerType));
             }
 
-            if (topic == null)
+            if (string.IsNullOrEmpty(topic))
             {
-                throw new ArgumentNullException(nameof(topic));
+                throw new ArgumentException(
+                    $"'{nameof(topic)}' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' method.",
+                    nameof(topic));
             }
 
-            this.RegisterSubscription(messageHandlerType, topic);
+            throw new NotImplementedException();
         }
 
-        private void CheckNotStarted()
+        public SubscriptionInfo[] GetSubscriptions()
         {
-            if (this.State == WorkerState.Running)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        //public void UnsubscribeAll()
-        //{
-        //    //this.CheckStateForOperation(WorkerState.Stopped);
-        //    this.CheckNotStarted();
-        //    _bundles.Clear();
-        //}
-
-        public ISubscriptionInfo[] GetSubscriptions()
-        {
-            var list = new List<ISubscriptionInfo>();
-
-            foreach (var bundle in _bundles.Values)
-            {
-                list.AddRange(bundle.MessageHandlerTypes
-                    .Select(x => new SubscriptionInfo(bundle.MessageType, bundle.Topic, x)));
-            }
-
-            return list.ToArray();
+            throw new NotImplementedException();
         }
 
         #endregion

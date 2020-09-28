@@ -14,35 +14,36 @@ namespace TauCode.Mq.Tests
         [Test]
         public void GetSubscriptions_NoArguments_ReturnsExpectedSubscriptions()
         {
-            // Arrange
-            IMessageSubscriber messageSubscriber = new TestMessageSubscriber();
+            throw new NotImplementedException();
+            //// Arrange
+            //IMessageSubscriber messageSubscriber = new TestMessageSubscriber();
 
-            // Act
-            messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler));
-            messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler), "some-topic");
+            //// Act
+            //messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler));
+            //messageSubscriber.Subscribe(typeof(SmartHelloMessageHandler), "some-topic");
 
-            messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
-            messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
+            //messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
+            //messageSubscriber.Subscribe(typeof(DumbPersonMessageHandler));
 
-            var subscriptions = messageSubscriber.GetSubscriptions();
+            //var subscriptions = messageSubscriber.GetSubscriptions();
 
-            // Assert
-            Assert.That(subscriptions, Has.Length.EqualTo(4));
+            //// Assert
+            //Assert.That(subscriptions, Has.Length.EqualTo(4));
 
-            var subs1 = subscriptions.Where(x => x.MessageHandlerType == typeof(SmartHelloMessageHandler)).ToList();
-            Assert.That(subs1, Has.Count.EqualTo(2));
+            //var subs1 = subscriptions.Where(x => x.MessageHandlerType == typeof(SmartHelloMessageHandler)).ToList();
+            //Assert.That(subs1, Has.Count.EqualTo(2));
 
-            var sub = subs1.SingleOrDefault(x => x.Topic == null);
-            Assert.That(sub, Is.Not.Null);
-            Assert.That(sub.MessageType, Is.SameAs(typeof(HelloMessage)));
+            //var sub = subs1.SingleOrDefault(x => x.Topic == null);
+            //Assert.That(sub, Is.Not.Null);
+            //Assert.That(sub.MessageType, Is.SameAs(typeof(HelloMessage)));
 
-            sub = subs1.SingleOrDefault(x => x.Topic == "some-topic");
-            Assert.That(sub, Is.Not.Null);
-            Assert.That(sub.MessageType, Is.SameAs(typeof(HelloMessage)));
+            //sub = subs1.SingleOrDefault(x => x.Topic == "some-topic");
+            //Assert.That(sub, Is.Not.Null);
+            //Assert.That(sub.MessageType, Is.SameAs(typeof(HelloMessage)));
 
-            var subs2 = subscriptions.Where(x => x.MessageHandlerType == typeof(DumbPersonMessageHandler)).ToList();
-            Assert.That(subs2, Has.Count.EqualTo(2));
-            Assert.That(subs2.All(x => x.Topic == null && x.MessageType == typeof(PersonMessage)), Is.True);
+            //var subs2 = subscriptions.Where(x => x.MessageHandlerType == typeof(DumbPersonMessageHandler)).ToList();
+            //Assert.That(subs2, Has.Count.EqualTo(2));
+            //Assert.That(subs2.All(x => x.Topic == null && x.MessageType == typeof(PersonMessage)), Is.True);
         }
 
         [Test]
