@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using TauCode.Mq.Abstractions;
 using TauCode.Working;
 
 namespace TauCode.Mq
@@ -16,16 +19,105 @@ namespace TauCode.Mq
             string Tag { get; }
             Action<object> Handler { get; }
             Func<object, Task> AsyncHandler { get; }
-            IReadOnlyList<Type> MessageHandlers { get; }
+            IReadOnlyList<Type> MessageHandlerTypes { get; }
+        }
+
+        private readonly struct MessageHandlerInfo
+        {
+            internal MessageHandlerInfo(
+                Type messageType,
+                bool isAsync,
+                Type messageHandlerType,
+                string tag)
+            {
+                this.MessageType = messageType;
+                this.IsAsync = isAsync;
+                this.MessageHandlerType = messageHandlerType;
+                this.Tag = tag;
+            }
+
+            internal Type MessageType { get; }
+            internal bool IsAsync { get; }
+            internal Type MessageHandlerType { get; }
+            internal string Tag { get; }
         }
 
         private class Bundle : ISubscriptionRequest
         {
+            #region Fields
+
+            private readonly bool _isAsync;
+            private readonly HashSet<Type> _messageHandlerTypes;
+
+            #endregion
+
             #region Constructor
 
-            internal Bundle()
+            internal Bundle(Type messageType, bool isAsync, string topic, string tag)
             {
-                
+                this.MessageType = messageType;
+                _isAsync = isAsync;
+                this.Topic = topic;
+                this.Tag = tag;
+
+                _messageHandlerTypes = new HashSet<Type>();
+
+                if (isAsync)
+                {
+                    this.AsyncHandler = this.HandleAsync;
+                }
+                else
+                {
+                    this.Handler = this.Handle;
+                }
+            }
+
+            #endregion
+
+            #region Private
+
+            private void Handle(object message)
+            {
+                throw new NotImplementedException();
+            }
+
+            private Task HandleAsync(object message)
+            {
+                throw new NotImplementedException();
+            }
+
+            #endregion
+
+            #region Internal
+
+            internal void AddHandlerType(Type messageHandlerType)
+            {
+                if (_messageHandlerTypes.Contains(messageHandlerType))
+                {
+                    throw new NotImplementedException();
+                }
+
+                _messageHandlerTypes.Add(messageHandlerType);
+            }
+
+            #endregion
+
+            #region Static
+
+            internal static string BuildTag(Type messageType, string topic)
+            {
+                var sb = new StringBuilder();
+                sb.Append("[");
+                sb.Append(messageType.FullName);
+                sb.Append(":");
+                if (topic != null)
+                {
+                    sb.Append(topic);
+                }
+
+                sb.Append("]");
+
+                return sb.ToString();
             }
 
             #endregion
@@ -37,7 +129,7 @@ namespace TauCode.Mq
             public string Tag { get; }
             public Action<object> Handler { get; }
             public Func<object, Task> AsyncHandler { get; }
-            public IReadOnlyList<Type> MessageHandlers { get; }
+            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes.ToList();
 
             #endregion
         }
@@ -47,6 +139,7 @@ namespace TauCode.Mq
         #region Fields
 
         private readonly Dictionary<string, Bundle> _bundles;
+        private readonly List<IDisposable> _subscriptionHandles;
 
         #endregion
 
@@ -55,9 +148,84 @@ namespace TauCode.Mq
         protected MessageSubscriberBase()
         {
             _bundles = new Dictionary<string, Bundle>();
+            _subscriptionHandles = new List<IDisposable>();
         }
 
-        #endregion-
+        #endregion
+
+        #region Private
+
+        private void CheckStopped()
+        {
+            if (this.State != WorkerState.Stopped)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private MessageHandlerInfo BuildMessageHandlerInfo(Type messageHandlerType, string topic)
+        {
+            if (!messageHandlerType.IsClass)
+            {
+                throw new ArgumentException($"'{nameof(messageHandlerType)}' must represent a class.", nameof(messageHandlerType));
+            }
+
+            if (messageHandlerType.IsAbstract)
+            {
+                throw new ArgumentException($"'{nameof(messageHandlerType)}' cannot be abstract.", nameof(messageHandlerType));
+            }
+
+            var syncList = new List<Type>();
+            var asyncList = new List<Type>();
+            Type messageType = null;
+
+            var ifaces = messageHandlerType.GetInterfaces();
+
+            foreach (var iface in ifaces)
+            {
+                if (iface.IsGenericType)
+                {
+                    var genericBase = iface.GetGenericTypeDefinition();
+
+                    if (genericBase == typeof(IAsyncMessageHandler<>))
+                    {
+                        asyncList.Add(messageHandlerType);
+                        messageType = iface.GetGenericArguments().Single();
+                    }
+                    else if (genericBase == typeof(IMessageHandler<>))
+                    {
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                }
+                else
+                {
+                    // it might be IAsyncMessageHandler (non-generic), or IMessageHandler (non-generic), or any other interface - none of them we're interested in here.
+                }
+            }
+
+            if (asyncList.Count == 1)
+            {
+                return new MessageHandlerInfo(
+                    messageType,
+                    true,
+                    asyncList.Single(),
+                    Bundle.BuildTag(messageType, topic));
+            }
+            else if (syncList.Count == 1)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        #endregion
 
         #region Abstract
 
@@ -65,7 +233,7 @@ namespace TauCode.Mq
 
         protected abstract void ShutdownImpl();
 
-        
+        protected abstract IDisposable SubscribeImpl(ISubscriptionRequest subscriptionRequest);
 
         #endregion
 
@@ -74,10 +242,23 @@ namespace TauCode.Mq
         protected override void OnStarting()
         {
             this.InitImpl();
+
+            foreach (var subscriptionRequest in _bundles.Values)
+            {
+                var subscriptionHandle = this.SubscribeImpl(subscriptionRequest);
+                _subscriptionHandles.Add(subscriptionHandle);
+            }
         }
 
         protected override void OnStopping()
         {
+            foreach (var subscriptionHandle in _subscriptionHandles)
+            {
+                subscriptionHandle.Dispose();
+            }
+
+            _subscriptionHandles.Clear();
+
             this.ShutdownImpl();
         }
 
@@ -92,7 +273,22 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(messageHandlerType));
             }
 
-            throw new NotImplementedException();
+            this.CheckStopped();
+
+            var info = this.BuildMessageHandlerInfo(messageHandlerType, null);
+
+            var bundle = _bundles.GetValueOrDefault(info.Tag);
+            if (bundle == null)
+            {
+                bundle = new Bundle(info.MessageType, info.IsAsync, null, info.Tag);
+                bundle.AddHandlerType(messageHandlerType);
+
+                _bundles.Add(bundle.Tag, bundle);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public void Subscribe(Type messageHandlerType, string topic)
