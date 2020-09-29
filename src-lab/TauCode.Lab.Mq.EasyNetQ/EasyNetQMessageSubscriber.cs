@@ -1,4 +1,5 @@
 ﻿using EasyNetQ;
+using EasyNetQ.NonGeneric;
 using System;
 using TauCode.Mq;
 
@@ -11,6 +12,17 @@ namespace TauCode.Lab.Mq.EasyNetQ
         private IBus _bus;
 
         #endregion
+
+        #region Constructor
+
+        public EasyNetQMessageSubscriber(IMessageHandlerContextFactory contextFactory)
+            : base(contextFactory)
+        {
+        }
+
+        #endregion
+
+
 
         #region Overridden
 
@@ -36,7 +48,10 @@ namespace TauCode.Lab.Mq.EasyNetQ
                 // got async handler
 
                 var subscriptionId = Guid.NewGuid().ToString();
-                var handle = _bus.SubscribeAsync(subscriptionId, subscriptionRequest.AsyncHandler);
+                var handle = _bus.SubscribeAsync(
+                    subscriptionRequest.MessageType,
+                    subscriptionId,
+                    subscriptionRequest.AsyncHandler);
 
                 return handle;
             }

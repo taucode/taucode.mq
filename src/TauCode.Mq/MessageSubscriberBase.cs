@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 using TauCode.Working;
@@ -48,13 +50,20 @@ namespace TauCode.Mq
 
             private readonly bool _isAsync;
             private readonly HashSet<Type> _messageHandlerTypes;
+            private readonly IMessageHandlerContextFactory _factory;
 
             #endregion
 
             #region Constructor
 
-            internal Bundle(Type messageType, bool isAsync, string topic, string tag)
+            internal Bundle(
+                IMessageHandlerContextFactory factory,
+                Type messageType,
+                bool isAsync,
+                string topic,
+                string tag)
             {
+                _factory = factory;
                 this.MessageType = messageType;
                 _isAsync = isAsync;
                 this.Topic = topic;
@@ -81,9 +90,27 @@ namespace TauCode.Mq
                 throw new NotImplementedException();
             }
 
-            private Task HandleAsync(object message)
+            private async Task HandleAsync(object message)
             {
-                throw new NotImplementedException();
+                foreach (var messageHandlerType in _messageHandlerTypes)
+                {
+                    try
+                    {
+                        using var context = _factory.CreateContext();
+                        context.Begin();
+
+                        var token = CancellationToken.None; // todo
+
+                        var handler = (IAsyncMessageHandler)context.GetService(messageHandlerType);
+                        await handler.HandleAsync(message, token);
+
+                        context.End();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error occurred while running the handler.");
+                    }
+                }
             }
 
             #endregion
@@ -145,8 +172,9 @@ namespace TauCode.Mq
 
         #region Constructor
 
-        protected MessageSubscriberBase()
+        protected MessageSubscriberBase(IMessageHandlerContextFactory contextFactory)
         {
+            this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _bundles = new Dictionary<string, Bundle>();
             _subscriptionHandles = new List<IDisposable>();
         }
@@ -227,6 +255,13 @@ namespace TauCode.Mq
 
         #endregion
 
+        #region Protected
+
+        protected IMessageHandlerContextFactory ContextFactory { get; }
+
+        #endregion
+
+
         #region Abstract
 
         protected abstract void InitImpl();
@@ -280,7 +315,12 @@ namespace TauCode.Mq
             var bundle = _bundles.GetValueOrDefault(info.Tag);
             if (bundle == null)
             {
-                bundle = new Bundle(info.MessageType, info.IsAsync, null, info.Tag);
+                bundle = new Bundle(
+                    this.ContextFactory,
+                    info.MessageType,
+                    info.IsAsync,
+                    null,
+                    info.Tag);
                 bundle.AddHandlerType(messageHandlerType);
 
                 _bundles.Add(bundle.Tag, bundle);

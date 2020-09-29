@@ -7,6 +7,20 @@ namespace TauCode.Mq
 {
     public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
     {
+        protected abstract void InitImpl();
+
+        protected abstract void ShutdownImpl();
+
+        protected override void OnStarting()
+        {
+            this.InitImpl();
+        }
+
+        protected override void OnStopping()
+        {
+            this.ShutdownImpl();
+        }
+
         protected abstract void PublishImpl(IMessage message);
 
         protected abstract void PublishImpl(IMessage message, string topic);
@@ -27,7 +41,10 @@ namespace TauCode.Mq
 
         private void CheckStarted()
         {
-            throw new NotImplementedException();
+            if (this.State != WorkerState.Running)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public void Publish(IMessage message, string topic)
