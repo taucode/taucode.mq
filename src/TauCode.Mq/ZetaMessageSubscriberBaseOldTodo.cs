@@ -10,7 +10,7 @@ using TauCode.Working;
 // todo clean up
 namespace TauCode.Mq
 {
-    public abstract class ZetaMessageSubscriberBaseOldTodo : WorkerBase, IMessageSubscriber
+    public abstract class ZetaMessageSubscriberBaseOldTodo : WorkerBase, TauCode.Mq.IMessageSubscriber
     {
         #region Nested
 
@@ -170,12 +170,6 @@ namespace TauCode.Mq
 
         #endregion
 
-        #region Protected
-
-        protected IMessageHandlerContextFactory ContextFactory { get; }
-
-        #endregion
-
         #region Overridden
 
         protected override void OnStarting()
@@ -271,6 +265,8 @@ namespace TauCode.Mq
         #endregion
 
         #region IMessageSubscriber Members
+
+        public IMessageHandlerContextFactory ContextFactory { get; }
 
         public void Subscribe(Type messageHandlerType)
         {

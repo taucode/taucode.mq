@@ -255,13 +255,6 @@ namespace TauCode.Mq
 
         #endregion
 
-        #region Protected
-
-        protected IMessageHandlerContextFactory ContextFactory { get; }
-
-        #endregion
-
-
         #region Abstract
 
         protected abstract void InitImpl();
@@ -300,6 +293,8 @@ namespace TauCode.Mq
         #endregion
 
         #region IMessageSubscriber Members
+
+        public IMessageHandlerContextFactory ContextFactory { get; }
 
         public void Subscribe(Type messageHandlerType)
         {

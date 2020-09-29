@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {
@@ -7,162 +8,1386 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
     {
         #region ctor
 
-        // ctor(IMessageHandlerContextFactory)
-        // todo - happy path, check name, con.str, status etc.
-        // todo - factory is null, throws
+        [Test]
+        public void ConstructorOneArgument_ValidArgument_RunsOk()
+        {
+            // Arrange
 
-        // ctor(string, IMessageHandlerContextFactory)
-        // todo - happy path, connection string equals to what we passed, null accepted also.
-        // todo - factory is null, throws
-        // todo - multi todo: deal with bad factory (cannot resolve, throws, etc) => log & behave gracefully.
+            // Act
+            // todo - happy path, check name, con.str, status etc.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ConstructorOneArgument_ArgumentIsNull_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - factory is null, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ConstructorTwoArguments_ValidArguments_RunsOk()
+        {
+            // Arrange
+
+            // Act
+            // todo - happy path, connection string equals to what we passed, null accepted also.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ConstructorTwoArguments_FactoryIsNull_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - factory is null, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region ConnectionString
 
-        // todo - when set, changes, null is also ok.
-        // todo - when running, cannot be set, but can be read.
-        // todo - when disposed, cannot be set, but can be read.
+        [Test]
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("host=some-host")]
+        public void ConnectionString_NotStarted_CanBeSet(string connectionString)
+        {
+            // Arrange
+
+            // Act
+            
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("host=some-host")]
+        public void ConnectionString_StoppedThenStarted_CanBeSet(string connectionString)
+        {
+            // Arrange
+
+            // Act
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ConnectionString_StartedThenSet_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+
+            // todo: when started, can be read, but not set.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ConnectionString_DisposedThenSet_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+
+            // todo - when disposed, cannot be set, but can be read.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region ContextFactory
+
+        [Test]
+        public void ContextFactory_ThrowsOnCreateContext_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - see name of ut.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ContextFactory_ReturnsNullOnCreateContext_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - see name of ut.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ContextFactory_ContextBeginThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - IMessageHandlerContext.Begin() throws => todo.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ContextFactory_ContextEndThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - IMessageHandlerContext.End() throws => todo.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ContextFactory_ContextGetServiceThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - IMessageHandlerContext.GetService() throws => todo.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ContextFactory_ContextGetServiceReturnsNull_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - IMessageHandlerContext.GetService() returns null => todo.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void ContextFactory_ContextGetServiceReturnsBadResult_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - IMessageHandlerContext.GetService() returns bad result (e.g. not IMessageHandler/IAsyncMessageHandler) => todo.
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region Subscribe(Type)
 
-        // todo - happy path, starts handling messages without topic (sync, single handler).
-        // todo - happy path, starts handling messages without topic (sync, multiple handlers).
-        // todo - happy path, starts handling messages without topic (async, single handler).
-        // todo - happy path, starts handling messages without topic (async, multiple handlers).
+        [Test]
+        public void SubscribeType_SingleSyncHandler_HandlesMessagesWithoutTopic()
+        {
+            // Arrange
 
-        // todo - arg is null => throws
-        // todo - arg is abstract => throws
-        // todo - arg is not class => throws
-        // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
-        // todo - arg is sync, while there are already async handlers for this type of message => throws
-        // todo - arg is async, while there are already sync handlers for this type of message => throws
-        // todo - arg implements IMessageHandler<TMessage> more than once => throws
-        // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
-        // todo - already have this handler type => throws
+            // Act
+            // todo - happy path, starts handling messages without topic (sync, single handler).
 
-        // todo - TMessage is abstract => throws
-        // todo - TMessage is not class => throws
-        // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
-        // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+            // Assert
+            throw new NotImplementedException();
+        }
 
-        // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
-        // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
+        [Test]
+        public void SubscribeType_MultipleSyncHandlers_HandleMessagesWithoutTopic()
+        {
+            // Arrange
 
-        // todo - async handler's ctor is throwing => logs, stops loop gracefully.
-        // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
-        // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+            // Act
+            // todo - happy path, starts handling messages without topic (sync, multiple handlers).
 
-        // todo - started, throws
-        // todo - disposed, throws
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_SingleAsyncHandler_HandlesMessagesWithoutTopic()
+        {
+            // Arrange
+
+            // Act
+            // todo - happy path, starts handling messages without topic (async, single handler).
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_MultipleAsyncHandlers_HandleMessagesWithoutTopic()
+        {
+            // Arrange
+
+            // Act
+            // todo - happy path, starts handling messages without topic (async, multiple handlers).
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeIsNull_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is null => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeIsAbstract_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is abstract => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeIsNotClass_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is not class => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeIsNotGenericSyncOrAsyncHandler_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeIsSyncAfterAsync_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is sync, while there are already async handlers for this type of message => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeIsAsyncAfterSync_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is async, while there are already sync handlers for this type of message => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg implements IMessageHandler<TMessage> more than once => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TypeImplementsBothSyncAndAsync_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg implements both sync and async handler, same or different TMessage => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_SyncTypeAlreadySubscribed_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - type already subscribed => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_AsyncTypeAlreadySubscribed_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - type already subscribed => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TMessageIsAbstract_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is abstract => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TMessageIsNotClass_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is not class => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TMessageCtorThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_TMessagePropertyThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_SyncHandlerCtorThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_SyncHandlerHandleThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_AsyncHandlerCtorThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's ctor is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_AsyncHandlerHandleAsyncThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_AsyncHandlerHandleAsyncIsFaulted_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_AsyncHandlerHandleAsyncIsCanceled_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_Started_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - started, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeType_Disposed_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region Subscribe(Type, string)
 
-        // todo - happy path, starts handling messages with proper topic (sync, single handler).
-        // todo - happy path, starts handling messages with proper topic (sync, multiple handlers).
-        // todo - happy path, starts handling messages with proper topic (async, single handler).
-        // todo - happy path, starts handling messages with proper topic (async, multiple handlers).
+        [Test]
+        public void SubscribeTypeString_SingleSyncHandler_HandlesMessagesWithProperTopic()
+        {
+            // Arrange
 
-        // todo - topic is null or empty => throws
+            // Act
+            // todo - happy path, starts handling messages with proper topic (sync, single handler).
 
-        // todo - arg is null => throws
-        // todo - arg is abstract => throws
-        // todo - arg is not class => throws
-        // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
-        // todo - arg is sync, while there are already async handlers for this type of message => throws
-        // todo - arg is async, while there are already sync handlers for this type of message => throws
-        // todo - arg implements IMessageHandler<TMessage> more than once => throws
-        // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
-        // todo - already have this handler type => throws
+            // Assert
+            throw new NotImplementedException();
+        }
 
-        // todo - TMessage is abstract => throws
-        // todo - TMessage is not class => throws
-        // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
-        // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+        [Test]
+        public void SubscribeTypeString_MultipleSyncHandlers_HandleMessagesWithProperTopic()
+        {
+            // Arrange
 
-        // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
-        // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
+            // Act
+            // todo - happy path, starts handling messages with proper topic (sync, multiple handlers).
 
-        // todo - async handler's ctor is throwing => logs, stops loop gracefully.
-        // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
-        // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+            // Assert
+            throw new NotImplementedException();
+        }
 
-        // todo - started, throws
-        // todo - disposed, throws
+        [Test]
+        public void SubscribeTypeString_SingleAsyncHandler_HandlesMessagesWithProperTopic()
+        {
+            // Arrange
+
+            // Act
+            // todo - happy path, starts handling messages with proper topic (async, single handler).
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_MultipleAsyncHandlers_HandleMessagesWithProperTopic()
+        {
+            // Arrange
+
+            // Act
+            // todo - happy path, starts handling messages with proper topic (async, multiple handlers).
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TopicIsNullOrEmpty_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - topic is null or empty => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsNull_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is null => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsAbstract_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is abstract => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsNotClass_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is not class => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsNotGenericSyncOrAsyncHandler_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsSyncAfterAsyncSameTopic_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is sync, while there are already async handlers for this type of message AND this topic => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncHasDifferentTopic_TodoOk()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is sync, while there are already async handlers for this type of message BUT different topic => no problem
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncIsTopicless_TodoOk()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is sync, while there are already async handlers for this type of message BUT those handlers are topicless => no problem
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsAsyncAfterSyncSameTopic_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg is async, while there are already sync handlers for this type of message AND this topic => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncHasDifferentTopic_TodoOk()
+        {
+            // Arrange
+
+            // Act
+            // todo - type is async, while there are already sync handlers for this type of message BUT different topic => no problem
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncIsTopicless_TodoOk()
+        {
+            // Arrange
+
+            // Act
+            // todo - type is async, while there are already sync handlers for this type of message BUT those handlers are topicless => no problem
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg implements IMessageHandler<TMessage> more than once => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TypeImplementsBothSyncAndAsync_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - arg implements both sync and async handler, same or different TMessage => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_SyncTypeAlreadySubscribedToTheSameTopic_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_SyncTypeAlreadySubscribedButToDifferentTopic_TodoOk()
+        {
+            // Arrange
+
+            // Act
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_SyncTypeAlreadySubscribedButWithoutTopic_TodoOk()
+        {
+            // Arrange
+
+            // Act
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_AsyncTypeAlreadySubscribedToTheSameTopic_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_AsyncTypeAlreadySubscribedButToDifferentTopic_TodoOk()
+        {
+            // Arrange
+
+            // Act
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_AsyncTypeAlreadySubscribedButWithoutTopic_TodoOk()
+        {
+            // Arrange
+
+            // Act
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TMessageIsAbstract_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is abstract => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TMessageIsNotClass_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is not class => throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TMessageCtorThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_TMessagePropertyThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_SyncHandlerCtorThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_SyncHandlerHandleThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_AsyncHandlerCtorThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's ctor is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_AsyncHandlerHandleAsyncThrows_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_AsyncHandlerHandleAsyncIsFaulted_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_AsyncHandlerHandleAsyncIsCanceled_Todo()
+        {
+            // Arrange
+
+            // Act
+            // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_Started_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - started, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void SubscribeTypeString_Disposed_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region GetSubscriptions()
 
-        // todo - just created, returns empty array
-        // todo - running, returns subscriptions
-        // todo - stopped, returns subscriptions
-        // todo - disposed, returns empty array
+        [Test]
+        public void GetSubscriptions_JustCreated_ReturnsEmptyArray()
+        {
+            // Arrange
 
+            // Act
+            // todo - just created, returns empty array
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void GetSubscriptions_Running_ReturnsSubscriptions()
+        {
+            // Arrange
+
+            // Act
+            // todo - running, returns subscriptions
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void GetSubscriptions_Stopped_ReturnsSubscriptions()
+        {
+            // Arrange
+
+            // Act
+            // todo - stopped, returns subscriptions
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void GetSubscriptions_Disposed_ReturnsEmptyArray()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed, returns empty array
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region Name
 
-        // todo - when set, reflects, can be any value
-        // todo - after disposed, name cannot be set.
-        // todo - after disposed, name still can be read
+        [Test]
+        public void Name_NotDisposed_IsChangedAndCanBeRead()
+        {
+            // Arrange
+
+            // Act
+
+            // todo - when set, reflects, can be any value
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Name_Disposed_CanOnlyBeRead()
+        {
+            // Arrange
+
+            // Act
+
+            // todo - after disposed, name cannot be set.
+            // todo - after disposed, name still can be read
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region State
 
-        // todo - just created, eq. to 'stopped'
-        // todo - started, eq. to 'started'
-        // todo - stopped, eq. to 'stopped'
-        // todo - disposed just after creation, eq. to 'stopped'
-        // todo - disposed after started, eq. to 'stopped'
-        // todo - disposed after stopped, eq. to 'stopped'
-        // todo - disposed after disposed, eq. to 'disposed'
+        [Test]
+        public void State_JustCreated_EqualsToStopped()
+        {
+            // Arrange
+
+            // Act
+            // todo - just created, eq. to 'stopped'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void State_Started_EqualsToStarted()
+        {
+            // Arrange
+
+            // Act
+            // todo - started, eq. to 'started'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void State_Stopped_EqualsToStopped()
+        {
+            // Arrange
+
+            // Act
+            // todo - stopped, eq. to 'stopped'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+
+        [Test]
+        public void State_DisposedJustAfterCreation_EqualsToStopped()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed just after creation, eq. to 'stopped'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void State_DisposedAfterStarted_EqualsToStopped()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed after started, eq. to 'stopped'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void State_DisposedAfterStopped_EqualsToStopped()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed after stopped, eq. to 'stopped'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void State_DisposedAfterDisposed_EqualsToStopped()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed after disposed, eq. to 'disposed'
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region IsDisposed
 
-        // todo - just created, eq. to 'false'
-        // todo - started, eq. to 'false'
-        // todo - stopped, eq. to 'false'
-        // todo - disposed just after creation, eq. to 'true'
-        // todo - disposed after started, eq. to 'true'
-        // todo - disposed after stopped, eq. to 'true'
-        // todo - disposed after disposed, eq. to 'true'
+        [Test]
+        public void IsDisposed_JustCreated_EqualsToFalse()
+        {
+            // Arrange
+
+            // Act
+            // todo - just created, eq. to 'false'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void IsDisposed_Started_EqualsToFalse()
+        {
+            // Arrange
+
+            // Act
+            // todo - started, eq. to 'false'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void IsDisposed_Stopped_EqualsToFalse()
+        {
+            // Arrange
+
+            // Act
+            // todo - stopped, eq. to 'false'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void IsDisposed_DisposedJustAfterCreation_EqualsToTrue()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed just after creation, eq. to 'true'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void IsDisposed_DisposedAfterStarted_EqualsToTrue()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed after started, eq. to 'true'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void IsDisposed_DisposedAfterStopped_EqualsToTrue()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed after stopped, eq. to 'true'
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void IsDisposed_DisposedAfterDisposed_EqualsToTrue()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed after disposed, eq. to 'true'
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region Start()
 
-        // todo - just created, starts, handles messages
-        // todo - con str is null or empty, throws.
-        // todo - started, throws
-        // todo - stopped, starts, handles messages
-        // todo - disposed, throws
+        [Test]
+        public void Start_JustCreated_StartsAndHandlesMessages()
+        {
+            // Arrange
+
+            // Act
+            // todo - just created, starts, handles messages
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Start_ConnectionStringIsNullOrEmpty_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - con str is null or empty, throws.
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Start_Started_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - started, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Start_Stopped_StartsAndHandlesMessages()
+        {
+            // Arrange
+
+            // Act
+            // todo - stopped, starts, handles messages
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Start_Disposed_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region Stop()
 
-        // todo - just created, throws
-        // todo - started, stops, cancels current async tasks, shown in logs
-        // todo - stopped, throws
-        // todo - disposed, throws
+        [Test]
+        public void Stop_JustCreated_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - just created, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Stop_Started_StopsAndCancelsCurrentAsyncTasks()
+        {
+            // Arrange
+
+            // Act
+            // todo - started, stops, cancels current async tasks, shown in logs
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Stop_Stopped_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - stopped, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Stop_Disposed_ThrowsTodo()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed, throws
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
 
         #region Dispose()
 
-        // todo - just created, disposes
-        // todo - started, disposes, cancels current async tasks, shown in logs
-        // todo - stopped, disposes
-        // todo - disposed, does nothing.
+        [Test]
+        public void Dispose_JustCreated_Disposes()
+        {
+            // Arrange
+
+            // Act
+            // todo - just created, disposes
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Dispose_Started_DisposesAndCancelsCurrentAsyncTasks()
+        {
+            // Arrange
+
+            // Act
+            // todo - started, disposes, cancels current async tasks, shown in logs
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Disposes_Stopped_Disposes()
+        {
+            // Arrange
+
+            // Act
+            // todo - stopped, disposes
+
+            // Assert
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Disposes_Disposed_DoesNothing()
+        {
+            // Arrange
+
+            // Act
+            // todo - disposed, does nothing.
+
+            // Assert
+            throw new NotImplementedException();
+        }
 
         #endregion
     }
