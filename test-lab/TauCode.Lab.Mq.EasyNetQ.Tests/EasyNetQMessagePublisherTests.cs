@@ -1,91 +1,148 @@
 ﻿using NUnit.Framework;
-using System;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {
     [TestFixture]
     public class EasyNetQMessagePublisherTests
     {
+        #region ctor
+
         [Test]
         public void Constructor_NoArguments_RunsOk()
         {
             // Arrange
 
             // Act
+            IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(messagePublisher.ConnectionString, Is.Null);
         }
 
-        // todo: ctor()
-        // - happy path, check name, con.str, status etc.
+        [Test]
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("host=some-host")]
+        public void Constructor_ConnectionString_RunsOk(string connectionString)
+        {
+            // Arrange
 
-        // todo: ctor(string name)
-        // - happy path, check name, con.str, status etc. null or empty name is ok.
+            // Act
+            IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher(connectionString);
 
-        // todo: ctor(string name, string connectionString)
-        // - happy path, connection string equals to what we passed, null accepted also.
+            // Assert
+            Assert.That(messagePublisher.ConnectionString, Is.EqualTo(connectionString));
+        }
 
-        // todo: IEasyNetQMessagePublisher.ConnectionString
-        // - when set, changes, null is also ok.
-        // - when running, cannot be set, but can be read.
-        // - when disposed, cannot be set, but can be read.
+        #endregion
 
-        // todo: IEasyNetQMessagePublisher.Publish(IMessage)
-        // - happy path, publishes; subscription with no topic fires, subscriptions without topics don't fire.
-        // - arg is null, throws
-        // - arg is abstract class, throws
-        // - arg is struct, throws
-        // - not started, throws
-        // - disposed, throws
+        #region ConnectionString
 
-        // todo: IEasyNetQMessagePublisher.Publish(IMessage, string)
-        // - happy path, publishes, subscription fired with proper topic; with other topic - not fired; with no topic - not fired.
-        // - arg is null, throws
-        // - arg is abstract class, throws
-        // - arg is struct, throws
-        // - topic is null or empty, throws
-        // - not started, throws
-        // - disposed, throws
+        [Test]
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("host=some-host")]
+        public void ConnectionString_NotStarted_CanBeSet(string connectionString)
+        {
+            // Arrange
+            IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
 
-        // todo: IEasyNetQMessagePublisher.Name
-        // - after disposed, name still can be read.
+            // Act
+            messagePublisher.ConnectionString = connectionString;
 
-        // todo: IEasyNetQMessagePublisher.State
-        // - just created, eq. to 'stopped'
-        // - started, eq. to 'started'
-        // - stopped, eq. to 'stopped'
-        // - disposed just after creation, eq. to 'stopped'
-        // - disposed after started, eq. to 'stopped'
-        // - disposed after stopped, eq. to 'stopped'
-        // - disposed after disposed, eq. to 'disposed'
+            // Assert
+            Assert.That(messagePublisher.ConnectionString, Is.EqualTo(connectionString));
+        }
 
-        // todo: IEasyNetQMessagePublisher.IsDisposed
-        // - just created, eq. to 'false'
-        // - started, eq. to 'false'
-        // - stopped, eq. to 'false'
-        // - disposed just after creation, eq. to 'true'
-        // - disposed after started, eq. to 'true'
-        // - disposed after stopped, eq. to 'true'
-        // - disposed after disposed, eq. to 'true'
+        // todo - when set, changes, null is also ok.
+        // todo - when running, cannot be set, but can be read.
+        // todo - when disposed, cannot be set, but can be read.
 
-        // todo: IEasyNetQMessagePublisher.Start
-        // - just created, starts
-        // - con str is null or empty, throws.
-        // - started, throws
-        // - stopped, starts
-        // - disposed, throws
+        #endregion
 
-        // todo: IEasyNetQMessagePublisher.Stop
-        // - just created, throws
-        // - started, stops
-        // - stopped, throws
-        // - disposed, throws
+        #region Publish(IMessage)
 
-        // todo: IEasyNetQMessagePublisher.Dispose
-        // - just created, disposes
-        // - started, disposes
-        // - stopped, disposes
-        // - disposed, does nothing.
+        // todo - happy path, publishes; subscription with no topic fires, subscriptions without topics don't fire.
+        // todo - arg is null, throws
+        // todo - arg is abstract class, throws
+        // todo - arg is struct, throws
+        // todo - not started, throws
+        // todo - disposed, throws
+
+
+        #endregion
+
+        #region Publish(IMessage, string)
+
+        // todo - happy path, publishes, subscription fired with proper topic; with other topic - not fired; with no topic - not fired.
+        // todo - arg is null, throws
+        // todo - arg is abstract class, throws
+        // todo - arg is struct, throws
+        // todo - topic is null or empty, throws
+        // todo - not started, throws
+        // todo - disposed, throws
+
+        #endregion
+
+        #region Name
+
+        // todo - when set, reflects, can be any value
+        // todo - after disposed, name cannot be set.
+        // todo - after disposed, name still can be read
+
+        #endregion
+
+        #region State
+
+        // todo - just created, eq. to 'stopped'
+        // todo - started, eq. to 'started'
+        // todo - stopped, eq. to 'stopped'
+        // todo - disposed just after creation, eq. to 'stopped'
+        // todo - disposed after started, eq. to 'stopped'
+        // todo - disposed after stopped, eq. to 'stopped'
+        // todo - disposed after disposed, eq. to 'disposed'
+
+        #endregion
+
+        #region IsDisposed
+
+        // todo - just created, eq. to 'false'
+        // todo - started, eq. to 'false'
+        // todo - stopped, eq. to 'false'
+        // todo - disposed just after creation, eq. to 'true'
+        // todo - disposed after started, eq. to 'true'
+        // todo - disposed after stopped, eq. to 'true'
+        // todo - disposed after disposed, eq. to 'true'
+
+        #endregion
+
+        #region Start()
+
+        // todo - just created, starts
+        // todo - con str is null or empty, throws.
+        // todo - started, throws
+        // todo - stopped, starts
+        // todo - disposed, throws
+
+        #endregion
+
+        #region Stop()
+
+        // todo - just created, throws
+        // todo - started, stops
+        // todo - stopped, throws
+        // todo - disposed, throws
+
+
+        #endregion
+
+        #region Dispose()
+
+        // todo - just created, disposes
+        // todo - started, disposes
+        // todo - stopped, disposes
+        // todo - disposed, does nothing.
+
+        #endregion
     }
 }

@@ -20,6 +20,12 @@ namespace TauCode.Lab.Mq.EasyNetQ
         {
         }
 
+        public EasyNetQMessageSubscriber(IMessageHandlerContextFactory contextFactory, string connectionString)
+            : base(contextFactory)
+        {
+            this.ConnectionString = connectionString;
+        }
+
         #endregion
 
         #region Overridden

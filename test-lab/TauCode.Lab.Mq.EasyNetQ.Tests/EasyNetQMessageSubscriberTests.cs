@@ -5,132 +5,165 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
     [TestFixture]
     public class EasyNetQMessageSubscriberTests
     {
-        // todo: ctor(IMessageHandlerContextFactory)
-        // - happy path, check name, con.str, status etc.
-        // - factory is null, throws
+        #region ctor
 
-        // todo: ctor(string, IMessageHandlerContextFactory)
-        // - happy path, check name, con.str, status etc. null or empty name is ok.
-        // - factory is null, throws
+        // ctor(IMessageHandlerContextFactory)
+        // todo - happy path, check name, con.str, status etc.
+        // todo - factory is null, throws
 
-        // todo: ctor(string, connectionString, IMessageHandlerContextFactory)
-        // - happy path, connection string equals to what we passed, null accepted also.
-        // - factory is null, throws
-        // -todo: deal with bad factory (cannot resolve, throws, etc) => log & behave gracefully.
+        // ctor(string, IMessageHandlerContextFactory)
+        // todo - happy path, connection string equals to what we passed, null accepted also.
+        // todo - factory is null, throws
+        // todo - multi todo: deal with bad factory (cannot resolve, throws, etc) => log & behave gracefully.
 
-        // todo: IEasyNetQMessageSubscriber.ConnectionString
-        // - when set, changes, null is also ok.
-        // - when running, cannot be set, but can be read.
-        // - when disposed, cannot be set, but can be read.
+        #endregion
 
-        // todo: IEasyNetQMessageSubscriber.Subscribe(Type)
-        // - happy path, starts handling messages without topic (sync, single handler).
-        // - happy path, starts handling messages without topic (sync, multiple handlers).
-        // - happy path, starts handling messages without topic (async, single handler).
-        // - happy path, starts handling messages without topic (async, multiple handlers).
+        #region ConnectionString
 
-        // - arg is null => throws
-        // - arg is abstract => throws
-        // - arg is not class => throws
-        // - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
-        // - arg is sync, while there are already async handlers for this type of message => throws
-        // - arg is async, while there are already sync handlers for this type of message => throws
-        // - arg implements IMessageHandler<TMessage> more than once => throws
-        // - arg implements IAsyncMessageHandler<TMessage> more than once => throws
-        // - already have this handler type => throws
+        // todo - when set, changes, null is also ok.
+        // todo - when running, cannot be set, but can be read.
+        // todo - when disposed, cannot be set, but can be read.
 
-        // - TMessage is abstract => throws
-        // - TMessage is not class => throws
-        // - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
-        // - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+        #endregion
 
-        // - sync handler's ctor is throwing => logs, stops loop gracefully.
-        // - sync handler's Handle is throwing => logs, stops loop gracefully.
+        #region Subscribe(Type)
 
-        // - async handler's ctor is throwing => logs, stops loop gracefully.
-        // - async handler's HandleAsync is throwing => logs, stops loop gracefully.
-        // - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+        // todo - happy path, starts handling messages without topic (sync, single handler).
+        // todo - happy path, starts handling messages without topic (sync, multiple handlers).
+        // todo - happy path, starts handling messages without topic (async, single handler).
+        // todo - happy path, starts handling messages without topic (async, multiple handlers).
 
-        // - started, throws
-        // - disposed, throws
+        // todo - arg is null => throws
+        // todo - arg is abstract => throws
+        // todo - arg is not class => throws
+        // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
+        // todo - arg is sync, while there are already async handlers for this type of message => throws
+        // todo - arg is async, while there are already sync handlers for this type of message => throws
+        // todo - arg implements IMessageHandler<TMessage> more than once => throws
+        // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
+        // todo - already have this handler type => throws
 
-        // todo: IEasyNetQMessageSubscriber.Subscribe(Type, string)
-        // - happy path, starts handling messages with proper topic (sync, single handler).
-        // - happy path, starts handling messages with proper topic (sync, multiple handlers).
-        // - happy path, starts handling messages with proper topic (async, single handler).
-        // - happy path, starts handling messages with proper topic (async, multiple handlers).
+        // todo - TMessage is abstract => throws
+        // todo - TMessage is not class => throws
+        // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
+        // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
 
-        // - topic is null or empty => throws
+        // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
+        // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
 
-        // - arg is null => throws
-        // - arg is abstract => throws
-        // - arg is not class => throws
-        // - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
-        // - arg is sync, while there are already async handlers for this type of message => throws
-        // - arg is async, while there are already sync handlers for this type of message => throws
-        // - arg implements IMessageHandler<TMessage> more than once => throws
-        // - arg implements IAsyncMessageHandler<TMessage> more than once => throws
-        // - already have this handler type => throws
+        // todo - async handler's ctor is throwing => logs, stops loop gracefully.
+        // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
+        // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
 
-        // - TMessage is abstract => throws
-        // - TMessage is not class => throws
-        // - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
-        // - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+        // todo - started, throws
+        // todo - disposed, throws
 
-        // - sync handler's ctor is throwing => logs, stops loop gracefully.
-        // - sync handler's Handle is throwing => logs, stops loop gracefully.
+        #endregion
 
-        // - async handler's ctor is throwing => logs, stops loop gracefully.
-        // - async handler's HandleAsync is throwing => logs, stops loop gracefully.
-        // - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+        #region Subscribe(Type, string)
 
-        // - started, throws
-        // - disposed, throws
+        // todo - happy path, starts handling messages with proper topic (sync, single handler).
+        // todo - happy path, starts handling messages with proper topic (sync, multiple handlers).
+        // todo - happy path, starts handling messages with proper topic (async, single handler).
+        // todo - happy path, starts handling messages with proper topic (async, multiple handlers).
 
-        // todo: IEasyNetQMessageSubscriber.GetSubscriptions()
-        // - just created, returns empty array
-        // - running, returns subscriptions
-        // - stopped, returns subscriptions
-        // - disposed, returns empty array
+        // todo - topic is null or empty => throws
 
-        // todo: IEasyNetQMessageSubscriber.Name
-        // - after disposed, name still can be read.
+        // todo - arg is null => throws
+        // todo - arg is abstract => throws
+        // todo - arg is not class => throws
+        // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
+        // todo - arg is sync, while there are already async handlers for this type of message => throws
+        // todo - arg is async, while there are already sync handlers for this type of message => throws
+        // todo - arg implements IMessageHandler<TMessage> more than once => throws
+        // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
+        // todo - already have this handler type => throws
 
-        // todo: IEasyNetQMessageSubscriber.State
-        // - just created, eq. to 'stopped'
-        // - started, eq. to 'started'
-        // - stopped, eq. to 'stopped'
-        // - disposed just after creation, eq. to 'stopped'
-        // - disposed after started, eq. to 'stopped'
-        // - disposed after stopped, eq. to 'stopped'
-        // - disposed after disposed, eq. to 'disposed'
+        // todo - TMessage is abstract => throws
+        // todo - TMessage is not class => throws
+        // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
+        // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
 
-        // todo: IEasyNetQMessageSubscriber.IsDisposed
-        // - just created, eq. to 'false'
-        // - started, eq. to 'false'
-        // - stopped, eq. to 'false'
-        // - disposed just after creation, eq. to 'true'
-        // - disposed after started, eq. to 'true'
-        // - disposed after stopped, eq. to 'true'
-        // - disposed after disposed, eq. to 'true'
+        // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
+        // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
 
-        // todo: IEasyNetQMessageSubscriber.Start
-        // - just created, starts, handles messages
-        // - con str is null or empty, throws.
-        // - started, throws
-        // - stopped, starts, handles messages
-        // - disposed, throws
+        // todo - async handler's ctor is throwing => logs, stops loop gracefully.
+        // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
+        // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
 
-        // todo: IEasyNetQMessageSubscriber.Stop
-        // - just created, throws
-        // - started, stops, cancels current async tasks, shown in logs
-        // - stopped, throws
-        // - disposed, throws
+        // todo - started, throws
+        // todo - disposed, throws
 
-        // todo: IEasyNetQMessageSubscriber.Dispose
-        // - just created, disposes
-        // - started, disposes, cancels current async tasks, shown in logs
-        // - stopped, disposes
-        // - disposed, does nothing.
+        #endregion
+
+        #region GetSubscriptions()
+
+        // todo - just created, returns empty array
+        // todo - running, returns subscriptions
+        // todo - stopped, returns subscriptions
+        // todo - disposed, returns empty array
+
+
+        #endregion
+
+        #region Name
+
+        // todo - when set, reflects, can be any value
+        // todo - after disposed, name cannot be set.
+        // todo - after disposed, name still can be read
+
+        #endregion
+
+        #region State
+
+        // todo - just created, eq. to 'stopped'
+        // todo - started, eq. to 'started'
+        // todo - stopped, eq. to 'stopped'
+        // todo - disposed just after creation, eq. to 'stopped'
+        // todo - disposed after started, eq. to 'stopped'
+        // todo - disposed after stopped, eq. to 'stopped'
+        // todo - disposed after disposed, eq. to 'disposed'
+
+        #endregion
+
+        #region IsDisposed
+
+        // todo - just created, eq. to 'false'
+        // todo - started, eq. to 'false'
+        // todo - stopped, eq. to 'false'
+        // todo - disposed just after creation, eq. to 'true'
+        // todo - disposed after started, eq. to 'true'
+        // todo - disposed after stopped, eq. to 'true'
+        // todo - disposed after disposed, eq. to 'true'
+
+        #endregion
+
+        #region Start()
+
+        // todo - just created, starts, handles messages
+        // todo - con str is null or empty, throws.
+        // todo - started, throws
+        // todo - stopped, starts, handles messages
+        // todo - disposed, throws
+
+        #endregion
+
+        #region Stop()
+
+        // todo - just created, throws
+        // todo - started, stops, cancels current async tasks, shown in logs
+        // todo - stopped, throws
+        // todo - disposed, throws
+
+        #endregion
+
+        #region Dispose()
+
+        // todo - just created, disposes
+        // todo - started, disposes, cancels current async tasks, shown in logs
+        // todo - stopped, disposes
+        // todo - disposed, does nothing.
+
+        #endregion
     }
 }

@@ -8,7 +8,26 @@ namespace TauCode.Lab.Mq.EasyNetQ
 {
     public class EasyNetQMessagePublisher : MessagePublisherBase, IEasyNetQMessagePublisher
     {
+        #region Fields
+
         private IBus _bus;
+
+        #endregion
+
+        #region Constructors
+
+        public EasyNetQMessagePublisher()
+        {   
+        }
+
+        public EasyNetQMessagePublisher(string connectionString)
+        {
+            this.ConnectionString = connectionString;
+        }
+
+        #endregion
+
+        #region Overridden
 
         protected override void InitImpl()
         {
@@ -31,6 +50,12 @@ namespace TauCode.Lab.Mq.EasyNetQ
             _bus.Publish(message.GetType(), message, topic);
         }
 
+        #endregion
+
+        #region IEasyNetQMessagePublisher Members
+
         public string ConnectionString { get; set; }
+
+        #endregion
     }
 }
