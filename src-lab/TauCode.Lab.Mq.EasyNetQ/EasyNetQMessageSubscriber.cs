@@ -22,8 +22,6 @@ namespace TauCode.Lab.Mq.EasyNetQ
 
         #endregion
 
-
-
         #region Overridden
 
         protected override void InitImpl()

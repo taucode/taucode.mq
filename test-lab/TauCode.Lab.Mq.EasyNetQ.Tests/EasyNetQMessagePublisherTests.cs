@@ -26,12 +26,12 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         // todo: ctor(string name, string connectionString)
         // - happy path, connection string equals to what we passed, null accepted also.
 
-        // todo: IMessagePublisher.ConnectionString
+        // todo: IEasyNetQMessagePublisher.ConnectionString
         // - when set, changes, null is also ok.
         // - when running, cannot be set, but can be read.
         // - when disposed, cannot be set, but can be read.
 
-        // todo: IMessagePublisher.Publish(IMessage)
+        // todo: IEasyNetQMessagePublisher.Publish(IMessage)
         // - happy path, publishes; subscription with no topic fires, subscriptions without topics don't fire.
         // - arg is null, throws
         // - arg is abstract class, throws
@@ -39,7 +39,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         // - not started, throws
         // - disposed, throws
 
-        // todo: IMessagePublisher.Publish(IMessage, string)
+        // todo: IEasyNetQMessagePublisher.Publish(IMessage, string)
         // - happy path, publishes, subscription fired with proper topic; with other topic - not fired; with no topic - not fired.
         // - arg is null, throws
         // - arg is abstract class, throws
@@ -48,10 +48,10 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         // - not started, throws
         // - disposed, throws
 
-        // todo: IMessagePublisher.Name
+        // todo: IEasyNetQMessagePublisher.Name
         // - after disposed, name still can be read.
 
-        // todo: IMessagePublisher.State
+        // todo: IEasyNetQMessagePublisher.State
         // - just created, eq. to 'stopped'
         // - started, eq. to 'started'
         // - stopped, eq. to 'stopped'
@@ -60,7 +60,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         // - disposed after stopped, eq. to 'stopped'
         // - disposed after disposed, eq. to 'disposed'
 
-        // todo: IMessagePublisher.IsDisposed
+        // todo: IEasyNetQMessagePublisher.IsDisposed
         // - just created, eq. to 'false'
         // - started, eq. to 'false'
         // - stopped, eq. to 'false'
@@ -69,23 +69,23 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         // - disposed after stopped, eq. to 'true'
         // - disposed after disposed, eq. to 'true'
 
-        // todo: IMessagePublisher.Start
+        // todo: IEasyNetQMessagePublisher.Start
         // - just created, starts
+        // - con str is null or empty, throws.
         // - started, throws
         // - stopped, starts
         // - disposed, throws
 
-        // todo: IMessagePublisher.Stop
+        // todo: IEasyNetQMessagePublisher.Stop
         // - just created, throws
         // - started, stops
         // - stopped, throws
         // - disposed, throws
 
-        // todo: IMessagePublisher.Dispose
+        // todo: IEasyNetQMessagePublisher.Dispose
         // - just created, disposes
         // - started, disposes
         // - stopped, disposes
         // - disposed, does nothing.
-
     }
 }

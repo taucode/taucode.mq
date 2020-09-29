@@ -11,4 +11,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src-lab\TauCode.Lab.Mq.EasyNetQ\TauCode.Lab.Mq.EasyNetQ.csproj" />
+  </ItemGroup>
+
 </Project>
