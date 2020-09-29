@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
+using TauCode.Mq.Exceptions;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {
@@ -14,7 +15,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Arrange
 
             // Act
-            IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
+            using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
 
             // Assert
             Assert.That(messagePublisher.ConnectionString, Is.Null);
@@ -29,7 +30,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Arrange
 
             // Act
-            IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher(connectionString);
+            using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher(connectionString);
 
             // Assert
             Assert.That(messagePublisher.ConnectionString, Is.EqualTo(connectionString));
@@ -46,7 +47,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void ConnectionString_NotStarted_CanBeSet(string connectionString)
         {
             // Arrange
-            IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
+            using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
 
             // Act
             messagePublisher.ConnectionString = connectionString;
@@ -58,11 +59,12 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         [Test]
         [TestCase(null)]
         [TestCase("")]
-        [TestCase("host=some-host")]
+        [TestCase("host=localhost")]
         public void ConnectionString_StoppedThenStarted_CanBeSet(string connectionString)
         {
             // Arrange
-            IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
+            using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
+            messagePublisher.ConnectionString = "host=localhost";
             messagePublisher.Start();
             messagePublisher.Stop();
 
@@ -74,29 +76,41 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void ConnectionString_StartedThenSet_ThrowsTodo()
+        public void ConnectionString_StartedThenSet_ThrowsMqException()
         {
             // Arrange
-            
-            // Act
+            using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
+            messagePublisher.ConnectionString = "host=localhost";
+            messagePublisher.Start();
 
-            // todo: when started, can be read, but not set.
+            // Act
+            var connectionString = messagePublisher.ConnectionString;
+
+            var ex = Assert.Throws<MqException>(() => messagePublisher.ConnectionString = "host=127.0.0.1");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(connectionString, Is.EqualTo("host=localhost"));
+            Assert.That(ex, Has.Message.EqualTo("Cannot set connection string while publisher is running."));
         }
 
         [Test]
-        public void ConnectionString_DisposedThenSet_ThrowsTodo()
+        public void ConnectionString_DisposedThenSet_ThrowsObjectDisposedException()
         {
             // Arrange
+            using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
+            messagePublisher.ConnectionString = "host=localhost";
+            messagePublisher.Name = "my-publisher";
 
             // Act
+            messagePublisher.Dispose();
+            var connectionString = messagePublisher.ConnectionString;
 
-            // todo - when disposed, cannot be set, but can be read.
+            var ex = Assert.Throws<ObjectDisposedException>(() => messagePublisher.ConnectionString = "host=127.0.0.1");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(connectionString, Is.EqualTo("host=localhost"));
+            Assert.That(ex, Has.Message.StartWith("Cannot set connection string for disposed publisher."));
+            Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
         }
 
         #endregion

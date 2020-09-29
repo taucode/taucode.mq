@@ -1,6 +1,9 @@
 ﻿using EasyNetQ.NonGeneric;
+using System;
 using TauCode.Mq;
 using TauCode.Mq.Abstractions;
+using TauCode.Mq.Exceptions;
+using TauCode.Working;
 using IBus = EasyNetQ.IBus;
 using RabbitHutch = EasyNetQ.RabbitHutch;
 
@@ -10,6 +13,7 @@ namespace TauCode.Lab.Mq.EasyNetQ
     {
         #region Fields
 
+        private string _connectionString;
         private IBus _bus;
 
         #endregion
@@ -54,7 +58,24 @@ namespace TauCode.Lab.Mq.EasyNetQ
 
         #region IEasyNetQMessagePublisher Members
 
-        public string ConnectionString { get; set; }
+        public string ConnectionString
+        {
+            get => _connectionString;
+            set
+            {
+                if (this.State != WorkerState.Stopped)
+                {
+                    throw new MqException("Cannot set connection string while publisher is running.");
+                }
+
+                if (this.IsDisposed)
+                {
+                    throw new ObjectDisposedException(this.Name, "Cannot set connection string for disposed publisher.");
+                }
+
+                _connectionString = value;
+            }
+        }
 
         #endregion
     }
