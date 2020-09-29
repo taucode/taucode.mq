@@ -30,29 +30,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src-lab", "src-lab", "{C711
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-lab", "test-lab", "{40C8B04B-67A8-4544-AA62-0D660D3DADCC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Lab.Mq.EasyNetQ", "src-lab\TauCode.Lab.Mq.EasyNetQ\TauCode.Lab.Mq.EasyNetQ.csproj", "{1B581F7F-5C20-4A63-9D11-6AA5901525DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Lab.Mq.EasyNetQ", "src-lab\TauCode.Lab.Mq.EasyNetQ\TauCode.Lab.Mq.EasyNetQ.csproj", "{1B581F7F-5C20-4A63-9D11-6AA5901525DD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-zoo", "test-zoo", "{150858B5-9A89-4915-B937-98951239B21D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.Zoo.UsersApp", "test-zoo\TauCode.Mq.Zoo.UsersApp\TauCode.Mq.Zoo.UsersApp.csproj", "{1B46002B-BF6C-4F95-A920-760684F65B4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.Zoo.UsersApp", "test-zoo\TauCode.Mq.Zoo.UsersApp\TauCode.Mq.Zoo.UsersApp.csproj", "{1B46002B-BF6C-4F95-A920-760684F65B4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.Zoo.Mailer", "test-zoo\TauCode.Mq.Zoo.Mailer\TauCode.Mq.Zoo.Mailer.csproj", "{88B7D9DC-9E6A-42A9-901C-E143CCB6B6B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.Zoo.Mailer", "test-zoo\TauCode.Mq.Zoo.Mailer\TauCode.Mq.Zoo.Mailer.csproj", "{88B7D9DC-9E6A-42A9-901C-E143CCB6B6B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.Zoo", "test-zoo\TauCode.Mq.Zoo\TauCode.Mq.Zoo.csproj", "{E4238944-F7B6-4C8A-A4AD-61EAAE428DC5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.Zoo", "test-zoo\TauCode.Mq.Zoo\TauCode.Mq.Zoo.csproj", "{E4238944-F7B6-4C8A-A4AD-61EAAE428DC5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Lab.Mq.Autofac", "src-lab\TauCode.Lab.Mq.Autofac\TauCode.Lab.Mq.Autofac.csproj", "{98C6673E-38A5-4B72-8FA1-47339420C3D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Lab.Mq.Autofac", "src-lab\TauCode.Lab.Mq.Autofac\TauCode.Lab.Mq.Autofac.csproj", "{98C6673E-38A5-4B72-8FA1-47339420C3D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Lab.Mq.EasyNetQ.Cli", "src-lab\TauCode.Lab.Mq.EasyNetQ.Cli\TauCode.Lab.Mq.EasyNetQ.Cli.csproj", "{51B4EB2F-AA97-4518-8F51-B36B9D53C150}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Lab.Mq.EasyNetQ.Cli", "src-lab\TauCode.Lab.Mq.EasyNetQ.Cli\TauCode.Lab.Mq.EasyNetQ.Cli.csproj", "{51B4EB2F-AA97-4518-8F51-B36B9D53C150}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Lab.Mq.NHibernate", "src-lab\TauCode.Lab.Mq.NHibernate\TauCode.Lab.Mq.NHibernate.csproj", "{229313A4-C771-40AD-9EA6-7A41AFB99FE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Lab.Mq.NHibernate", "src-lab\TauCode.Lab.Mq.NHibernate\TauCode.Lab.Mq.NHibernate.csproj", "{229313A4-C771-40AD-9EA6-7A41AFB99FE6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Lab.Mq.Testing", "src-lab\TauCode.Lab.Mq.Testing\TauCode.Lab.Mq.Testing.csproj", "{FC995C71-270A-413B-873E-BC2BFB2C38EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Lab.Mq.Testing", "src-lab\TauCode.Lab.Mq.Testing\TauCode.Lab.Mq.Testing.csproj", "{FC995C71-270A-413B-873E-BC2BFB2C38EF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.Tests", "test\TauCode.Mq.Tests\TauCode.Mq.Tests.csproj", "{F08E182B-CF8D-4039-8A82-4F3FE60558D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.Tests", "test\TauCode.Mq.Tests\TauCode.Mq.Tests.csproj", "{F08E182B-CF8D-4039-8A82-4F3FE60558D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Lab.Mq.Testing.Tests", "test-lab\TauCode.Lab.Mq.Testing.Tests\TauCode.Lab.Mq.Testing.Tests.csproj", "{65AD1EBC-0B2A-49AC-8D87-29851E452732}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Lab.Mq.Testing.Tests", "test-lab\TauCode.Lab.Mq.Testing.Tests\TauCode.Lab.Mq.Testing.Tests.csproj", "{65AD1EBC-0B2A-49AC-8D87-29851E452732}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Mq.Zoo.XenaConsole", "test-zoo\TauCode.Mq.Zoo.XenaConsole\TauCode.Mq.Zoo.XenaConsole.csproj", "{303E8A07-7F8C-4DA5-8F86-7C126F9F5003}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.Zoo.XenaConsole", "test-zoo\TauCode.Mq.Zoo.XenaConsole\TauCode.Mq.Zoo.XenaConsole.csproj", "{303E8A07-7F8C-4DA5-8F86-7C126F9F5003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TauCode.Lab.Mq.EasyNetQ.Tests", "test-lab\TauCode.Lab.Mq.EasyNetQ.Tests\TauCode.Lab.Mq.EasyNetQ.Tests.csproj", "{6DF0BE2A-F9C3-40E5-A85C-BB2A0D5AF568}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -108,6 +110,10 @@ Global
 		{303E8A07-7F8C-4DA5-8F86-7C126F9F5003}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{303E8A07-7F8C-4DA5-8F86-7C126F9F5003}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{303E8A07-7F8C-4DA5-8F86-7C126F9F5003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DF0BE2A-F9C3-40E5-A85C-BB2A0D5AF568}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DF0BE2A-F9C3-40E5-A85C-BB2A0D5AF568}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DF0BE2A-F9C3-40E5-A85C-BB2A0D5AF568}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DF0BE2A-F9C3-40E5-A85C-BB2A0D5AF568}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -125,6 +131,7 @@ Global
 		{F08E182B-CF8D-4039-8A82-4F3FE60558D4} = {585AC245-8B6E-4F5E-8EEF-D4125EF88880}
 		{65AD1EBC-0B2A-49AC-8D87-29851E452732} = {40C8B04B-67A8-4544-AA62-0D660D3DADCC}
 		{303E8A07-7F8C-4DA5-8F86-7C126F9F5003} = {150858B5-9A89-4915-B937-98951239B21D}
+		{6DF0BE2A-F9C3-40E5-A85C-BB2A0D5AF568} = {40C8B04B-67A8-4544-AA62-0D660D3DADCC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CA6859C8-B1CF-4CDF-A5FE-24E4FF8F85B8}

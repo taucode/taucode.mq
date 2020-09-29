@@ -341,9 +341,10 @@ namespace TauCode.Mq
             if (string.IsNullOrEmpty(topic))
             {
                 throw new ArgumentException(
-                    $"'{nameof(topic)}' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' method.",
+                    $"'{nameof(topic)}' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' overload.",
                     nameof(topic));
             }
+
 
             throw new NotImplementedException();
         }

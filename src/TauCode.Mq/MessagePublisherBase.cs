@@ -54,10 +54,13 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(message));
             }
 
-            if (string.IsNullOrWhiteSpace(topic))
+            if (string.IsNullOrEmpty(topic))
             {
-                throw new ArgumentException("Topic cannot be empty or white-space.", nameof(topic));
+                throw new ArgumentException(
+                    $"'{nameof(topic)}' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload.",
+                    nameof(topic));
             }
+
 
             this.PublishImpl(message, topic);
         }
