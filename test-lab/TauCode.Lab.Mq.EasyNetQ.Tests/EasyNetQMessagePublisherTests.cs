@@ -134,24 +134,30 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void PublishIMessage_ArgumentIsNull_ThrowsTodo()
+        public void PublishIMessage_ArgumentIsNull_ThrowsArgumentNullException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
 
             // Act
-
-            // todo - arg is null, throws
+            var ex = Assert.Throws<ArgumentNullException>(() => publisher.Publish(null));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
         [Test]
         public void PublishIMessage_ArgumentIsNotClass_ThrowsArgumentException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher();
-            publisher.ConnectionString = "host=localhost";
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
             publisher.Start();
 
             // Act
@@ -448,82 +454,114 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Arrange
 
             // Act
-            // todo - just created, eq. to 'false'
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.IsDisposed, Is.False);
         }
 
         [Test]
         public void IsDisposed_Started_EqualsToFalse()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
 
             // Act
-            // todo - started, eq. to 'false'
+            publisher.Start();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.IsDisposed, Is.False);
         }
 
         [Test]
         public void IsDisposed_Stopped_EqualsToFalse()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
 
             // Act
-            // todo - stopped, eq. to 'false'
+            publisher.Stop();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.IsDisposed, Is.False);
         }
 
         [Test]
         public void IsDisposed_DisposedJustAfterCreation_EqualsToTrue()
         {
             // Arrange
-
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            
             // Act
-            // todo - disposed just after creation, eq. to 'true'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.IsDisposed, Is.True);
         }
 
         [Test]
         public void IsDisposed_DisposedAfterStarted_EqualsToTrue()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
 
             // Act
-            // todo - disposed after started, eq. to 'true'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.IsDisposed, Is.True);
         }
 
         [Test]
         public void IsDisposed_DisposedAfterStopped_EqualsToTrue()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
+            publisher.Stop();
 
             // Act
-            // todo - disposed after stopped, eq. to 'true'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.IsDisposed, Is.True);
         }
 
         [Test]
         public void IsDisposed_DisposedAfterDisposed_EqualsToTrue()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Dispose();
 
             // Act
-            // todo - disposed after disposed, eq. to 'true'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.IsDisposed, Is.True);
         }
 
         #endregion
