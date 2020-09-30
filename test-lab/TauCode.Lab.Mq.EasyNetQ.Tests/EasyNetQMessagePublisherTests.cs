@@ -1,5 +1,8 @@
-﻿using NUnit.Framework;
+﻿using EasyNetQ;
+using Newtonsoft.Json;
+using NUnit.Framework;
 using System;
+using System.Threading.Tasks;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
@@ -127,10 +130,8 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Act
 
-            // todo - happy path, publishes; subscription with no topic fires, subscriptions without topics don't fire.
-
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass($"See '{nameof(PublishIMessageString_ValidStateAndArguments_PublishesAndProperSubscriberHandles)}', both methods are UT'ed there.");
         }
 
         [Test]
@@ -164,21 +165,34 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new StructMessage()));
 
             // Assert
-            Assert.That(ex, Has.Message.StartWith($"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
+            Assert.That(ex,
+                Has.Message.StartWith(
+                    $"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
             Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
         [Test]
-        public void PublishIMessage_ArgumentPropertyThrows_Todo()
+        public void PublishIMessage_ArgumentPropertyThrows_ThrowsJsonSerializationException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
 
             // Act
-
-            // todo - arg throws when props queried, will EasyNetQ handle this?
+            var ex = Assert.Throws<JsonSerializationException>(() =>
+            {
+                publisher.Publish(new ThrowPropertyMessage
+                {
+                    BadProperty = "bad",
+                });
+            });
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.InnerException, Is.TypeOf<NotSupportedException>());
+            Assert.That(ex.InnerException, Has.Message.EqualTo("Property is bad!"));
         }
 
         [Test]
@@ -221,16 +235,63 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region Publish(IMessage, string)
 
         [Test]
-        public void PublishIMessageString_ValidStateAndArguments_PublishesAndProperSubscriberHandles()
+        public async Task PublishIMessageString_ValidStateAndArguments_PublishesAndProperSubscriberHandles()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
+
+            string name = null;
+            string nameWithTopic = null;
+
+            string name1;
+            string nameWithTopic1;
+
+            string name2;
+            string nameWithTopic2;
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+
+            var subId1 = Guid.NewGuid().ToString();
+            using var sub1 = bus.Subscribe<HelloMessage>(subId1, message => name = message.Name);
+
+            var subId2 = Guid.NewGuid().ToString();
+            using var sub2 = bus.Subscribe<HelloMessage>(
+                subId2,
+                message => nameWithTopic = message.Name,
+                configuration => configuration.WithTopic("some-topic"));
 
             // Act
+            publisher.Publish(new HelloMessage
+                {
+                    Name = "mia",
+                },
+                "some-topic");
 
-            // todo - happy path, publishes, subscription fired with proper topic; with other topic - not fired; with no topic - not fired.
+            await Task.Delay(100);
+
+            name1 = name;
+            nameWithTopic1 = nameWithTopic;
+
+            publisher.Publish(new HelloMessage
+            {
+                Name = "deserea",
+            });
+
+            await Task.Delay(100);
+
+            name2 = name;
+            nameWithTopic2 = nameWithTopic;
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(name1, Is.EqualTo("mia"));
+            Assert.That(nameWithTopic1, Is.EqualTo("mia"));
+
+            Assert.That(name2, Is.EqualTo("deserea"));
+            Assert.That(nameWithTopic2, Is.EqualTo("mia"));
         }
 
         [Test]
@@ -264,7 +325,9 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new StructMessage()));
 
             // Assert
-            Assert.That(ex, Has.Message.StartWith($"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
+            Assert.That(ex,
+                Has.Message.StartWith(
+                    $"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
             Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
@@ -284,7 +347,9 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new HelloMessage(), badTopic));
 
             // Assert
-            Assert.That(ex, Has.Message.StartWith("'topic' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload."));
+            Assert.That(ex,
+                Has.Message.StartWith(
+                    "'topic' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload."));
             Assert.That(ex.ParamName, Is.EqualTo("topic"));
         }
 
@@ -570,7 +635,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             {
                 ConnectionString = "host=localhost"
             };
-            
+
             // Act
             publisher.Dispose();
 
@@ -685,7 +750,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Start());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Started)."));
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
         }
 
         [Test]
