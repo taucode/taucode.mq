@@ -115,7 +115,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             Assert.That(connectionString, Is.EqualTo("host=localhost"));
-            Assert.That(ex, Has.Message.StartWith("Cannot set connection string for disposed publisher."));
             Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
         }
 

@@ -76,7 +76,7 @@ namespace TauCode.Lab.Mq.EasyNetQ
 
                 if (this.IsDisposed)
                 {
-                    throw new ObjectDisposedException(this.Name, "Cannot set connection string for disposed publisher.");
+                    throw new ObjectDisposedException(this.Name);
                 }
 
                 _connectionString = value;

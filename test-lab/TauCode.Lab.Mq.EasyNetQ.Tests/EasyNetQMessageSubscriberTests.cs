@@ -1,5 +1,9 @@
 ﻿using NUnit.Framework;
 using System;
+using TauCode.Lab.Mq.EasyNetQ.Tests.ContextFactory;
+using TauCode.Mq.Exceptions;
+using TauCode.Working;
+using TauCode.Working.Exceptions;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {
@@ -67,12 +71,14 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void ConnectionString_NotStarted_CanBeSet(string connectionString)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory());
 
             // Act
-            
+            subscriber.ConnectionString = connectionString;
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.ConnectionString, Is.EqualTo(connectionString));
         }
 
         [Test]
@@ -82,37 +88,55 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void ConnectionString_StoppedThenStarted_CanBeSet(string connectionString)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
+            subscriber.ConnectionString = "host=localhost";
+            subscriber.Start();
+            subscriber.Stop();
 
             // Act
+            subscriber.ConnectionString = connectionString;
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.ConnectionString, Is.EqualTo(connectionString));
         }
 
         [Test]
-        public void ConnectionString_StartedThenSet_ThrowsTodo()
+        public void ConnectionString_StartedThenSet_ThrowsMqException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
+            subscriber.ConnectionString = "host=localhost";
+            subscriber.Start();
 
             // Act
+            var connectionString = subscriber.ConnectionString;
 
-            // todo: when started, can be read, but not set.
+            var ex = Assert.Throws<MqException>(() => subscriber.ConnectionString = "host=127.0.0.1");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(connectionString, Is.EqualTo("host=localhost"));
+            Assert.That(ex, Has.Message.EqualTo("Cannot set connection string while subscriber is running."));
         }
 
         [Test]
         public void ConnectionString_DisposedThenSet_ThrowsTodo()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost")
+            {
+                Name = "sub",
+            };
 
             // Act
+            subscriber.Dispose();
 
-            // todo - when disposed, cannot be set, but can be read.
+            var ex = Assert.Throws<ObjectDisposedException>(() => subscriber.ConnectionString = "host=127.0.0.1");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("sub"));
+            Assert.That(subscriber.Name, Is.EqualTo("sub"));
         }
 
         #endregion
@@ -1054,34 +1078,43 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Arrange
 
             // Act
-            // todo - just created, eq. to 'stopped'
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
         public void State_Started_EqualsToStarted()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - started, eq. to 'started'
+            subscriber.Start();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.State, Is.EqualTo(WorkerState.Running));
         }
 
         [Test]
         public void State_Stopped_EqualsToStopped()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+            subscriber.Start();
 
             // Act
-            // todo - stopped, eq. to 'stopped'
+            subscriber.Stop();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
         }
 
 
@@ -1089,48 +1122,64 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void State_DisposedJustAfterCreation_EqualsToStopped()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
 
             // Act
-            // todo - disposed just after creation, eq. to 'stopped'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
         public void State_DisposedAfterStarted_EqualsToStopped()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+            subscriber.Start();
 
             // Act
-            // todo - disposed after started, eq. to 'stopped'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
         public void State_DisposedAfterStopped_EqualsToStopped()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+            subscriber.Start();
+            subscriber.Stop();
 
             // Act
-            // todo - disposed after stopped, eq. to 'stopped'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
         public void State_DisposedAfterDisposed_EqualsToStopped()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+            subscriber.Start();
+            subscriber.Stop();
+            subscriber.Dispose();
 
             // Act
-            // todo - disposed after disposed, eq. to 'disposed'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         #endregion
@@ -1290,15 +1339,20 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region Stop()
 
         [Test]
-        public void Stop_JustCreated_ThrowsTodo()
+        public void Stop_JustCreated_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
 
             // Act
-            // todo - just created, throws
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Stop());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
         }
 
         [Test]
@@ -1314,15 +1368,23 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Stop_Stopped_ThrowsTodo()
+        public void Stop_Stopped_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
+
+            subscriber.Start();
+            subscriber.Stop();
 
             // Act
-            // todo - stopped, throws
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Stop());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
         }
 
         [Test]
