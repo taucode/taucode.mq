@@ -2,6 +2,7 @@
 using System;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
 using TauCode.Mq.Exceptions;
+using TauCode.Working;
 using TauCode.Working.Exceptions;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
@@ -343,34 +344,50 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Arrange
 
             // Act
-            // todo - just created, eq. to 'stopped'
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
-        public void State_Started_EqualsToStarted()
+        public void State_Started_EqualsToRunning()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
 
             // Act
-            // todo - started, eq. to 'started'
+            publisher.Start();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.State, Is.EqualTo(WorkerState.Running));
         }
 
         [Test]
         public void State_Stopped_EqualsToStopped()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
 
             // Act
-            // todo - stopped, eq. to 'stopped'
+            publisher.Stop();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
@@ -517,12 +534,17 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Start_JustCreated_Starts()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
 
             // Act
-            // todo - just created, starts
+            publisher.Start();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass();
         }
 
         [Test]
@@ -538,27 +560,42 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Start_Started_ThrowsTodo()
+        public void Start_Started_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
 
             // Act
-            // todo - started, throws
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Start());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Started)."));
         }
 
         [Test]
         public void Start_Stopped_Starts()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
+            publisher.Stop();
 
             // Act
-            // todo - stopped, starts
+            publisher.Start();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass();
         }
 
         [Test]
@@ -604,12 +641,19 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Stop_Started_Stops()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
 
             // Act
-            // todo - started, stops
+            publisher.Stop();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass();
         }
 
         [Test]
@@ -658,48 +702,75 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Dispose_JustCreated_Disposes()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
 
             // Act
-            // todo - just created, disposes
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass("Test passed.");
         }
 
         [Test]
         public void Dispose_Started_Disposes()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
 
             // Act
-            // todo - started, disposes
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass("Test passed.");
         }
 
         [Test]
-        public void Disposes_Stopped_Disposes()
+        public void Dispose_Stopped_Disposes()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
+            publisher.Stop();
 
             // Act
-            // todo - stopped, disposes
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass("Test passed.");
         }
 
         [Test]
         public void Disposes_Disposed_DoesNothing()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Dispose();
 
             // Act
-            // todo - disposed, does nothing.
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass("Test passed.");
         }
 
         #endregion
