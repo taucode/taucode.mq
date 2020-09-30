@@ -185,8 +185,10 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void PublishIMessage_NotStarted_ThrowsMqException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher();
-            publisher.ConnectionString = "host=localhost";
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
 
             // Act
             var ex = Assert.Throws<MqException>(() => publisher.Publish(new HelloMessage()));
@@ -232,81 +234,93 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void PublishIMessageString_MessageIsNull_ThrowsTodo()
+        public void PublishIMessageString_MessageIsNull_ThrowsArgumentNullException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
 
             // Act
-
-            // todo - message is null, throws
+            var ex = Assert.Throws<ArgumentNullException>(() => publisher.Publish(null, "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
         [Test]
-        public void PublishIMessageString_MessageIsAbstract_ThrowsTodo()
+        public void PublishIMessageString_MessageIsNotClass_ThrowsArgumentException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
 
             // Act
-
-            // todo - message is abstract class, throws
+            var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new StructMessage()));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
+            Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
         [Test]
-        public void PublishIMessageString_MessageIsNotClass_ThrowsTodo()
+        [TestCase(null)]
+        [TestCase("")]
+        public void PublishIMessageString_TopicIsNullOrEmpty_ThrowsTodo(string badTopic)
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
 
             // Act
-
-            // todo - message is not class, throws
+            var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new HelloMessage(), badTopic));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith("'topic' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload."));
+            Assert.That(ex.ParamName, Is.EqualTo("topic"));
         }
 
         [Test]
-        public void PublishIMessageString_TopicIsNullOrEmpty_ThrowsTodo()
+        public void PublishIMessageString_NotStarted_ThrowsMqException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
 
             // Act
-
-            // todo - topic is null or empty, throws
+            var ex = Assert.Throws<MqException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Publisher not started."));
         }
 
         [Test]
-        public void PublishIMessageString_NotStarted_ThrowsTodo()
+        public void PublishIMessageString_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Dispose();
 
             // Act
-
-            // todo - not started, throws
-
-            // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void PublishIMessageString_Disposed_ThrowsTodo()
-        {
-            // Arrange
-
-            // Act
-
-            // todo - disposed, throws
+            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Publish(new HelloMessage(), "my-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
         }
 
         #endregion
@@ -317,27 +331,50 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Name_NotDisposed_IsChangedAndCanBeRead()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                Name = "pub_created",
+                ConnectionString = "host=localhost"
+            };
 
             // Act
+            var nameCreated = publisher.Name;
 
-            // todo - when set, reflects, can be any value
+            publisher.Start();
+            publisher.Name = "pub_started";
+
+            var nameStarted = publisher.Name;
+
+            publisher.Stop();
+            publisher.Name = "pub_stopped";
+
+            var nameStopped = publisher.Name;
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(nameCreated, Is.EqualTo("pub_created"));
+            Assert.That(nameStarted, Is.EqualTo("pub_started"));
+            Assert.That(nameStopped, Is.EqualTo("pub_stopped"));
         }
 
         [Test]
         public void Name_Disposed_CanOnlyBeRead()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                Name = "name1"
+            };
 
             // Act
+            publisher.Dispose();
 
-            // todo - after disposed, name cannot be set.
-            // todo - after disposed, name still can be read
+            var name = publisher.Name;
+            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Name = "name2");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(name, Is.EqualTo("name1"));
+            Assert.That(publisher.Name, Is.EqualTo("name1"));
+            Assert.That(ex.ObjectName, Is.EqualTo("name1"));
         }
 
         #endregion
@@ -400,48 +437,77 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void State_DisposedJustAfterCreation_EqualsToStopped()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
 
             // Act
-            // todo - disposed just after creation, eq. to 'stopped'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
         public void State_DisposedAfterStarted_EqualsToStopped()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
 
             // Act
-            // todo - disposed after started, eq. to 'stopped'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
         public void State_DisposedAfterStopped_EqualsToStopped()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
+            publisher.Stop();
 
             // Act
-            // todo - disposed after stopped, eq. to 'stopped'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         [Test]
         public void State_DisposedAfterDisposed_EqualsToStopped()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
+            publisher.Stop();
+            publisher.Dispose();
 
             // Act
-            // todo - disposed after disposed, eq. to 'disposed'
+            publisher.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(publisher.State, Is.EqualTo(WorkerState.Stopped));
         }
 
         #endregion
@@ -586,15 +652,21 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Start_ConnectionStringIsNullOrEmpty_ThrowsTodo()
+        [TestCase(null)]
+        [TestCase("")]
+        public void Start_ConnectionStringIsNullOrEmpty_ThrowsMqException(string badConnectionString)
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = badConnectionString
+            };
 
             // Act
-            // todo - con str is null or empty, throws.
+            var ex = Assert.Throws<MqException>(() => publisher.Start());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Cannot start: connection string is null or empty."));
         }
 
         [Test]

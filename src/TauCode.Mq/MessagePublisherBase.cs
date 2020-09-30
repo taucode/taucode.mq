@@ -3,6 +3,7 @@ using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
+// todo: nice looking
 namespace TauCode.Mq
 {
     public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
@@ -77,6 +78,13 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(message));
             }
 
+            var type = message.GetType();
+
+            if (!type.IsClass)
+            {
+                throw new ArgumentException($"Cannot publish instance of '{type.FullName}'. Message type must be a class.", nameof(message));
+            }
+
             if (string.IsNullOrEmpty(topic))
             {
                 throw new ArgumentException(
@@ -84,6 +92,8 @@ namespace TauCode.Mq
                     nameof(topic));
             }
 
+            this.CheckNotDisposed();
+            this.CheckStarted();
 
             this.PublishImpl(message, topic);
         }
