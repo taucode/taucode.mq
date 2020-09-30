@@ -1,6 +1,8 @@
 ﻿using NUnit.Framework;
 using System;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
 using TauCode.Mq.Exceptions;
+using TauCode.Working.Exceptions;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {
@@ -144,29 +146,19 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void PublishIMessage_ArgumentIsAbstract_ThrowsTodo()
+        public void PublishIMessage_ArgumentIsNotClass_ThrowsArgumentException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher();
+            publisher.ConnectionString = "host=localhost";
+            publisher.Start();
 
             // Act
-
-            // todo - arg is abstract class, throws
-
-            // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void PublishIMessage_ArgumentIsNotClass_ThrowsTodo()
-        {
-            // Arrange
-
-            // Act
-
-            // todo - arg is struct, throws
+            var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new StructMessage()));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
+            Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
         [Test]
@@ -183,29 +175,36 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void PublishIMessage_NotStarted_ThrowsTodo()
+        public void PublishIMessage_NotStarted_ThrowsMqException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher();
+            publisher.ConnectionString = "host=localhost";
 
             // Act
-
-            // todo - not started, throws
+            var ex = Assert.Throws<MqException>(() => publisher.Publish(new HelloMessage()));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Publisher not started."));
         }
 
         [Test]
-        public void PublishIMessage_Disposed_ThrowsTodo()
+        public void PublishIMessage_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Dispose();
 
             // Act
-
-            // todo - disposed, throws
+            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Publish(new HelloMessage()));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
         }
 
         #endregion
@@ -563,15 +562,21 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Start_Disposed_ThrowsTodo()
+        public void Start_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+            publisher.Dispose();
 
             // Act
-            // todo - disposed, throws
+            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Start());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
         }
 
         #endregion
@@ -579,15 +584,20 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region Stop()
 
         [Test]
-        public void Stop_JustCreated_ThrowsTodo()
+        public void Stop_JustCreated_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
 
             // Act
-            // todo - just created, throws
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Stop());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
         }
 
         [Test]
@@ -603,27 +613,41 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Stop_Stopped_ThrowsTodo()
+        public void Stop_Stopped_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Start();
+            publisher.Stop();
 
             // Act
-            // todo - stopped, throws
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Stop());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
         }
 
         [Test]
-        public void Stop_Disposed_ThrowsTodo()
+        public void Stop_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+            publisher.Dispose();
 
             // Act
-            // todo - disposed, throws
+            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Stop());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
         }
 
         #endregion

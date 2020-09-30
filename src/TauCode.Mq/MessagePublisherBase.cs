@@ -1,8 +1,8 @@
 ﻿using System;
 using TauCode.Mq.Abstractions;
+using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
-// todo clean
 namespace TauCode.Mq
 {
     public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
@@ -32,8 +32,14 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(message));
             }
 
-            //this.CheckStateForOperation(WorkerState.Running);
+            var type = message.GetType();
 
+            if (!type.IsClass)
+            {
+                throw new ArgumentException($"Cannot publish instance of '{type.FullName}'. Message type must be a class.", nameof(message));
+            }
+
+            this.CheckNotDisposed();
             this.CheckStarted();
 
             this.PublishImpl(message);
@@ -43,7 +49,24 @@ namespace TauCode.Mq
         {
             if (this.State != WorkerState.Running)
             {
-                throw new NotImplementedException();
+                throw new MqException("Publisher not started.");
+            }
+        }
+
+        private void CheckStopped(string operationName)
+        {
+            if (this.State != WorkerState.Stopped)
+            {
+                throw new MqException($"Cannot perform this operation while publisher is running ({operationName}).");
+            }
+        }
+
+        private void CheckNotDisposed()
+        {
+            if (this.IsDisposed)
+            {
+                var name = this.Name ?? this.GetType().FullName;
+                throw new ObjectDisposedException(name);
             }
         }
 
