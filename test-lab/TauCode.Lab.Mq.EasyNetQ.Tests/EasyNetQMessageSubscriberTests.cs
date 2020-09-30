@@ -25,15 +25,15 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void ConstructorOneArgument_ArgumentIsNull_ThrowsTodo()
+        public void ConstructorOneArgument_ArgumentIsNull_ThrowsArgumentNullException()
         {
             // Arrange
 
             // Act
-            // todo - factory is null, throws
+            var ex = Assert.Throws<ArgumentNullException>(() => new EasyNetQMessageSubscriber(null));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("contextFactory"));
         }
 
         [Test]
