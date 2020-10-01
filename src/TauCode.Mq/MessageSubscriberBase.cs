@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
+using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
 namespace TauCode.Mq
@@ -49,7 +50,7 @@ namespace TauCode.Mq
             #region Fields
 
             private readonly bool _isAsync;
-            private readonly HashSet<Type> _messageHandlerTypes;
+            private readonly List<Type> _messageHandlerTypes;
             private readonly IMessageHandlerContextFactory _factory;
 
             #endregion
@@ -69,7 +70,7 @@ namespace TauCode.Mq
                 this.Topic = topic;
                 this.Tag = tag;
 
-                _messageHandlerTypes = new HashSet<Type>();
+                _messageHandlerTypes = new List<Type>();
 
                 if (isAsync)
                 {
@@ -87,7 +88,165 @@ namespace TauCode.Mq
 
             private void Handle(object message)
             {
-                throw new NotImplementedException();
+                for (var i = 0; i < _messageHandlerTypes.Count; i++)
+                {
+                    var messageHandlerType = _messageHandlerTypes[i];
+
+                    IMessageHandlerContext context = null;
+
+                    try
+                    {
+                        try
+                        {
+                            #region mocking the using(...) construct
+
+                            #region trying to create context
+
+                            try
+                            {
+                                context = _factory.CreateContext();
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new HandleException(
+                                    $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' threw an exception.",
+                                    ex,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            if (context == null)
+                            {
+                                throw new HandleException(
+                                    $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' returned 'null'.",
+                                    null,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            #endregion
+
+                            #region trying to begin context
+
+                            try
+                            {
+                                context.Begin();
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new HandleException(
+                                    $"Method 'Begin' of context '{context.GetType().FullName}' threw an exception.",
+                                    ex,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            #endregion
+
+                            object service;
+
+                            #region trying to get service which would be the handler
+
+                            try
+                            {
+                                service = context.GetService(messageHandlerType);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new HandleException(
+                                    $"Method 'GetService' of context '{context.GetType().FullName}' threw an exception.",
+                                    ex,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            #endregion
+
+                            #region check service is not null
+
+                            if (service == null)
+                            {
+                                throw new HandleException(
+                                    $"Method 'GetService' of context '{context.GetType().FullName}' returned 'null'.",
+                                    null,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            #endregion
+
+                            #region check service is of proper type
+
+                            if (service.GetType() != messageHandlerType)
+                            {
+                                throw new HandleException(
+                                    $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.",
+                                    null,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            #endregion
+
+                            IMessageHandler handler = (IMessageHandler)service;
+
+                            #region trying to invoke handler
+
+                            try
+                            {
+                                handler.Handle(message);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new HandleException(
+                                    $"Method 'Handle' threw an exception.",
+                                    ex,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            #endregion
+
+                            #region trying to end context
+
+                            try
+                            {
+                                context.End();
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new HandleException(
+                                    $"Method 'End' of context '{context.GetType().FullName}' threw an exception.",
+                                    ex,
+                                    messageHandlerType,
+                                    i);
+                            }
+
+                            #endregion
+
+                            #endregion
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                context?.Dispose();
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new HandleException(
+                                    $"Method 'Dispose' of context '{context?.GetType().FullName}' threw an exception.",
+                                    ex,
+                                    messageHandlerType,
+                                    i);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"One of the handlers failed for message of type '{message.GetType().FullName}'."); // todo: correlation id, createdAt, etc.
+                    }
+                }
             }
 
             private async Task HandleAsync(object message)
@@ -195,12 +354,14 @@ namespace TauCode.Mq
         {
             if (!messageHandlerType.IsClass)
             {
-                throw new ArgumentException($"'{nameof(messageHandlerType)}' must represent a class.", nameof(messageHandlerType));
+                throw new ArgumentException($"'{nameof(messageHandlerType)}' must represent a class.",
+                    nameof(messageHandlerType));
             }
 
             if (messageHandlerType.IsAbstract)
             {
-                throw new ArgumentException($"'{nameof(messageHandlerType)}' cannot be abstract.", nameof(messageHandlerType));
+                throw new ArgumentException($"'{nameof(messageHandlerType)}' cannot be abstract.",
+                    nameof(messageHandlerType));
             }
 
             var syncList = new List<Type>();
@@ -222,11 +383,12 @@ namespace TauCode.Mq
                     }
                     else if (genericBase == typeof(IMessageHandler<>))
                     {
-                        throw new NotImplementedException();
+                        syncList.Add(messageHandlerType);
+                        messageType = iface.GetGenericArguments().Single();
                     }
                     else
                     {
-                        throw new NotImplementedException();
+                        // not our guy
                     }
                 }
                 else
@@ -245,7 +407,11 @@ namespace TauCode.Mq
             }
             else if (syncList.Count == 1)
             {
-                throw new NotImplementedException();
+                return new MessageHandlerInfo(
+                    messageType,
+                    false,
+                    syncList.Single(),
+                    Bundle.BuildTag(messageType, topic));
             }
             else
             {

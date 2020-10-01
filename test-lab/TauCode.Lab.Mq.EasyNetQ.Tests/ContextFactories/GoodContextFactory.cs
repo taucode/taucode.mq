@@ -1,7 +1,7 @@
 ﻿using System;
 using TauCode.Mq;
 
-namespace TauCode.Lab.Mq.EasyNetQ.Tests.ContextFactory
+namespace TauCode.Lab.Mq.EasyNetQ.Tests.ContextFactories
 {
     public class GoodContextFactory : IMessageHandlerContextFactory
     {

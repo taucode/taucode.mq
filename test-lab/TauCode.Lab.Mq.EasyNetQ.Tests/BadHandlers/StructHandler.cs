@@ -2,7 +2,7 @@
 using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
 using TauCode.Mq.Abstractions;
 
-namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers
+namespace TauCode.Lab.Mq.EasyNetQ.Tests.BadHandlers
 {
     public struct StructHandler : IMessageHandler<HelloMessage>
     {

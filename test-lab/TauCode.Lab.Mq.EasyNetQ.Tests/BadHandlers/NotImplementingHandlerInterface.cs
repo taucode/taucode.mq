@@ -2,11 +2,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
-using TauCode.Mq.Abstractions;
 
-namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers
+namespace TauCode.Lab.Mq.EasyNetQ.Tests.BadHandlers
 {
-    public class BothSyncAndAsyncHandler : IMessageHandler<HelloMessage>, IAsyncMessageHandler<HelloMessage>
+    public class NotImplementingHandlerInterface
     {
         public void Handle(HelloMessage message)
         {

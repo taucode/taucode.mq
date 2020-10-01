@@ -1,7 +1,17 @@
-﻿using NUnit.Framework;
+﻿using EasyNetQ;
+using NUnit.Framework;
+using Serilog;
 using System;
-using TauCode.Lab.Mq.EasyNetQ.Tests.ContextFactory;
+using System.Text;
+using System.Threading.Tasks;
+using TauCode.Extensions;
+using TauCode.Infrastructure.Time;
+using TauCode.Lab.Mq.EasyNetQ.Tests.BadHandlers;
+using TauCode.Lab.Mq.EasyNetQ.Tests.ContextFactories;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Contexts;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
+using TauCode.Mq;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 using TauCode.Working.Exceptions;
@@ -11,6 +21,24 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
     [TestFixture]
     public class EasyNetQMessageSubscriberTests
     {
+        private StringWriterWithEncoding _log;
+
+        [SetUp]
+        public void SetUp()
+        {
+            TimeProvider.Reset();
+
+            _log = new StringWriterWithEncoding(Encoding.UTF8);
+
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.TextWriter(_log)
+                .MinimumLevel
+                .Debug()
+                .CreateLogger();
+        }
+
+        private string GetLog() => _log.ToString();
+
         #region ctor
 
         [Test]
@@ -43,12 +71,15 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void ConstructorTwoArguments_ValidArguments_RunsOk()
         {
             // Arrange
+            var factory = new GoodContextFactory();
+            var connectionString = "host=localhost";
 
             // Act
-            // todo - happy path, connection string equals to what we passed, null accepted also.
+            using var subscriber = new EasyNetQMessageSubscriber(factory, connectionString);
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.ConnectionString, Is.EqualTo(connectionString));
+            Assert.That(subscriber.ContextFactory, Is.SameAs(factory));
         }
 
         [Test]
@@ -149,87 +180,251 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region ContextFactory
 
         [Test]
-        public void ContextFactory_ThrowsOnCreateContext_Todo()
+        public async Task ContextFactory_ThrowsOnCreateContext_LogsException()
         {
             // Arrange
+            IMessageHandlerContextFactory factory = new BadContextFactory(
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false);
+
+            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            subscriber.Start();
+
+            using IBus bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - see name of ut.
+            bus.Publish(
+                new HelloMessage
+                {
+                    Name = "Geki",
+                });
+
+            await Task.Delay(500);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain($"Method 'CreateContext' of factory '{typeof(BadContextFactory).FullName}' threw an exception."));
         }
 
         [Test]
-        public void ContextFactory_ReturnsNullOnCreateContext_Todo()
+        public async Task ContextFactory_ReturnsNullOnCreateContext_LogsException()
         {
             // Arrange
+            IMessageHandlerContextFactory factory = new BadContextFactory(
+                false,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false);
+
+            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            subscriber.Start();
+
+            using IBus bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - see name of ut.
+            bus.Publish(
+                new HelloMessage
+                {
+                    Name = "Geki",
+                });
+
+            await Task.Delay(500);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain($"Method 'CreateContext' of factory '{typeof(BadContextFactory).FullName}' returned 'null'."));
+        }
+
+        // todo: message handler failed once, next time goes well.
+
+        [Test]
+        public async Task ContextFactory_ContextBeginThrows_LogsException()
+        {
+            // Arrange
+            IMessageHandlerContextFactory factory = new BadContextFactory(
+                false,
+                false,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false);
+
+            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            subscriber.Start();
+
+            using IBus bus = RabbitHutch.CreateBus("host=localhost");
+
+            // Act
+            bus.Publish(
+                new HelloMessage
+                {
+                    Name = "Geki",
+                });
+
+            await Task.Delay(500);
+
+            // Assert
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Failed to begin."));
         }
 
         [Test]
-        public void ContextFactory_ContextBeginThrows_Todo()
+        public async Task ContextFactory_ContextEndThrows_LogsException()
         {
             // Arrange
+            IMessageHandlerContextFactory factory = new BadContextFactory(
+                false,
+                false,
+                false,
+                true,
+                false,
+                false,
+                false,
+                false);
+
+            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            subscriber.Start();
+
+            using IBus bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - IMessageHandlerContext.Begin() throws => todo.
+            bus.Publish(
+                new HelloMessage
+                {
+                    Name = "Geki",
+                });
+
+            await Task.Delay(500);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Failed to end."));
         }
 
         [Test]
-        public void ContextFactory_ContextEndThrows_Todo()
+        public async Task ContextFactory_ContextGetServiceThrows_LogsException()
         {
             // Arrange
+            IMessageHandlerContextFactory factory = new BadContextFactory(
+                false,
+                false,
+                false,
+                false,
+                true,
+                false,
+                false,
+                false);
+
+            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            subscriber.Start();
+
+            using IBus bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - IMessageHandlerContext.End() throws => todo.
+            bus.Publish(
+                new HelloMessage
+                {
+                    Name = "Geki",
+                });
+
+            await Task.Delay(500);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' threw an exception."));
+            Assert.That(log, Does.Contain("Failed to get service."));
         }
 
         [Test]
-        public void ContextFactory_ContextGetServiceThrows_Todo()
+        public async Task ContextFactory_ContextGetServiceReturnsNull_LogsException()
         {
             // Arrange
+            IMessageHandlerContextFactory factory = new BadContextFactory(
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+                false,
+                false);
+
+            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            subscriber.Start();
+
+            using IBus bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - IMessageHandlerContext.GetService() throws => todo.
+            bus.Publish(
+                new HelloMessage
+                {
+                    Name = "Geki",
+                });
+
+            await Task.Delay(500);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' returned 'null'."));
         }
 
         [Test]
-        public void ContextFactory_ContextGetServiceReturnsNull_Todo()
+        public async Task ContextFactory_ContextGetServiceReturnsBadResult_LogsException()
         {
             // Arrange
+            IMessageHandlerContextFactory factory = new BadContextFactory(
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+                false);
+
+            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            subscriber.Start();
+
+            using IBus bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - IMessageHandlerContext.GetService() returns null => todo.
+            bus.Publish(
+                new HelloMessage
+                {
+                    Name = "Geki",
+                });
+
+            await Task.Delay(500);
 
             // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void ContextFactory_ContextGetServiceReturnsBadResult_Todo()
-        {
-            // Arrange
-
-            // Act
-            // todo - IMessageHandlerContext.GetService() returns bad result (e.g. not IMessageHandler/IAsyncMessageHandler) => todo.
-
-            // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' returned wrong service of type '{typeof(ByeHandler).FullName}'."));
         }
 
         #endregion
@@ -1067,27 +1262,50 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Name_NotDisposed_IsChangedAndCanBeRead()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                Name = "sub_created",
+                ConnectionString = "host=localhost"
+            };
 
             // Act
+            var nameCreated = subscriber.Name;
 
-            // todo - when set, reflects, can be any value
+            subscriber.Start();
+            subscriber.Name = "sub_started";
+
+            var nameStarted = subscriber.Name;
+
+            subscriber.Stop();
+            subscriber.Name = "sub_stopped";
+
+            var nameStopped = subscriber.Name;
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(nameCreated, Is.EqualTo("sub_created"));
+            Assert.That(nameStarted, Is.EqualTo("sub_started"));
+            Assert.That(nameStopped, Is.EqualTo("sub_stopped"));
         }
 
         [Test]
         public void Name_Disposed_CanOnlyBeRead()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                Name = "name1"
+            };
 
             // Act
+            subscriber.Dispose();
 
-            // todo - after disposed, name cannot be set.
-            // todo - after disposed, name still can be read
+            var name = subscriber.Name;
+            var ex = Assert.Throws<ObjectDisposedException>(() => subscriber.Name = "name2");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(name, Is.EqualTo("name1"));
+            Assert.That(subscriber.Name, Is.EqualTo("name1"));
+            Assert.That(ex.ObjectName, Is.EqualTo("name1"));
         }
 
         #endregion
@@ -1366,15 +1584,22 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Start_Started_ThrowsTodo()
+        public void Start_Started_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Start();
 
             // Act
-            // todo - started, throws
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Start());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
         }
 
         [Test]
@@ -1390,15 +1615,21 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Start_Disposed_ThrowsTodo()
+        public void Start_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+            subscriber.Dispose();
 
             // Act
-            // todo - disposed, throws
+            var ex = Assert.Throws<ObjectDisposedException>(() => subscriber.Start());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("my-subscriber"));
         }
 
         #endregion

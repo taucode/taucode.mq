@@ -1,7 +1,7 @@
 ﻿using System;
 using TauCode.Mq.Abstractions;
 
-namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers
+namespace TauCode.Lab.Mq.EasyNetQ.Tests.BadHandlers
 {
     public class NonGenericHandler : IMessageHandler
     {

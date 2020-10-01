@@ -53,12 +53,17 @@ namespace TauCode.Lab.Mq.EasyNetQ
             if (subscriptionRequest.Handler != null)
             {
                 // got sync handler
-                throw new NotImplementedException();
+                var subscriptionId = Guid.NewGuid().ToString();
+                var handle = _bus.Subscribe(
+                    subscriptionRequest.MessageType,
+                    subscriptionId,
+                    subscriptionRequest.Handler);
+
+                return handle;
             }
             else
             {
                 // got async handler
-
                 var subscriptionId = Guid.NewGuid().ToString();
                 var handle = _bus.SubscribeAsync(
                     subscriptionRequest.MessageType,
