@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using TauCode.Lab.Mq.EasyNetQ.Tests.ContextFactory;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 using TauCode.Working.Exceptions;
@@ -16,12 +17,14 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void ConstructorOneArgument_ValidArgument_RunsOk()
         {
             // Arrange
+            var factory = new GoodContextFactory();
 
             // Act
-            // todo - happy path, check name, con.str, status etc.
+            using var subscriber = new EasyNetQMessageSubscriber(factory);
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.ConnectionString, Is.Null);
+            Assert.That(subscriber.ContextFactory, Is.SameAs(factory));
         }
 
         [Test]
@@ -49,15 +52,17 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void ConstructorTwoArguments_FactoryIsNull_ThrowsTodo()
+        public void ConstructorTwoArguments_FactoryArgumentIsNull_ThrowsArgumentNullException()
         {
             // Arrange
 
             // Act
-            // todo - factory is null, throws
+            var ex = Assert.Throws<ArgumentNullException>(() => new EasyNetQMessageSubscriber(
+                null,
+                "host=localhost"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("contextFactory"));
         }
 
         #endregion
@@ -232,7 +237,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region Subscribe(Type)
 
         [Test]
-        public void SubscribeType_SingleSyncHandler_HandlesMessagesWithoutTopic()
+        public void SubscribeType_SingleSyncHandler_HandlesMessagesWithAndWithoutTopic()
         {
             // Arrange
 
@@ -244,7 +249,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_MultipleSyncHandlers_HandleMessagesWithoutTopic()
+        public void SubscribeType_MultipleSyncHandlers_HandleMessagesWithAndWithoutTopic()
         {
             // Arrange
 
@@ -256,7 +261,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_SingleAsyncHandler_HandlesMessagesWithoutTopic()
+        public void SubscribeType_SingleAsyncHandler_HandlesMessagesWithAndWithoutTopic()
         {
             // Arrange
 
@@ -268,7 +273,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_MultipleAsyncHandlers_HandleMessagesWithoutTopic()
+        public void SubscribeType_MultipleAsyncHandlers_HandleMessagesWithAndWithoutTopic()
         {
             // Arrange
 
@@ -280,51 +285,68 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_TypeIsNull_ThrowsTodo()
+        public void SubscribeType_TypeIsNull_ThrowsArgumentNullException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is null => throws
+            var ex = Assert.Throws<ArgumentNullException>(() => subscriber.Subscribe(null));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
         }
 
         [Test]
-        public void SubscribeType_TypeIsAbstract_ThrowsTodo()
+        public void SubscribeType_TypeIsAbstract_ThrowsArgumentException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is abstract => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(AbstractHandler)));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' cannot be abstract."));
         }
 
         [Test]
-        public void SubscribeType_TypeIsNotClass_ThrowsTodo()
+        public void SubscribeType_TypeIsNotClass_ThrowsArgumentException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is not class => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(StructHandler)));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must represent a class."));
         }
 
         [Test]
-        public void SubscribeType_TypeIsNotGenericSyncOrAsyncHandler_ThrowsTodo()
+        [TestCase(typeof(NonGenericHandler))]
+        [TestCase(typeof(NotImplementingHandlerInterface))]
+        public void SubscribeType_TypeIsNotGenericSyncOrAsyncHandler_ThrowsArgumentException(Type badHandlerType)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>'. (Parameter 'messageHandlerType')"));
         }
 
         [Test]
@@ -1117,7 +1139,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
         }
 
-
         [Test]
         public void State_DisposedJustAfterCreation_EqualsToStopped()
         {
@@ -1192,82 +1213,121 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Arrange
 
             // Act
-            // todo - just created, eq. to 'false'
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.IsDisposed, Is.False);
         }
 
         [Test]
         public void IsDisposed_Started_EqualsToFalse()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
 
             // Act
-            // todo - started, eq. to 'false'
+            subscriber.Start();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.IsDisposed, Is.False);
         }
 
         [Test]
         public void IsDisposed_Stopped_EqualsToFalse()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
+            subscriber.Start();
 
             // Act
-            // todo - stopped, eq. to 'false'
+            subscriber.Stop();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.IsDisposed, Is.False);
         }
 
         [Test]
         public void IsDisposed_DisposedJustAfterCreation_EqualsToTrue()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
 
             // Act
-            // todo - disposed just after creation, eq. to 'true'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.IsDisposed, Is.True);
         }
 
         [Test]
         public void IsDisposed_DisposedAfterStarted_EqualsToTrue()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
+            subscriber.Start();
 
             // Act
-            // todo - disposed after started, eq. to 'true'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.IsDisposed, Is.True);
         }
 
         [Test]
         public void IsDisposed_DisposedAfterStopped_EqualsToTrue()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
+            subscriber.Start();
+            subscriber.Stop();
 
             // Act
-            // todo - disposed after stopped, eq. to 'true'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.IsDisposed, Is.True);
         }
 
         [Test]
         public void IsDisposed_DisposedAfterDisposed_EqualsToTrue()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "sub"
+            };
+            subscriber.Dispose();
 
             // Act
-            // todo - disposed after disposed, eq. to 'true'
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriber.IsDisposed, Is.True);
         }
 
         #endregion
@@ -1287,15 +1347,22 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Start_ConnectionStringIsNullOrEmpty_ThrowsTodo()
+        [TestCase(null)]
+        [TestCase("")]
+        public void Start_ConnectionStringIsNullOrEmpty_ThrowsMqException(string badConnectionString)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = badConnectionString,
+                Name = "sub"
+            };
 
             // Act
-            // todo - con str is null or empty, throws.
+            var ex = Assert.Throws<MqException>(() => subscriber.Start());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Cannot start: connection string is null or empty."));
         }
 
         [Test]
@@ -1391,12 +1458,18 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Stop_Disposed_ThrowsTodo()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost")
+            {
+                Name = "sub",
+            };
+
+            subscriber.Dispose();
 
             // Act
-            // todo - disposed, throws
+            var ex = Assert.Throws<ObjectDisposedException>(() => subscriber.Stop());
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("sub"));
         }
 
         #endregion
@@ -1407,12 +1480,13 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Dispose_JustCreated_Disposes()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
 
             // Act
-            // todo - just created, disposes
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass("Test passed.");
         }
 
         [Test]
@@ -1431,24 +1505,29 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void Disposes_Stopped_Disposes()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
+            subscriber.Start();
+            subscriber.Stop();
 
             // Act
-            // todo - stopped, disposes
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass("Test passed.");
         }
 
         [Test]
         public void Disposes_Disposed_DoesNothing()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
+            subscriber.Dispose();
 
             // Act
-            // todo - disposed, does nothing.
+            subscriber.Dispose();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.Pass("Test passed.");
         }
 
         #endregion

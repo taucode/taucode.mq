@@ -35,6 +35,11 @@ namespace TauCode.Lab.Mq.EasyNetQ
 
         protected override void InitImpl()
         {
+            if (string.IsNullOrEmpty(this.ConnectionString))
+            {
+                throw new MqException("Cannot start: connection string is null or empty.");
+            }
+
             _bus = RabbitHutch.CreateBus(this.ConnectionString);
         }
 

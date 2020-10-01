@@ -249,7 +249,9 @@ namespace TauCode.Mq
             }
             else
             {
-                throw new NotImplementedException();
+                throw new ArgumentException(
+                    $"'{nameof(messageHandlerType)}' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>'.",
+                    nameof(messageHandlerType));
             }
         }
 
