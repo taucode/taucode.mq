@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using TauCode.Working;
 
 namespace TauCode.Mq
@@ -11,6 +12,6 @@ namespace TauCode.Mq
 
         void Subscribe(Type messageHandlerType, string topic);
 
-        SubscriptionInfo[] GetSubscriptions();
+        IReadOnlyList<SubscriptionInfo> GetSubscriptions();
     }
 }

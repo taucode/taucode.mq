@@ -325,7 +325,7 @@ namespace TauCode.Mq
         //    _bundles.Clear();
         //}
 
-        public SubscriptionInfo[] GetSubscriptions()
+        public IReadOnlyList<SubscriptionInfo> GetSubscriptions()
         {
             throw new NotImplementedException();
 

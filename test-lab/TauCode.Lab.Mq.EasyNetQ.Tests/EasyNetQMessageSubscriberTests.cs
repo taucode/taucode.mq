@@ -45,7 +45,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void ConstructorOneArgument_ValidArgument_RunsOk()
         {
             // Arrange
-            var factory = new GoodContextFactory();
+            var factory = new GoodContextFactory(0);
 
             // Act
             using var subscriber = new EasyNetQMessageSubscriber(factory);
@@ -1210,48 +1210,119 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void GetSubscriptions_JustCreated_ReturnsEmptyArray()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
 
             // Act
-            // todo - just created, returns empty array
+            var subscriptions = subscriber.GetSubscriptions();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriptions, Is.Empty);
         }
 
         [Test]
         public void GetSubscriptions_Running_ReturnsSubscriptions()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler));
+
+            subscriber.Subscribe(typeof(ByeHandler));
+
+            subscriber.Start();
 
             // Act
-            // todo - running, returns subscriptions
+            var subscriptions = subscriber.GetSubscriptions();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriptions, Has.Count.EqualTo(2));
+
+            var info0 = subscriptions[0];
+            Assert.That(info0.MessageType, Is.EqualTo(typeof(HelloMessage)));
+            Assert.That(info0.Topic, Is.Null);
+            CollectionAssert.AreEqual(
+                new[] { typeof(HelloHandler), typeof(WelcomeHandler) },
+                info0.MessageHandlerTypes);
+
+            var info1 = subscriptions[1];
+            Assert.That(info1.MessageType, Is.EqualTo(typeof(ByeMessage)));
+            Assert.That(info1.Topic, Is.Null);
+            CollectionAssert.AreEqual(
+                new[] { typeof(ByeHandler), },
+                info1.MessageHandlerTypes);
         }
 
         [Test]
         public void GetSubscriptions_Stopped_ReturnsSubscriptions()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler));
+
+            subscriber.Subscribe(typeof(ByeHandler));
+
+            subscriber.Start();
+            subscriber.Stop();
 
             // Act
-            // todo - stopped, returns subscriptions
+            var subscriptions = subscriber.GetSubscriptions();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriptions, Has.Count.EqualTo(2));
+
+            var info0 = subscriptions[0];
+            Assert.That(info0.MessageType, Is.EqualTo(typeof(HelloMessage)));
+            Assert.That(info0.Topic, Is.Null);
+            CollectionAssert.AreEqual(
+                new[] { typeof(HelloHandler), typeof(WelcomeHandler) },
+                info0.MessageHandlerTypes);
+
+            var info1 = subscriptions[1];
+            Assert.That(info1.MessageType, Is.EqualTo(typeof(ByeMessage)));
+            Assert.That(info1.Topic, Is.Null);
+            CollectionAssert.AreEqual(
+                new[] { typeof(ByeHandler), },
+                info1.MessageHandlerTypes);
         }
 
         [Test]
-        public void GetSubscriptions_Disposed_ReturnsEmptyArray()
+        public async Task GetSubscriptions_Disposed_ReturnsEmptyArray()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler));
+
+            subscriber.Start();
 
             // Act
-            // todo - disposed, returns empty array
+            subscriber.Dispose();
+            await Task.Delay(200);
+
+            var subscriptions = subscriber.GetSubscriptions();
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(subscriptions, Is.Empty);
         }
 
         #endregion
@@ -1553,15 +1624,39 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region Start()
 
         [Test]
-        public void Start_JustCreated_StartsAndHandlesMessages()
+        public async Task Start_JustCreated_StartsAndHandlesMessages()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler));
+
+            subscriber.Subscribe(typeof(ByeAsyncHandler));
+            subscriber.Subscribe(typeof(ByeAndComeBackAsyncHandler));
+
+            subscriber.Start();
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - just created, starts, handles messages
+            bus.Publish(new HelloMessage("Ira"));
+            bus.Publish(new ByeMessage("Olia"));
+
+            await Task.Delay(200);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync, Ira!"));
+            Assert.That(log, Does.Contain("Welcome sync, Ira!"));
+
+            Assert.That(log, Does.Contain("Bye async, Olia!"));
+            Assert.That(log, Does.Contain("Bye async and come back, Olia!"));
         }
 
         [Test]
@@ -1603,15 +1698,49 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Start_Stopped_StartsAndHandlesMessages()
+        public async Task Start_Stopped_StartsAndHandlesMessages()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler));
+
+            subscriber.Subscribe(typeof(ByeAsyncHandler));
+            subscriber.Subscribe(typeof(ByeAndComeBackAsyncHandler));
+
+            subscriber.Start();
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - stopped, starts, handles messages
+            bus.Publish(new HelloMessage("Ira"));
+            bus.Publish(new ByeMessage("Olia"));
+
+            await Task.Delay(200);
+
+            subscriber.Stop();
+            await Task.Delay(200);
+
+            subscriber.Start();
+
+            bus.Publish(new HelloMessage("Manuela"));
+            bus.Publish(new ByeMessage("Alex"));
+
+            await Task.Delay(200);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync, Manuela!"));
+            Assert.That(log, Does.Contain("Welcome sync, Manuela!"));
+
+            Assert.That(log, Does.Contain("Bye async, Alex!"));
+            Assert.That(log, Does.Contain("Bye async and come back, Alex!"));
         }
 
         [Test]
@@ -1721,15 +1850,29 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Dispose_Started_DisposesAndCancelsCurrentAsyncTasks()
+        public async Task Dispose_Started_DisposesAndCancelsCurrentAsyncTasks()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(3000), "host=localhost");
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
+            subscriber.Start();
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+            bus.Publish(new HelloMessage()
+            {
+                Name = "Koika",
+            });
 
             // Act
-            // todo - started, disposes, cancels current async tasks, shown in logs
+            await Task.Delay(200); // let 'HelloAsyncHandler' start.
+
+            subscriber.Dispose(); // should cancel 'HelloAsyncHandler'
+
+            await Task.Delay(100);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain($"Handler '{typeof(HelloAsyncHandler).FullName}' got canceled. Entire chain will be canceled."));
         }
 
         [Test]
