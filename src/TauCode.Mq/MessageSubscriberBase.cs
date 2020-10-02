@@ -293,19 +293,19 @@ namespace TauCode.Mq
                             {
                                 await handler.HandleAsync(message, token);
                             }
-                            catch (TaskCanceledException)
+                            catch (TaskCanceledException ex)
                             {
-                                // It is not an error. looks like subscriber was stopped.
-                                Log.Information($"Handler '{handler.GetType().FullName}' got canceled. Entire chain will be canceled.");
-                                break;
+                                // It is not necessarily an error, e.g. subscriber might be stopped.
+                                Log.Information(ex, $"Async handler '{handler.GetType().FullName}' got canceled.");
+
+                                // the loop will continue. other handlers gotta get their chance, therefore let's continue the loop.
                             }
                             catch (Exception ex)
                             {
-                                throw new HandleException(
-                                    $"Method 'Handle' threw an exception.",
-                                    ex,
-                                    messageHandlerType,
-                                    i);
+                                // this handler has faulted. but we gonna give a chance to remaining ones.
+                                // so don't throw here, just log the exception and continue the loop.
+
+                                Log.Error(ex, $"Async handler '{handler.GetType().FullName}' faulted.");
                             }
 
                             // end context
@@ -462,14 +462,6 @@ namespace TauCode.Mq
                         syncList.Add(messageHandlerType);
                         messageType = iface.GetGenericArguments().Single();
                     }
-                    else
-                    {
-                        // not our guy
-                    }
-                }
-                else
-                {
-                    // it might be IAsyncMessageHandler (non-generic), or IMessageHandler (non-generic), or any other interface - none of them we're interested in here.
                 }
             }
 
@@ -601,7 +593,6 @@ namespace TauCode.Mq
                     $"'{nameof(topic)}' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' overload.",
                     nameof(topic));
             }
-
 
             throw new NotImplementedException();
         }

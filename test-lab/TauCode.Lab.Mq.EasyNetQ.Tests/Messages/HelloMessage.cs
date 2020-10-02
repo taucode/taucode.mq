@@ -14,10 +14,11 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Messages
         {
             this.Name = name;
         }
-
-        public string Name { get; set; }
+        
         public string Topic { get; set; }
         public string CorrelationId { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
+        public string Name { get; set; }
+        public int MillisecondsTimeout { get; set; } = 0;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
-using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Sync;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Sync;
 using TauCode.Mq;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts

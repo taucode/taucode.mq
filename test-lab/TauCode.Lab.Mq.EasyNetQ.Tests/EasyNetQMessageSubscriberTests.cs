@@ -9,7 +9,10 @@ using TauCode.Infrastructure.Time;
 using TauCode.Lab.Mq.EasyNetQ.Tests.BadHandlers;
 using TauCode.Lab.Mq.EasyNetQ.Tests.ContextFactories;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Contexts;
-using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Async;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Sync;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Async;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Sync;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
 using TauCode.Mq;
 using TauCode.Mq.Exceptions;
@@ -27,6 +30,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void SetUp()
         {
             TimeProvider.Reset();
+            MessageRepository.Instance.Clear();
 
             _log = new StringWriterWithEncoding(Encoding.UTF8);
 
@@ -45,7 +49,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void ConstructorOneArgument_ValidArgument_RunsOk()
         {
             // Arrange
-            var factory = new GoodContextFactory(0);
+            var factory = new GoodContextFactory();
 
             // Act
             using var subscriber = new EasyNetQMessageSubscriber(factory);
@@ -737,15 +741,36 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_AsyncHandlerHandleAsyncIsCanceled_Todo()
+        public async Task SubscribeType_AsyncHandlerCanceledOrFaulted_RestDoRun()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler)); // #0 will say 'hello'
+            subscriber.Subscribe(typeof(CancelingHelloAsyncHandler)); // #1 will cancel with message
+            subscriber.Subscribe(typeof(FaultingHelloAsyncHandler)); // #2 will fault with message
+            subscriber.Subscribe(typeof(WelcomeAsyncHandler)); // #3 will say 'welcome', regardless of #1 canceled and #2 faulted.
+
+            subscriber.Start();
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+            bus.Publish(new HelloMessage("Ira"));
+
+            await Task.Delay(200);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async, Ira!")); // #0
+            Assert.That(log, Does.Contain("Sorry, I am cancelling async, Ira...")); // #1
+            Assert.That(log, Does.Contain("Sorry, I am faulting async, Ira...")); // #2
+            Assert.That(log, Does.Contain("Welcome async, Ira!")); // #3
         }
 
         [Test]
@@ -1131,18 +1156,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeTypeString_AsyncHandlerCtorThrows_Todo()
-        {
-            // Arrange
-
-            // Act
-            // todo - async handler's ctor is throwing => logs, stops loop gracefully.
-
-            // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
         public void SubscribeTypeString_AsyncHandlerHandleAsyncThrows_Todo()
         {
             // Arrange
@@ -1166,13 +1179,17 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             throw new NotImplementedException();
         }
 
+        // todo: sync handler throwing => rest of them working.
+
+
+
         [Test]
-        public void SubscribeTypeString_AsyncHandlerHandleAsyncIsCanceled_Todo()
+        public async Task SubscribeTypeString_AsyncHandlerHandleAsyncIsCanceled_Todo()
         {
             // Arrange
 
             // Act
-            // todo - async handler's HandleAsync is canceled => logs, stops loop gracefully.
+            // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
 
             // Assert
             throw new NotImplementedException();
@@ -1637,7 +1654,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             subscriber.Subscribe(typeof(WelcomeHandler));
 
             subscriber.Subscribe(typeof(ByeAsyncHandler));
-            subscriber.Subscribe(typeof(ByeAndComeBackAsyncHandler));
+            subscriber.Subscribe(typeof(BeBackAsyncHandler));
 
             subscriber.Start();
 
@@ -1656,7 +1673,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             Assert.That(log, Does.Contain("Welcome sync, Ira!"));
 
             Assert.That(log, Does.Contain("Bye async, Olia!"));
-            Assert.That(log, Does.Contain("Bye async and come back, Olia!"));
+            Assert.That(log, Does.Contain("Be back async, Olia!"));
         }
 
         [Test]
@@ -1711,7 +1728,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             subscriber.Subscribe(typeof(WelcomeHandler));
 
             subscriber.Subscribe(typeof(ByeAsyncHandler));
-            subscriber.Subscribe(typeof(ByeAndComeBackAsyncHandler));
+            subscriber.Subscribe(typeof(BeBackAsyncHandler));
 
             subscriber.Start();
 
@@ -1740,7 +1757,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             Assert.That(log, Does.Contain("Welcome sync, Manuela!"));
 
             Assert.That(log, Does.Contain("Bye async, Alex!"));
-            Assert.That(log, Does.Contain("Bye async and come back, Alex!"));
+            Assert.That(log, Does.Contain("Be back async, Alex!"));
         }
 
         [Test]
@@ -1783,15 +1800,30 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Stop_Started_StopsAndCancelsCurrentAsyncTasks()
+        public async Task Stop_Started_StopsAndCancelsCurrentAsyncTasks()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
+            subscriber.Start();
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+            bus.Publish(new HelloMessage()
+            {
+                Name = "Koika",
+                MillisecondsTimeout = 3000,
+            });
 
             // Act
-            // todo - started, stops, cancels current async tasks, shown in logs
+            await Task.Delay(200); // let 'HelloAsyncHandler' start.
+
+            subscriber.Stop(); // should cancel 'HelloAsyncHandler'
+
+            await Task.Delay(100);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain($"Handler '{typeof(HelloAsyncHandler).FullName}' got canceled. Entire chain will be canceled."));
         }
 
         [Test]
@@ -1853,7 +1885,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public async Task Dispose_Started_DisposesAndCancelsCurrentAsyncTasks()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(3000), "host=localhost");
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Start();
 
@@ -1861,6 +1893,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             bus.Publish(new HelloMessage()
             {
                 Name = "Koika",
+                MillisecondsTimeout = 3000,
             });
 
             // Act

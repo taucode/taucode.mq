@@ -4,14 +4,16 @@ using System.Threading.Tasks;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Messages;
 using TauCode.Mq.Abstractions;
 
-namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers
+namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Async
 {
     public class ByeAsyncHandler : AsyncMessageHandlerBase<ByeMessage>
     {
-        public override Task HandleAsync(ByeMessage message, CancellationToken cancellationToken)
+        public override async Task HandleAsync(ByeMessage message, CancellationToken cancellationToken)
         {
+            await Task.Delay(message.MillisecondsTimeout, cancellationToken);
+
             Log.Information($"Bye async, {message.Nickname}!");
-            return Task.CompletedTask;
+            MessageRepository.Instance.Add(message);
         }
     }
 }

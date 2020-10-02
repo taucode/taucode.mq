@@ -18,5 +18,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Messages
         public string CorrelationId { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public string Nickname { get; set; }
+        public int MillisecondsTimeout { get; set; } = 0;
     }
 }

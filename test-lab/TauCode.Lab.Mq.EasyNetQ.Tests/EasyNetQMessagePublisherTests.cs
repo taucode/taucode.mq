@@ -204,10 +204,10 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             };
 
             // Act
-            var ex = Assert.Throws<MqException>(() => publisher.Publish(new HelloMessage()));
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Publish(new HelloMessage()));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Publisher not started."));
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
         }
 
         [Test]
@@ -362,10 +362,10 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             };
 
             // Act
-            var ex = Assert.Throws<MqException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Publisher not started."));
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
         }
 
         [Test]

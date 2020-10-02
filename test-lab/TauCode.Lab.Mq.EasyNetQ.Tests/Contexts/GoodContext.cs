@@ -1,17 +1,32 @@
 ﻿using System;
-using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers;
+using System.Collections.Generic;
+using System.Linq;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Async;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Sync;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Async;
+using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Sync;
 using TauCode.Mq;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
 {
     public class GoodContext : IMessageHandlerContext
     {
-        private readonly int _millisecondsTimeout;
+        private static readonly HashSet<Type> SupportedHandlerTypes = new[]
+            {
+                typeof(BeBackAsyncHandler),
+                typeof(ByeAsyncHandler),
 
-        public GoodContext(int millisecondsTimeout)
-        {
-            _millisecondsTimeout = millisecondsTimeout;
-        }
+                typeof(ByeHandler),
+
+                typeof(CancelingHelloAsyncHandler),
+                typeof(FaultingHelloAsyncHandler),
+                typeof(HelloAsyncHandler),
+                typeof(WelcomeAsyncHandler),
+
+                typeof(HelloHandler),
+                typeof(WelcomeHandler),
+            }
+            .ToHashSet();
 
         public void Begin()
         {
@@ -25,28 +40,19 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
 
         public object GetService(Type serviceType)
         {
-            if (serviceType == typeof(HelloAsyncHandler))
+            if (SupportedHandlerTypes.Contains(serviceType))
             {
-                return new HelloAsyncHandler(_millisecondsTimeout);
-            }
-            else if (serviceType == typeof(HelloHandler))
-            {
-                return new HelloHandler();
-            }
-            else if (serviceType == typeof(WelcomeHandler))
-            {
-                return new WelcomeHandler();
-            }
-            else if (serviceType == typeof(ByeAsyncHandler))
-            {
-                return new ByeAsyncHandler();
-            }
-            else if (serviceType == typeof(ByeAndComeBackAsyncHandler))
-            {
-                return new ByeAndComeBackAsyncHandler();
+                var ctor = serviceType.GetConstructor(Type.EmptyTypes);
+                if (ctor == null)
+                {
+                    throw new NotSupportedException($"Type '{serviceType.FullName}' has no parameterless constructor.");
+                }
+
+                var service = ctor.Invoke(new object[] { });
+                return service;
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException($"Service of type '{serviceType.FullName}' is not supported.");
         }
 
         public void Dispose()
