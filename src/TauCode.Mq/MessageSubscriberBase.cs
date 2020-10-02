@@ -33,6 +33,16 @@ namespace TauCode.Mq
                 Type messageHandlerType,
                 string tag)
             {
+                if (messageType.IsAbstract)
+                {
+                    throw new ArgumentException($"Cannot handle abstract message type '{messageType.FullName}'.", nameof(messageType));
+                }
+
+                if (!messageType.IsClass)
+                {
+                    throw new ArgumentException($"Cannot handle non-class message type '{messageType.FullName}'.", nameof(messageType));
+                }
+
                 this.MessageType = messageType;
                 this.IsAsync = isAsync;
                 this.MessageHandlerType = messageHandlerType;
@@ -354,11 +364,29 @@ namespace TauCode.Mq
             {
                 if (_messageHandlerTypes.Contains(messageHandlerType))
                 {
-                    throw new NotImplementedException();
+                    var sb = new StringBuilder();
+                    sb.Append("Handler type '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' already registered for message type '");
+                    sb.Append(this.MessageType.FullName);
+                    sb.Append("' (");
+                    if (this.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    sb.Append(").");
+
+                    throw new MqException(sb.ToString());
                 }
 
                 _messageHandlerTypes.Add(messageHandlerType);
             }
+
+            internal bool IsAsync() => _tokenGetter != null;
 
             #endregion
 
@@ -465,7 +493,7 @@ namespace TauCode.Mq
                 }
             }
 
-            if (asyncList.Count == 1)
+            if (asyncList.Count == 1 && syncList.Count == 0)
             {
                 return new MessageHandlerInfo(
                     messageType,
@@ -473,7 +501,7 @@ namespace TauCode.Mq
                     asyncList.Single(),
                     Bundle.BuildTag(messageType, topic));
             }
-            else if (syncList.Count == 1)
+            else if (syncList.Count == 1 && asyncList.Count == 0)
             {
                 return new MessageHandlerInfo(
                     messageType,
@@ -484,7 +512,7 @@ namespace TauCode.Mq
             else
             {
                 throw new ArgumentException(
-                    $"'{nameof(messageHandlerType)}' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>'.",
+                    $"'{nameof(messageHandlerType)}' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner.",
                     nameof(messageHandlerType));
             }
         }
@@ -573,8 +601,51 @@ namespace TauCode.Mq
                     null,
                     info.Tag);
 
-                
                 _bundles.Add(bundle.Tag, bundle);
+            }
+            else
+            {
+                if (bundle.IsAsync() && !info.IsAsync)
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("Cannot subscribe synchronous handler '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' to message '");
+                    sb.Append(bundle.MessageType.FullName);
+                    sb.Append("' (");
+                    if (bundle.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    sb.Append(") because there are asynchronous handlers existing for that subscription.");
+
+                    throw new MqException(sb.ToString());
+                }
+
+                if (!bundle.IsAsync() && info.IsAsync)
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("Cannot subscribe asynchronous handler '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' to message '");
+                    sb.Append(bundle.MessageType.FullName);
+                    sb.Append("' (");
+                    if (bundle.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    sb.Append(") because there are synchronous handlers existing for that subscription.");
+
+                    throw new MqException(sb.ToString());
+                }
             }
 
             bundle.AddHandlerType(messageHandlerType);

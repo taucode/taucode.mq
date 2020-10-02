@@ -548,112 +548,148 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>'. (Parameter 'messageHandlerType')"));
         }
 
+
         [Test]
-        public void SubscribeType_TypeIsSyncAfterAsync_ThrowsTodo()
+        public void SubscribeType_TypeIsSyncAfterAsync_ThrowsMqException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is sync, while there are already async handlers for this type of message => throws
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloHandler))); // todo: if previous 'HelloAsyncHandler' was subscribed to some topic, exception won't be thrown.
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo($"Cannot subscribe synchronous handler '{typeof(HelloHandler).FullName}' to message '{typeof(HelloMessage)}' (no topic) because there are asynchronous handlers existing for that subscription."));
         }
 
         [Test]
-        public void SubscribeType_TypeIsAsyncAfterSync_ThrowsTodo()
+        public void SubscribeType_TypeIsAsyncAfterSync_ThrowsMqException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is async, while there are already sync handlers for this type of message => throws
+            subscriber.Subscribe(typeof(HelloHandler));
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloAsyncHandler))); // todo: if previous 'HelloHandler' was subscribed to some topic, exception won't be thrown.
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo($"Cannot subscribe asynchronous handler '{typeof(HelloAsyncHandler).FullName}' to message '{typeof(HelloMessage)}' (no topic) because there are synchronous handlers existing for that subscription."));
         }
 
         [Test]
-        public void SubscribeType_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        public void SubscribeType_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg implements IMessageHandler<TMessage> more than once => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeHandler)));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
         }
 
         [Test]
         public void SubscribeType_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeAsyncHandler)));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
         }
 
         [Test]
-        public void SubscribeType_TypeImplementsBothSyncAndAsync_ThrowsTodo()
+        public void SubscribeType_TypeImplementsBothSyncAndAsync_ThrowsArgumentException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg implements both sync and async handler, same or different TMessage => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(BothSyncAndAsyncHandler)));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
         }
 
         [Test]
-        public void SubscribeType_SyncTypeAlreadySubscribed_ThrowsTodo()
+        public void SubscribeType_SyncTypeAlreadySubscribed_ThrowsMqException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler));
 
             // Act
-            // todo - type already subscribed => throws
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloHandler))); // todo: there would be no error if previous subscription was with some topic.
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo($"Handler type '{typeof(HelloHandler).FullName}' already registered for message type '{typeof(HelloMessage).FullName}' (no topic)."));
         }
 
         [Test]
-        public void SubscribeType_AsyncTypeAlreadySubscribed_ThrowsTodo()
+        public void SubscribeType_AsyncTypeAlreadySubscribed_ThrowsMqException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
 
             // Act
-            // todo - type already subscribed => throws
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloAsyncHandler))); // todo: there would be no error if previous subscription was with some topic.
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo($"Handler type '{typeof(HelloAsyncHandler).FullName}' already registered for message type '{typeof(HelloMessage).FullName}' (no topic)."));
         }
 
         [Test]
-        public void SubscribeType_TMessageIsAbstract_ThrowsTodo()
+        [TestCase(typeof(AbstractMessageHandler))]
+        [TestCase(typeof(AbstractMessageAsyncHandler))]
+        public void SubscribeType_TMessageIsAbstract_ThrowsArgumentException(Type badHandlerType)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - TMessage is abstract => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"Cannot handle abstract message type '{typeof(AbstractMessage).FullName}'."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageType"));
         }
 
         [Test]
-        public void SubscribeType_TMessageIsNotClass_ThrowsTodo()
+        [TestCase(typeof(StructMessageHandler))]
+        [TestCase(typeof(StructMessageAsyncHandler))]
+        public void SubscribeType_TMessageIsNotClass_ThrowsArgumentException(Type badHandlerType)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - TMessage is not class => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"Cannot handle non-class message type '{typeof(StructMessage).FullName}'."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageType"));
         }
 
         [Test]
@@ -681,36 +717,12 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_SyncHandlerCtorThrows_Todo()
-        {
-            // Arrange
-
-            // Act
-            // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
-
-            // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
         public void SubscribeType_SyncHandlerHandleThrows_Todo()
         {
             // Arrange
 
             // Act
             // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
-
-            // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void SubscribeType_AsyncHandlerCtorThrows_Todo()
-        {
-            // Arrange
-
-            // Act
-            // todo - async handler's ctor is throwing => logs, stops loop gracefully.
 
             // Assert
             throw new NotImplementedException();
