@@ -6,6 +6,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Messages
     public struct StructMessage : IMessage
     {
         public string Category { get; set; }
+        public string Topic { get; set; }
         public string CorrelationId { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
     }

@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TauCode.Mq.Abstractions" Version="1.3.2-dev-2020-09-28-16-56" />
+    <PackageReference Include="TauCode.Mq.Abstractions" Version="1.3.2-dev-2020-10-02-21-05" />
     <PackageReference Include="TauCode.Working" Version="1.3.2-dev-2020-09-30-19-11" />
   </ItemGroup>
 

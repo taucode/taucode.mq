@@ -1,64 +1,19 @@
 ﻿using System;
 using TauCode.Mq.Abstractions;
-using TauCode.Mq.Exceptions;
 using TauCode.Working;
+using TauCode.Working.Exceptions;
 
-// todo: nice looking
 namespace TauCode.Mq
 {
     public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
     {
-        protected abstract void InitImpl();
-
-        protected abstract void ShutdownImpl();
-
-        protected override void OnStarting()
-        {
-            this.InitImpl();
-        }
-
-        protected override void OnStopping()
-        {
-            this.ShutdownImpl();
-        }
-
-        protected abstract void PublishImpl(IMessage message);
-
-        protected abstract void PublishImpl(IMessage message, string topic);
-
-        public void Publish(IMessage message)
-        {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            var type = message.GetType();
-
-            if (!type.IsClass)
-            {
-                throw new ArgumentException($"Cannot publish instance of '{type.FullName}'. Message type must be a class.", nameof(message));
-            }
-
-            this.CheckNotDisposed();
-            this.CheckStarted();
-
-            this.PublishImpl(message);
-        }
+        #region Private
 
         private void CheckStarted()
         {
             if (this.State != WorkerState.Running)
             {
-                throw new MqException("Publisher not started.");
-            }
-        }
-
-        private void CheckStopped(string operationName)
-        {
-            if (this.State != WorkerState.Stopped)
-            {
-                throw new MqException($"Cannot perform this operation while publisher is running ({operationName}).");
+                throw new InappropriateWorkerStateException(this.State);
             }
         }
 
@@ -71,11 +26,72 @@ namespace TauCode.Mq
             }
         }
 
+        #endregion
+
+        #region Abstract
+
+        protected abstract void InitImpl();
+
+        protected abstract void ShutdownImpl();
+
+        protected abstract void PublishImpl(IMessage message);
+
+        protected abstract void PublishImpl(IMessage message, string topic);
+
+        #endregion
+
+        #region Overridden
+
+        protected override void OnStarting()
+        {
+            this.InitImpl();
+        }
+
+        protected override void OnStopping()
+        {
+            this.ShutdownImpl();
+        }
+
+
+        #endregion
+
+        #region IMessagePublisher Members
+
+        public void Publish(IMessage message)
+        {
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (message.Topic != null)
+            {
+                throw MqHelper.TopicMustBeNullException(); // todo ut this
+            }
+
+            var type = message.GetType();
+
+            if (!type.IsClass)
+            {
+                throw new ArgumentException($"Cannot publish instance of '{type.FullName}'. Message type must be a class.", nameof(message)); // todo: we are having copy-paste here
+            }
+
+            this.CheckNotDisposed();
+            this.CheckStarted();
+
+            this.PublishImpl(message);
+        }
+
         public void Publish(IMessage message, string topic)
         {
             if (message == null)
             {
                 throw new ArgumentNullException(nameof(message));
+            }
+
+            if (message.Topic != null)
+            {
+                throw MqHelper.TopicMustBeNullException(); // todo ut this
             }
 
             var type = message.GetType();
@@ -92,10 +108,14 @@ namespace TauCode.Mq
                     nameof(topic));
             }
 
+            message.Topic = topic;
+
             this.CheckNotDisposed();
             this.CheckStarted();
 
             this.PublishImpl(message, topic);
         }
+
+        #endregion
     }
 }
