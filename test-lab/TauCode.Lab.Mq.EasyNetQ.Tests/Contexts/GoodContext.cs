@@ -20,9 +20,11 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
 
                 typeof(CancelingHelloAsyncHandler),
                 typeof(FaultingHelloAsyncHandler),
+                typeof(FishHaterAsyncHandler),
                 typeof(HelloAsyncHandler),
                 typeof(WelcomeAsyncHandler),
 
+                typeof(FishHaterHandler),
                 typeof(HelloHandler),
                 typeof(WelcomeHandler),
             }

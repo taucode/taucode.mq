@@ -18,6 +18,7 @@ using TauCode.Mq;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 using TauCode.Working.Exceptions;
+using HelloHandler = TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Sync.HelloHandler;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {
@@ -39,6 +40,9 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
                 .MinimumLevel
                 .Debug()
                 .CreateLogger();
+
+            DecayingMessage.IsPropertyDecayed = false;
+            DecayingMessage.IsCtorDecayed = false;
         }
 
         private string GetLog() => _log.ToString();
@@ -545,7 +549,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
-            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>'. (Parameter 'messageHandlerType')"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
         }
 
 
@@ -693,51 +697,123 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_TMessageCtorThrows_Todo()
+        public async Task SubscribeType_TMessageCtorThrows_LogsException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+            var message = new DecayingMessage
+            {
+                DecayedProperty = "fresh",
+            };
+
+            DecayingMessage.IsCtorDecayed = true;
+
+            subscriber.Subscribe(typeof(DecayingMessageHandler));
+            subscriber.Start();
 
             // Act
-            // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
+            bus.Publish(message);
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Alas Ctor Decayed!"));
         }
 
         [Test]
-        public void SubscribeType_TMessagePropertyThrows_Todo()
+        public async Task SubscribeType_TMessagePropertyThrows_LogsException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+            var message = new DecayingMessage
+            {
+                DecayedProperty = "fresh",
+            };
+
+            DecayingMessage.IsPropertyDecayed = true;
+
+            subscriber.Subscribe(typeof(DecayingMessageHandler));
+            subscriber.Start();
+            
             // Act
-            // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+            bus.Publish(message);
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Alas Property Decayed!"));
         }
 
         [Test]
-        public void SubscribeType_SyncHandlerHandleThrows_Todo()
+        public async Task SubscribeType_SyncHandlerHandleThrows_LogsException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+
+            var message = new HelloMessage
+            {
+                Name = "Big Fish",
+            };
+
+            subscriber.Subscribe(typeof(HelloHandler)); // #0, will handle
+            subscriber.Subscribe(typeof(FishHaterHandler)); // #1, will throw
+            subscriber.Subscribe(typeof(WelcomeHandler)); // #2, will handle
+
+            subscriber.Start();
 
             // Act
-            // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
+            bus.Publish(message);
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Hello sync, Big Fish!"));
+            Assert.That(log, Does.Contain("I hate you sync, 'Big Fish'! Exception thrown!"));
+            Assert.That(log, Does.Contain("Welcome sync, Big Fish!"));
         }
 
         [Test]
-        public void SubscribeType_AsyncHandlerHandleAsyncThrows_Todo()
+        public async Task SubscribeType_AsyncHandlerHandleAsyncThrows_LogsException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+
+            var message = new HelloMessage
+            {
+                Name = "Big Fish",
+            };
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler)); // #0, will handle
+            subscriber.Subscribe(typeof(FishHaterAsyncHandler)); // #1, will throw
+            subscriber.Subscribe(typeof(WelcomeAsyncHandler)); // #2, will handle
+
+            subscriber.Start();
 
             // Act
-            // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
+            bus.Publish(message);
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Hello async, Big Fish!"));
+            Assert.That(log, Does.Contain("I hate you async, 'Big Fish'! Exception thrown!"));
+            Assert.That(log, Does.Contain("Welcome async, Big Fish!"));
         }
 
         [Test]
@@ -1144,18 +1220,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeTypeString_SyncHandlerCtorThrows_Todo()
-        {
-            // Arrange
-
-            // Act
-            // todo - sync handler's ctor is throwing => logs, stops loop gracefully.
-
-            // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
         public void SubscribeTypeString_SyncHandlerHandleThrows_Todo()
         {
             // Arrange
@@ -1192,8 +1256,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         // todo: sync handler throwing => rest of them working.
-
-
 
         [Test]
         public async Task SubscribeTypeString_AsyncHandlerHandleAsyncIsCanceled_Todo()
@@ -1835,7 +1897,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain($"Handler '{typeof(HelloAsyncHandler).FullName}' got canceled. Entire chain will be canceled."));
+            Assert.That(log, Does.Contain($"Async handler '{typeof(HelloAsyncHandler)}' got canceled."));
         }
 
         [Test]
@@ -1917,7 +1979,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain($"Handler '{typeof(HelloAsyncHandler).FullName}' got canceled. Entire chain will be canceled."));
+            Assert.That(log, Does.Contain($"Async handler '{typeof(HelloAsyncHandler)}' got canceled."));
         }
 
         [Test]

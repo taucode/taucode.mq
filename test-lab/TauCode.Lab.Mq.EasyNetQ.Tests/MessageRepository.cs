@@ -4,6 +4,7 @@ using TauCode.Mq.Abstractions;
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {
+    // todo: don't need it, indeed. log is enough.
     public class MessageRepository
     {
         public static MessageRepository Instance = new MessageRepository();
