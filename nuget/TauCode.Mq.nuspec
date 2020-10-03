@@ -16,7 +16,7 @@
     <dependencies>
       <group targetFramework=".NETStandard2.1">
         <dependency id="TauCode.Mq.Abstractions" version="1.3.2-dev-2020-10-02-21-05" />
-        <dependency id="TauCode.Working" version="1.3.2-dev-2020-09-30-19-11" />
+        <dependency id="TauCode.Working" version="1.3.2-dev-2020-10-04-22-32" />
       </group>
     </dependencies>
   </metadata>
