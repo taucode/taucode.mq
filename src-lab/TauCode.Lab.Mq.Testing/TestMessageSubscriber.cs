@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TauCode.Mq;
 
 namespace TauCode.Lab.Mq.Testing
@@ -8,6 +10,7 @@ namespace TauCode.Lab.Mq.Testing
         #region Fields
 
         private readonly ITestMqMedia _media;
+        private readonly List<IDisposable> _handles;
 
         #endregion
 
@@ -17,6 +20,7 @@ namespace TauCode.Lab.Mq.Testing
             : base(contextFactory)
         {
             _media = media ?? throw new ArgumentNullException(nameof(media));
+            _handles = new List<IDisposable>();
         }
 
         #endregion
@@ -25,17 +29,67 @@ namespace TauCode.Lab.Mq.Testing
 
         protected override void InitImpl()
         {
-            throw new NotImplementedException();
+            // idle
         }
 
         protected override void ShutdownImpl()
         {
-            throw new NotImplementedException();
+            foreach (var handle in _handles)
+            {
+                handle.Dispose();
+            }
         }
 
         protected override IDisposable SubscribeImpl(ISubscriptionRequest subscriptionRequest)
         {
-            throw new NotImplementedException();
+            if (subscriptionRequest.AsyncHandler != null && subscriptionRequest.Handler == null)
+            {
+                // got async subscription
+                if (subscriptionRequest.Topic == null)
+                {
+                    return _media.Subscribe(
+                        subscriptionRequest.MessageType,
+                        subscriptionRequest.AsyncHandler);
+                }
+                else
+                {
+                    return _media.Subscribe(
+                        subscriptionRequest.MessageType,
+                        subscriptionRequest.AsyncHandler,
+                        subscriptionRequest.Topic);
+                }
+            }
+            else if (subscriptionRequest.Handler != null && subscriptionRequest.AsyncHandler == null)
+            {
+                // got sync subscription
+                if (subscriptionRequest.Topic == null)
+                {
+                    return _media.Subscribe(
+                        subscriptionRequest.MessageType,
+                        obj =>
+                        {
+                            subscriptionRequest.Handler(obj);
+                            return Task.CompletedTask;
+                        });
+                }
+                else
+                {
+                    return _media.Subscribe(
+                        subscriptionRequest.MessageType,
+                        obj =>
+                        {
+                            subscriptionRequest.Handler(obj);
+                            return Task.CompletedTask;
+                        },
+                        subscriptionRequest.Topic);
+                }
+            }
+            else
+            {
+                throw new ArgumentException(
+                    $"'{nameof(subscriptionRequest)}' is invalid.",
+                    nameof(subscriptionRequest));
+            }
         }
 
         #endregion

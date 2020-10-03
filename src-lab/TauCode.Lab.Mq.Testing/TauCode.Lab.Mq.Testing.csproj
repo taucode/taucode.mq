@@ -5,7 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\TauCode.Mq\TauCode.Mq.csproj" />
+    <ProjectReference Include="..\TauCode.Lab.Working\TauCode.Lab.Working.csproj" />
   </ItemGroup>
 
 </Project>

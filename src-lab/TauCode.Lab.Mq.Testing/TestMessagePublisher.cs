@@ -25,22 +25,22 @@ namespace TauCode.Lab.Mq.Testing
 
         protected override void InitImpl()
         {
-            throw new NotImplementedException();
+            // idle
         }
 
         protected override void ShutdownImpl()
         {
-            throw new NotImplementedException();
+            // idle
         }
 
         protected override void PublishImpl(IMessage message)
         {
-            throw new NotImplementedException();
+            _media.Publish(message.GetType(), message);
         }
 
         protected override void PublishImpl(IMessage message, string topic)
         {
-            throw new NotImplementedException();
+            _media.Publish(message.GetType(), message, topic);
         }
 
         #endregion

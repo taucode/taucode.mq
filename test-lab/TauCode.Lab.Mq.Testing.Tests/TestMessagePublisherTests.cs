@@ -20,6 +20,12 @@ namespace TauCode.Lab.Mq.Testing.Tests
             _media = new TestMqMedia();
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            _media.Dispose();
+        }
+
         #region ctor
 
         [Test]
@@ -256,7 +262,10 @@ namespace TauCode.Lab.Mq.Testing.Tests
         public void PublishIMessageString_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            using var publisher = new TestMessagePublisher(_media);
+            using var publisher = new TestMessagePublisher(_media)
+            {
+                Name = "my-publisher",
+            };
 
             publisher.Dispose();
 
@@ -303,7 +312,10 @@ namespace TauCode.Lab.Mq.Testing.Tests
         public void Name_Disposed_CanOnlyBeRead()
         {
             // Arrange
-            using var publisher = new TestMessagePublisher(_media);
+            using var publisher = new TestMessagePublisher(_media)
+            {
+                Name = "name1",
+            };
 
             // Act
             publisher.Dispose();

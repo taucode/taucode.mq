@@ -48,6 +48,12 @@ namespace TauCode.Lab.Mq.Testing.Tests
             DecayingMessage.IsCtorDecayed = false;
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            _media.Dispose();
+        }
+
         private string GetLog() => _log.ToString();
 
         #region ctor
@@ -59,7 +65,7 @@ namespace TauCode.Lab.Mq.Testing.Tests
             var factory = new GoodContextFactory();
 
             // Act
-            using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory())
+            using var subscriber = new TestMessageSubscriber(_media, factory)
             {
                 Name = "my-subscriber"
             };
@@ -380,7 +386,6 @@ namespace TauCode.Lab.Mq.Testing.Tests
 
             Assert.That(log, Does.Contain("Hello sync (no topic), Olia!"));
             Assert.That(log, Does.Not.Contain("Welcome sync (no topic), Olia!"));
-
         }
 
         [Test]
@@ -1743,7 +1748,7 @@ namespace TauCode.Lab.Mq.Testing.Tests
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory())
             {
-                Name = "my-subscriber"
+                Name = "sub_created"
             };
 
             // Act
@@ -1771,7 +1776,7 @@ namespace TauCode.Lab.Mq.Testing.Tests
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory())
             {
-                Name = "my-subscriber"
+                Name = "name1",
             };
 
             // Act
