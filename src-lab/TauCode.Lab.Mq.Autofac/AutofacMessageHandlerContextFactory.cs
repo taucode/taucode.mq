@@ -1,17 +1,27 @@
-﻿using System;
-using Autofac;
+﻿using Autofac;
+using System;
 using TauCode.Mq;
 
 namespace TauCode.Lab.Mq.Autofac
 {
     public class AutofacMessageHandlerContextFactory : IMessageHandlerContextFactory
     {
+        #region Constructor
+
         public AutofacMessageHandlerContextFactory(ILifetimeScope rootLifetimeScope)
         {
             this.RootLifetimeScope = rootLifetimeScope ?? throw new ArgumentNullException(nameof(rootLifetimeScope));
         }
 
-        protected ILifetimeScope RootLifetimeScope { get; private set; }
+        #endregion
+
+        #region Protected
+
+        protected ILifetimeScope RootLifetimeScope { get; }
+
+        #endregion
+        
+        #region IMessageHandlerContextFactory Members
 
         public virtual IMessageHandlerContext CreateContext()
         {
@@ -19,5 +29,7 @@ namespace TauCode.Lab.Mq.Autofac
             var context = new AutofacMessageHandlerContext(childScope);
             return context;
         }
+
+        #endregion
     }
 }

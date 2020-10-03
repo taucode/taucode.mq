@@ -2,19 +2,27 @@
 using System;
 using TauCode.Mq;
 
-// todo regions etc
 namespace TauCode.Lab.Mq.Autofac
 {
     public class AutofacMessageHandlerContext : IMessageHandlerContext
     {
+        #region Fields
+
         private readonly ILifetimeScope _contextLifetimeScope;
+
+        #endregion
+
+        #region Constructor
 
         public AutofacMessageHandlerContext(ILifetimeScope contextLifetimeScope)
         {
             _contextLifetimeScope = contextLifetimeScope ?? throw new ArgumentNullException(nameof(contextLifetimeScope));
         }
 
-        
+        #endregion
+
+        #region IMessageHandlerContext Members
+
         public virtual void Begin()
         {
             // idle
@@ -27,9 +35,15 @@ namespace TauCode.Lab.Mq.Autofac
             // end
         }
 
+        #endregion
+
+        #region IDisposable Members
+
         public virtual void Dispose()
         {
             _contextLifetimeScope.Dispose();
         }
+
+        #endregion
     }
 }
