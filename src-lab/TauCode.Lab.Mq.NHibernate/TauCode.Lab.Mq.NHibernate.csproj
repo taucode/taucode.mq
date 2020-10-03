@@ -4,4 +4,12 @@
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NHibernate" Version="5.3.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TauCode.Lab.Mq.Autofac\TauCode.Lab.Mq.Autofac.csproj" />
+  </ItemGroup>
+
 </Project>
