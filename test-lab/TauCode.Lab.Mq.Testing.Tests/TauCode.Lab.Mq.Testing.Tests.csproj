@@ -9,6 +9,11 @@
     <PackageReference Include="nunit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
+    <PackageReference Include="Serilog.Sinks.TextWriter" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src-lab\TauCode.Lab.Mq.Testing\TauCode.Lab.Mq.Testing.csproj" />
   </ItemGroup>
 
 </Project>
