@@ -1,18 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace TauCode.Mq
 {
-    internal class SubscriptionInfo : ISubscriptionInfo
+    public readonly struct SubscriptionInfo
     {
-        internal SubscriptionInfo(Type messageType, string topic, Type handlerType)
+        internal SubscriptionInfo(
+            Type messageType,
+            string topic,
+            IEnumerable<Type> messageHandlerTypes)
         {
             this.MessageType = messageType;
             this.Topic = topic;
-            this.MessageHandlerType = handlerType;
+            this.MessageHandlerTypes = messageHandlerTypes.ToList();
         }
 
         public Type MessageType { get; }
         public string Topic { get; }
-        public Type MessageHandlerType { get; }
+        public IReadOnlyList<Type> MessageHandlerTypes { get; }
     }
 }

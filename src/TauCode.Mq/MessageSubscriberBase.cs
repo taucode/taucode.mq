@@ -2,13 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
+using TauCode.Working.Exceptions;
 
 namespace TauCode.Mq
 {
-    public abstract class MessageSubscriberBase : OnDemandWorkerBase, IMessageSubscriber
+    public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
     {
         #region Nested
 
@@ -16,79 +20,261 @@ namespace TauCode.Mq
         {
             Type MessageType { get; }
             string Topic { get; }
+            string Tag { get; }
             Action<object> Handler { get; }
+            Func<object, Task> AsyncHandler { get; }
+            IReadOnlyList<Type> MessageHandlerTypes { get; }
+        }
+
+        private readonly struct MessageHandlerInfo
+        {
+            internal MessageHandlerInfo(
+                Type messageType,
+                bool isAsync,
+                Type messageHandlerType,
+                string tag)
+            {
+                if (messageType.IsAbstract)
+                {
+                    throw new ArgumentException($"Cannot handle abstract message type '{messageType.FullName}'.",
+                        nameof(messageType));
+                }
+
+                if (!messageType.IsClass)
+                {
+                    throw new ArgumentException($"Cannot handle non-class message type '{messageType.FullName}'.",
+                        nameof(messageType));
+                }
+
+                this.MessageType = messageType;
+                this.IsAsync = isAsync;
+                this.MessageHandlerType = messageHandlerType;
+                this.Tag = tag;
+            }
+
+            internal Type MessageType { get; }
+            internal bool IsAsync { get; }
+            internal Type MessageHandlerType { get; }
+            internal string Tag { get; }
         }
 
         private class Bundle : ISubscriptionRequest
         {
+            #region Fields
+
             private readonly List<Type> _messageHandlerTypes;
-            private readonly MessageSubscriberBase _host;
+            private readonly IMessageHandlerContextFactory _factory;
+            private readonly Func<CancellationToken> _tokenGetter;
 
-            internal Bundle(MessageSubscriberBase host, Type messageType, string topic)
+            #endregion
+
+            #region Constructor
+
+            internal Bundle(
+                IMessageHandlerContextFactory factory,
+                Func<CancellationToken> tokenGetter,
+                Type messageType,
+                string topic,
+                string tag)
             {
-                _host = host;
-
-                this.MessageType = messageType ?? throw new ArgumentNullException();
-
-                if (topic != null)
-                {
-                    if (string.IsNullOrWhiteSpace(topic))
-                    {
-                        throw new ArgumentException($"'{nameof(topic)}' cannot be empty or white-space.");
-                    }
-                }
-
+                _factory = factory;
+                _tokenGetter = tokenGetter;
+                this.MessageType = messageType;
                 this.Topic = topic;
-                this.BundleTag = MakeTag(this.MessageType, this.Topic);
+                this.Tag = tag;
 
                 _messageHandlerTypes = new List<Type>();
+
+                var isAsync = _tokenGetter != null;
+
+                if (isAsync)
+                {
+                    this.AsyncHandler = this.HandleAsync;
+                }
+                else
+                {
+                    this.Handler = this.Handle;
+                }
             }
 
-            public static string MakeTag(Type messageType, string topic)
-            {
-                topic = topic ?? string.Empty;
+            #endregion
 
-                return $"{messageType.FullName}:{topic}";
+            #region Private
+
+            private IMessageHandlerContext CreateContext()
+            {
+                var context = _factory.CreateContext();
+
+                if (context == null)
+                {
+                    throw new MqException(
+                        $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' returned 'null'.");
+                }
+
+                return context;
             }
 
-            public Type MessageType { get; }
-            public string Topic { get; }
-            public Action<object> Handler => Handle;
-
-            public string BundleTag { get; }
-            public override string ToString() => this.BundleTag;
-
-            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes;
-
-            public void AddHandlerType(Type messageHandlerType)
+            private static string StringToMessagePart(string s)
             {
-                _messageHandlerTypes.Add(messageHandlerType);
+                if (s == null)
+                {
+                    return "null";
+                }
+
+                return $"'{s}'";
+            }
+
+            private string GetHandleFailureMessage(Type messageHandlerType, IMessage message, int handlerIndex)
+            {
+                var sb = new StringBuilder();
+                sb.Append(
+                    $"Handler '{messageHandlerType}' failed (Index: {handlerIndex} of {_messageHandlerTypes.Count}). ");
+                sb.Append(
+                    $"Message: ['{message.GetType().FullName}', Topic: {StringToMessagePart(message.Topic)}, CorrelationId: {StringToMessagePart(message.CorrelationId)}, CreatedAt: {message.CreatedAt}]");
+
+                return sb.ToString();
+            }
+
+            private THandlerInterfaceType CreateHandler<THandlerInterfaceType>(
+                IMessageHandlerContext context,
+                Type messageHandlerType)
+            {
+                context.Begin();
+
+                var service = context.GetService(messageHandlerType);
+
+                if (service == null)
+                {
+                    throw new MqException(
+                        $"Method 'GetService' of context '{context.GetType().FullName}' returned 'null'.");
+                }
+
+                if (service.GetType() != messageHandlerType)
+                {
+                    throw new MqException(
+                        $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.");
+                }
+
+                var handler = (THandlerInterfaceType) service;
+                return handler;
             }
 
             private void Handle(object message)
             {
-                var contextFactory = _host.ContextFactory;
-
-                foreach (var messageHandlerType in _messageHandlerTypes)
+                for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
+                    var messageHandlerType = _messageHandlerTypes[i];
+
                     try
                     {
-                        using (var context = contextFactory.CreateContext())
-                        {
-                            context.Begin();
-
-                            var handler = (IMessageHandler)context.GetService(messageHandlerType);
-                            handler.Handle(message);
-
-                            context.End();
-                        }
+                        using var context = this.CreateContext();
+                        var handler = this.CreateHandler<IMessageHandler>(context, messageHandlerType);
+                        handler.Handle(message);
+                        context.End();
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error occured while running the handler.");
+                        Log.Error(
+                            ex,
+                            GetHandleFailureMessage(
+                                messageHandlerType,
+                                (IMessage) message,
+                                i));
                     }
                 }
             }
+
+            private async Task HandleAsync(object message)
+            {
+                for (var i = 0; i < _messageHandlerTypes.Count; i++)
+                {
+                    var messageHandlerType = _messageHandlerTypes[i];
+
+                    try
+                    {
+                        using var context = this.CreateContext();
+                        var handler = this.CreateHandler<IAsyncMessageHandler>(context, messageHandlerType);
+                        var token = _tokenGetter();
+                        await handler.HandleAsync(message, token);
+                        context.End();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(
+                            ex,
+                            GetHandleFailureMessage(
+                                messageHandlerType,
+                                (IMessage) message,
+                                i));
+                    }
+                }
+            }
+
+            #endregion
+
+            #region Internal
+
+            internal void AddHandlerType(Type messageHandlerType)
+            {
+                if (_messageHandlerTypes.Contains(messageHandlerType))
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("Handler type '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' already registered for message type '");
+                    sb.Append(this.MessageType.FullName);
+                    sb.Append("' (");
+                    if (this.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        sb.Append($"topic: '{this.Topic}'");
+                    }
+
+                    sb.Append(").");
+
+                    throw new MqException(sb.ToString());
+                }
+
+                _messageHandlerTypes.Add(messageHandlerType);
+            }
+
+            internal bool IsAsync() => _tokenGetter != null;
+
+            #endregion
+
+            #region Static
+
+            internal static string BuildTag(Type messageType, string topic)
+            {
+                var sb = new StringBuilder();
+                sb.Append("[");
+                sb.Append(messageType.FullName);
+                sb.Append(":");
+                if (topic != null)
+                {
+                    sb.Append(topic);
+                }
+
+                sb.Append("]");
+
+                return sb.ToString();
+            }
+
+            #endregion
+
+            #region ISubscriptionRequest Members
+
+            public Type MessageType { get; }
+            public string Topic { get; }
+            public string Tag { get; }
+            public Action<object> Handler { get; }
+            public Func<object, Task> AsyncHandler { get; }
+            public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes.ToList();
+
+            #endregion
         }
 
         #endregion
@@ -96,6 +282,9 @@ namespace TauCode.Mq
         #region Fields
 
         private readonly Dictionary<string, Bundle> _bundles;
+        private readonly List<IDisposable> _subscriptionHandles;
+
+        private CancellationTokenSource _tokenSource;
 
         #endregion
 
@@ -105,117 +294,178 @@ namespace TauCode.Mq
         {
             this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _bundles = new Dictionary<string, Bundle>();
-        }
-
-        #endregion
-
-        #region Abstract
-
-        /// <summary>
-        /// Implementation-specific subscription
-        /// </summary>
-        /// <param name="requests">Subscription requests to satisfy</param>
-        protected abstract void SubscribeImpl(IEnumerable<ISubscriptionRequest> requests);
-
-        /// <summary>
-        /// Implementation-specific cancellation of subscription
-        /// </summary>
-        protected abstract void UnsubscribeImpl();
-
-        #endregion
-
-        #region Protected
-
-        protected IMessageHandlerContextFactory ContextFactory { get; }
-
-        #endregion
-
-        #region Overridden
-
-        protected override void StartImpl()
-        {
-            base.StartImpl();
-            this.SubscribeImpl(_bundles.Values);
-        }
-
-        protected override void StopImpl()
-        {
-            base.StopImpl();
-            this.UnsubscribeImpl();
-        }
-
-        protected override void DisposeImpl()
-        {
-            base.DisposeImpl();
-            this.UnsubscribeImpl();
-            _bundles.Clear();
+            _subscriptionHandles = new List<IDisposable>();
         }
 
         #endregion
 
         #region Private
 
-        private Bundle GetBundle(Type messageType, string topic)
+        private void CheckStopped()
         {
-            var bundleTag = Bundle.MakeTag(messageType, topic);
-            _bundles.TryGetValue(bundleTag, out var bundle);
-            return bundle;
+            if (this.State != WorkerState.Stopped)
+            {
+                throw new InappropriateWorkerStateException(this.State);
+            }
         }
 
-        private Bundle AddBundle(Type messageType, string topic)
+        private void CheckNotDisposed()
         {
-            var bundle = new Bundle(this, messageType, topic);
-            _bundles.Add(bundle.BundleTag, bundle);
-            return bundle;
+            if (this.IsDisposed)
+            {
+                var name = this.Name ?? this.GetType().FullName;
+                throw new ObjectDisposedException(name);
+            }
         }
 
-        private void RegisterSubscription(Type messageHandlerType, string topic)
+        private MessageHandlerInfo BuildMessageHandlerInfo(Type messageHandlerType, string topic)
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
+            if (!messageHandlerType.IsClass)
+            {
+                throw new ArgumentException($"'{nameof(messageHandlerType)}' must represent a class.",
+                    nameof(messageHandlerType));
+            }
 
-            var interfaces = messageHandlerType.GetInterfaces();
+            if (messageHandlerType.IsAbstract)
+            {
+                throw new ArgumentException($"'{nameof(messageHandlerType)}' cannot be abstract.",
+                    nameof(messageHandlerType));
+            }
 
-            var messageHandlerInterfaces = new List<Type>();
+            var syncList = new List<Type>();
+            var asyncList = new List<Type>();
             Type messageType = null;
 
-            foreach (var @interface in interfaces)
-            {
-                if (@interface.IsConstructedGenericType)
-                {
-                    var generic = @interface.GetGenericTypeDefinition();
-                    if (generic == typeof(IMessageHandler<>))
-                    {
-                        var genericArgs = @interface.GetGenericArguments();
-                        // actually, redundant check, but let it be.
-                        if (genericArgs.Length == 1)
-                        {
-                            messageType = genericArgs.Single();
-                            var messageTypeInterfaces = messageType.GetInterfaces();
+            var ifaces = messageHandlerType.GetInterfaces();
 
-                            if (messageTypeInterfaces.Length == 1 &&
-                                messageTypeInterfaces.Single() == typeof(IMessage))
-                            {
-                                // looks like handler is valid.
-                            }
-                            messageHandlerInterfaces.Add(@interface);
-                        }
+            foreach (var iface in ifaces)
+            {
+                if (iface.IsGenericType)
+                {
+                    var genericBase = iface.GetGenericTypeDefinition();
+
+                    if (genericBase == typeof(IAsyncMessageHandler<>))
+                    {
+                        asyncList.Add(messageHandlerType);
+                        messageType = iface.GetGenericArguments().Single();
+                    }
+                    else if (genericBase == typeof(IMessageHandler<>))
+                    {
+                        syncList.Add(messageHandlerType);
+                        messageType = iface.GetGenericArguments().Single();
                     }
                 }
             }
 
-            if (messageHandlerInterfaces.Count == 1)
+            if (asyncList.Count == 1 && syncList.Count == 0)
             {
-                // ok.
+                return new MessageHandlerInfo(
+                    messageType,
+                    true,
+                    asyncList.Single(),
+                    Bundle.BuildTag(messageType, topic));
+            }
+            else if (syncList.Count == 1 && asyncList.Count == 0)
+            {
+                return new MessageHandlerInfo(
+                    messageType,
+                    false,
+                    syncList.Single(),
+                    Bundle.BuildTag(messageType, topic));
             }
             else
             {
-                throw new MqException("Message handler must implement 'IMessageHandler<TMessage>'; multiple implementation is not allowed.");
+                throw new ArgumentException(
+                    $"'{nameof(messageHandlerType)}' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner.",
+                    nameof(messageHandlerType));
+            }
+        }
+
+        private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed)
+        {
+            this.CheckNotDisposed();
+            this.CheckStopped();
+
+            if (messageHandlerType == null)
+            {
+                throw new ArgumentNullException(nameof(messageHandlerType));
             }
 
-            var bundle = this.GetBundle(messageType, topic);
+            if (string.IsNullOrEmpty(topic) && !emptyTopicIsAllowed)
+            {
+                throw new ArgumentException(
+                    $"'{nameof(topic)}' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' overload.",
+                    nameof(topic));
+            }
+
+            var info = this.BuildMessageHandlerInfo(messageHandlerType, topic);
+            var bundle = _bundles.GetValueOrDefault(info.Tag);
+
             if (bundle == null)
             {
-                bundle = this.AddBundle(messageType, topic);
+                Func<CancellationToken> tokenGetter = null;
+                if (info.IsAsync)
+                {
+                    tokenGetter = () =>
+                        _tokenSource?.Token
+                        ??
+                        throw new MqException("Could not get cancellation token for message handling.");
+                }
+
+                bundle = new Bundle(
+                    this.ContextFactory,
+                    tokenGetter,
+                    info.MessageType,
+                    topic,
+                    info.Tag);
+
+                _bundles.Add(bundle.Tag, bundle);
+            }
+            else
+            {
+                if (bundle.IsAsync() && !info.IsAsync)
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("Cannot subscribe synchronous handler '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' to message '");
+                    sb.Append(bundle.MessageType.FullName);
+                    sb.Append("' (");
+                    if (bundle.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        sb.Append($"topic: '{bundle.Topic}'");
+                    }
+
+                    sb.Append(") because there are asynchronous handlers existing for that subscription.");
+
+                    throw new MqException(sb.ToString());
+                }
+
+                if (!bundle.IsAsync() && info.IsAsync)
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("Cannot subscribe asynchronous handler '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' to message '");
+                    sb.Append(bundle.MessageType.FullName);
+                    sb.Append("' (");
+                    if (bundle.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        sb.Append($"topic: '{bundle.Topic}'");
+                    }
+
+                    sb.Append(") because there are synchronous handlers existing for that subscription.");
+
+                    throw new MqException(sb.ToString());
+                }
             }
 
             bundle.AddHandlerType(messageHandlerType);
@@ -223,54 +473,73 @@ namespace TauCode.Mq
 
         #endregion
 
-        #region IMessageSubscriber Members
+        #region Abstract
 
-        public void Subscribe(Type messageHandlerType)
+        protected abstract void InitImpl();
+
+        protected abstract void ShutdownImpl();
+
+        protected abstract IDisposable SubscribeImpl(ISubscriptionRequest subscriptionRequest);
+
+        #endregion
+
+        #region Overridden
+
+        protected override void OnStarting()
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
+            this.InitImpl();
 
-            if (messageHandlerType == null)
+            _tokenSource = new CancellationTokenSource();
+
+            foreach (var subscriptionRequest in _bundles.Values)
             {
-                throw new ArgumentNullException(nameof(messageHandlerType));
+                var subscriptionHandle = this.SubscribeImpl(subscriptionRequest);
+                _subscriptionHandles.Add(subscriptionHandle);
             }
-
-            this.RegisterSubscription(messageHandlerType, null);
         }
 
-        public void Subscribe(Type messageHandlerType, string topic)
+        protected override void OnStopping()
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
-
-            if (messageHandlerType == null)
+            foreach (var subscriptionHandle in _subscriptionHandles)
             {
-                throw new ArgumentNullException(nameof(messageHandlerType));
+                subscriptionHandle.Dispose();
             }
 
-            if (topic == null)
-            {
-                throw new ArgumentNullException(nameof(topic));
-            }
+            _subscriptionHandles.Clear();
 
-            this.RegisterSubscription(messageHandlerType, topic);
+            _tokenSource.Cancel();
+            _tokenSource.Dispose();
+            _tokenSource = null;
+
+            this.ShutdownImpl();
         }
 
-        public void UnsubscribeAll()
+        protected override void OnDisposed()
         {
-            this.CheckStateForOperation(WorkerState.Stopped);
             _bundles.Clear();
         }
 
-        public ISubscriptionInfo[] GetSubscriptions()
+        #endregion
+
+        #region IMessageSubscriber Members
+
+        public IMessageHandlerContextFactory ContextFactory { get; }
+
+        public void Subscribe(Type messageHandlerType) =>
+            this.SubscribePriv(messageHandlerType, null, true);
+
+        public void Subscribe(Type messageHandlerType, string topic) =>
+            this.SubscribePriv(messageHandlerType, topic, false);
+
+        public IReadOnlyList<SubscriptionInfo> GetSubscriptions()
         {
-            var list = new List<ISubscriptionInfo>();
-
-            foreach (var bundle in _bundles.Values)
-            {
-                list.AddRange(bundle.MessageHandlerTypes
-                    .Select(x => new SubscriptionInfo(bundle.MessageType, bundle.Topic, x)));
-            }
-
-            return list.ToArray();
+            return _bundles
+                .Values
+                .Select(x => new SubscriptionInfo(
+                    x.MessageType,
+                    x.Topic,
+                    x.MessageHandlerTypes))
+                .ToList();
         }
 
         #endregion
