@@ -36,11 +36,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
             Log.Debug("Context began.");
         }
 
-        public void End()
-        {
-            Log.Debug("Context ended.");
-        }
-
         public object GetService(Type serviceType)
         {
             if (SupportedHandlerTypes.Contains(serviceType))
@@ -56,6 +51,11 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
             }
 
             throw new NotSupportedException($"Service of type '{serviceType.FullName}' is not supported.");
+        }
+
+        public void End()
+        {
+            Log.Debug("Context ended.");
         }
 
         public void Dispose()

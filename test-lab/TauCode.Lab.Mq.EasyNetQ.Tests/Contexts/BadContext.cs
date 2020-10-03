@@ -42,14 +42,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
             }
         }
 
-        public void End()
-        {
-            if (_throwOnEnd)
-            {
-                throw new NotSupportedException("Failed to end.");
-            }
-        }
-
         public object GetService(Type serviceType)
         {
             if (_throwOnGetService)
@@ -73,6 +65,14 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
             }
 
             throw new NotSupportedException($"Service of type '{serviceType.FullName}' not supported.");
+        }
+
+        public void End()
+        {
+            if (_throwOnEnd)
+            {
+                throw new NotSupportedException("Failed to end.");
+            }
         }
 
         public void Dispose()

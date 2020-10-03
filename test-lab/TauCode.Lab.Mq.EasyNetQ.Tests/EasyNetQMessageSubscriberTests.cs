@@ -18,7 +18,8 @@ using TauCode.Mq;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 using TauCode.Working.Exceptions;
-using HelloHandler = TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Sync.HelloHandler;
+
+// todo: check that topic, correlationId are preserved.
 
 namespace TauCode.Lab.Mq.EasyNetQ.Tests
 {

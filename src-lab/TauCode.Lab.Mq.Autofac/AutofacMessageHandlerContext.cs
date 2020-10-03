@@ -2,6 +2,7 @@
 using System;
 using TauCode.Mq;
 
+// todo regions etc
 namespace TauCode.Lab.Mq.Autofac
 {
     public class AutofacMessageHandlerContext : IMessageHandlerContext
@@ -13,17 +14,18 @@ namespace TauCode.Lab.Mq.Autofac
             _contextLifetimeScope = contextLifetimeScope ?? throw new ArgumentNullException(nameof(contextLifetimeScope));
         }
 
+        
         public virtual void Begin()
         {
             // idle
         }
 
+        public virtual object GetService(Type serviceType) => _contextLifetimeScope.Resolve(serviceType);
+
         public virtual void End()
         {
             // end
         }
-
-        public virtual object GetService(Type serviceType) => _contextLifetimeScope.Resolve(serviceType);
 
         public virtual void Dispose()
         {

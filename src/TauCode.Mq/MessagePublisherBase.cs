@@ -26,6 +26,26 @@ namespace TauCode.Mq
             }
         }
 
+        private static void CheckMessage(IMessage message)
+        {
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (message.Topic != null)
+            {
+                throw MqHelper.TopicMustBeNullException(); // todo ut this
+            }
+
+            var type = message.GetType();
+
+            if (!type.IsClass)
+            {
+                throw new ArgumentException($"Cannot publish instance of '{type.FullName}'. Message type must be a class.", nameof(message));
+            }
+        }
+
         #endregion
 
         #region Abstract
@@ -59,22 +79,7 @@ namespace TauCode.Mq
 
         public void Publish(IMessage message)
         {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            if (message.Topic != null)
-            {
-                throw MqHelper.TopicMustBeNullException(); // todo ut this
-            }
-
-            var type = message.GetType();
-
-            if (!type.IsClass)
-            {
-                throw new ArgumentException($"Cannot publish instance of '{type.FullName}'. Message type must be a class.", nameof(message)); // todo: we are having copy-paste here
-            }
+            CheckMessage(message);
 
             this.CheckNotDisposed();
             this.CheckStarted();
@@ -84,23 +89,8 @@ namespace TauCode.Mq
 
         public void Publish(IMessage message, string topic)
         {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            if (message.Topic != null)
-            {
-                throw MqHelper.TopicMustBeNullException(); // todo ut this
-            }
-
-            var type = message.GetType();
-
-            if (!type.IsClass)
-            {
-                throw new ArgumentException($"Cannot publish instance of '{type.FullName}'. Message type must be a class.", nameof(message));
-            }
-
+            CheckMessage(message);
+            
             if (string.IsNullOrEmpty(topic))
             {
                 throw new ArgumentException(
