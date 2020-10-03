@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TauCode.Mq\TauCode.Mq.csproj" />
-    <ProjectReference Include="..\TauCode.Lab.Working\TauCode.Lab.Working.csproj" />
   </ItemGroup>
 
 </Project>
