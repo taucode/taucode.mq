@@ -230,7 +230,7 @@ namespace TauCode.Mq
                     }
                     else
                     {
-                        throw new NotImplementedException();
+                        sb.Append($"topic: '{this.Topic}'");
                     }
 
                     sb.Append(").");

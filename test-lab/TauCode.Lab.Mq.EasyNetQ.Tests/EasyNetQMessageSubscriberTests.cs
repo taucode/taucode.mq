@@ -163,7 +163,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void ConnectionString_DisposedThenSet_ThrowsTodo()
+        public void ConnectionString_DisposedThenSet_ThrowsObjectDisposedException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -439,51 +439,143 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region Subscribe(Type)
 
         [Test]
-        public void SubscribeType_SingleSyncHandler_HandlesMessagesWithAndWithoutTopic()
+        public async Task SubscribeType_SingleSyncHandler_HandlesMessagesWithAndWithoutTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler), "topic1");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - happy path, starts handling messages without topic (sync, single handler).
+            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Olia"));
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync (topic: 'topic1'), Lesia!"));
+            Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
+
+            Assert.That(log, Does.Contain("Hello sync (no topic), Olia!"));
+            Assert.That(log, Does.Not.Contain("Welcome sync (no topic), Olia!"));
+
         }
 
         [Test]
-        public void SubscribeType_MultipleSyncHandlers_HandleMessagesWithAndWithoutTopic()
+        public async Task SubscribeType_MultipleSyncHandlers_HandleMessagesWithAndWithoutTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler));
+
+            subscriber.Subscribe(typeof(FishHaterHandler), "topic1");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - happy path, starts handling messages without topic (sync, multiple handlers).
+            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Olia"));
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync (topic: 'topic1'), Lesia!"));
+            Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
+            Assert.That(log, Does.Contain("Not fish - then hi sync (topic: 'topic1'), Lesia!"));
+
+            Assert.That(log, Does.Contain("Hello sync (no topic), Olia!"));
+            Assert.That(log, Does.Contain("Welcome sync (no topic), Olia!"));
+
+            Assert.That(log, Does.Not.Contain("Not fish - then hi sync (no topic), Olia!"));
         }
 
         [Test]
-        public void SubscribeType_SingleAsyncHandler_HandlesMessagesWithAndWithoutTopic()
+        public async Task SubscribeType_SingleAsyncHandler_HandlesMessagesWithAndWithoutTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
+            subscriber.Subscribe(typeof(WelcomeHandler), "topic1");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - happy path, starts handling messages without topic (async, single handler).
+            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Olia"));
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async (topic: 'topic1'), Lesia!"));
+            Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
+
+            Assert.That(log, Does.Contain("Hello async (no topic), Olia!"));
+            Assert.That(log, Does.Not.Contain("Welcome sync (no topic), Olia!"));
+
         }
 
         [Test]
-        public void SubscribeType_MultipleAsyncHandlers_HandleMessagesWithAndWithoutTopic()
+        public async Task SubscribeType_MultipleAsyncHandlers_HandleMessagesWithAndWithoutTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
+            subscriber.Subscribe(typeof(WelcomeAsyncHandler));
+
+            subscriber.Subscribe(typeof(HelloHandler), "topic1");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - happy path, starts handling messages without topic (async, multiple handlers).
+            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Olia"));
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async (topic: 'topic1'), Lesia!"));
+            Assert.That(log, Does.Contain("Welcome async (topic: 'topic1'), Lesia!"));
+            Assert.That(log, Does.Contain("Hello sync (topic: 'topic1'), Lesia!"));
+
+            Assert.That(log, Does.Contain("Hello async (no topic), Olia!"));
+            Assert.That(log, Does.Contain("Welcome async (no topic), Olia!"));
+            Assert.That(log, Does.Not.Contain("Hello sync (no topic), Olia!"));
+
         }
 
         [Test]
@@ -551,7 +643,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
         }
 
-
         [Test]
         public void SubscribeType_TypeIsSyncAfterAsync_ThrowsMqException()
         {
@@ -598,7 +689,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeType_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        public void SubscribeType_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -785,6 +876,8 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
         // todo: context.end() should not be called if handler thrown, faulted or canceled.
 
+        // todo: complex ut which covers all cases: sync, async, no topic, topic, another topic, dups, etc.
+
         [Test]
         public async Task SubscribeType_AsyncHandlerHandleAsyncThrows_LogsException()
         {
@@ -895,55 +988,130 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         #region Subscribe(Type, string)
 
         [Test]
-        public void SubscribeTypeString_SingleSyncHandler_HandlesMessagesWithProperTopic()
+        public async Task SubscribeTypeString_SingleSyncHandler_HandlesMessagesWithProperTopic()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
                 "host=localhost");
 
+            subscriber.Subscribe(typeof(HelloHandler), "topic1");
+            subscriber.Subscribe(typeof(HelloHandler), "topic2");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
+
             // Act
-            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(AbstractHandler), "some-topic"));
+            var message = new HelloMessage("Lesia");
+            publisher.Publish(message, "topic2");
+
+            await Task.Delay(300);
 
             // Assert
-            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
-            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' cannot be abstract."));
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync (topic: 'topic2'), Lesia!"));
+
+            Assert.That(log, Does.Not.Contain("Hello sync (topic: 'topic1'), Lesia!"));
         }
 
         [Test]
-        public void SubscribeTypeString_MultipleSyncHandlers_HandleMessagesWithProperTopic()
+        public async Task SubscribeTypeString_MultipleSyncHandlers_HandleMessagesWithProperTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler), "topic1");
+
+            subscriber.Subscribe(typeof(HelloHandler), "topic2");
+            subscriber.Subscribe(typeof(WelcomeHandler), "topic2");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - happy path, starts handling messages with proper topic (sync, multiple handlers).
+            var message = new HelloMessage("Lesia");
+            publisher.Publish(message, "topic2");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            
+            Assert.That(log, Does.Contain("Hello sync (topic: 'topic2'), Lesia!"));
+            Assert.That(log, Does.Contain("Welcome sync (topic: 'topic2'), Lesia!"));
+
+            Assert.That(log, Does.Not.Contain("Hello sync (topic: 'topic1'), Lesia!"));
         }
 
         [Test]
-        public void SubscribeTypeString_SingleAsyncHandler_HandlesMessagesWithProperTopic()
+        public async Task SubscribeTypeString_SingleAsyncHandler_HandlesMessagesWithProperTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "topic1");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "topic2");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - happy path, starts handling messages with proper topic (async, single handler).
+            var message = new HelloMessage("Lesia");
+            publisher.Publish(message, "topic2");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async (topic: 'topic2'), Lesia!"));
+
+            Assert.That(log, Does.Not.Contain("Hello async (topic: 'topic1'), Lesia!"));
         }
 
         [Test]
-        public void SubscribeTypeString_MultipleAsyncHandlers_HandleMessagesWithProperTopic()
+        public async Task SubscribeTypeString_MultipleAsyncHandlers_HandleMessagesWithProperTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "topic1");
+
+            subscriber.Subscribe(typeof(WelcomeAsyncHandler), "topic2");
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "topic2");
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - happy path, starts handling messages with proper topic (async, multiple handlers).
+            var message = new HelloMessage("Lesia");
+            publisher.Publish(message, "topic2");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async (topic: 'topic2'), Lesia!"));
+            Assert.That(log, Does.Contain("Welcome async (topic: 'topic2'), Lesia!"));
+
+            Assert.That(log, Does.Not.Contain("Hello async (topic: 'topic1'), Lesia!"));
         }
 
         [Test]
@@ -964,7 +1132,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsNull_ThrowsTodo()
+        public void SubscribeTypeString_TypeIsNull_ThrowsArgumentNullException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1028,133 +1196,234 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsSyncAfterAsyncSameTopic_ThrowsTodo()
+        public void SubscribeTypeString_TypeIsSyncAfterAsyncSameTopic_ThrowsMqException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
             // Act
-            // todo - arg is sync, while there are already async handlers for this type of message AND this topic => throws
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo($"Cannot subscribe synchronous handler '{typeof(HelloHandler)}' to message '{typeof(HelloMessage).FullName}' (topic: 'some-topic') because there are asynchronous handlers existing for that subscription."));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncHasDifferentTopic_TodoOk()
+        public async Task SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncHasDifferentTopic_RunsOk()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - arg is sync, while there are already async handlers for this type of message BUT different topic => no problem
+            subscriber.Subscribe(typeof(HelloHandler), "another-topic");
+            subscriber.Start();
+
+            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
+            Assert.That(log, Does.Not.Contain("Hello async (topic: 'another-topic'), Nika!"));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncIsTopicless_TodoOk()
+        public async Task SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncIsTopicless_RunsOk()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - arg is sync, while there are already async handlers for this type of message BUT those handlers are topicless => no problem
+            subscriber.Subscribe(typeof(HelloHandler), "another-topic");
+            subscriber.Start();
+
+            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
+            Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsAsyncAfterSyncSameTopic_ThrowsTodo()
+        public void SubscribeTypeString_TypeIsAsyncAfterSyncSameTopic_ThrowsMqException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler), "some-topic");
 
             // Act
-            // todo - arg is async, while there are already sync handlers for this type of message AND this topic => throws
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"Cannot subscribe asynchronous handler '{typeof(HelloAsyncHandler).FullName}' to message '{typeof(HelloMessage).FullName}' (topic: 'some-topic') because there are synchronous handlers existing for that subscription."));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncHasDifferentTopic_TodoOk()
+        public async Task SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncHasDifferentTopic_RunsOk()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler), "some-topic");
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - type is async, while there are already sync handlers for this type of message BUT different topic => no problem
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "another-topic");
+            subscriber.Start();
+
+            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
+            Assert.That(log, Does.Not.Contain("Hello sync (topic: 'another-topic'), Nika!"));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncIsTopicless_TodoOk()
+        public async Task SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncIsTopicless_RunsOk()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler));
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - type is async, while there are already sync handlers for this type of message BUT those handlers are topicless => no problem
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "another-topic");
+            subscriber.Start();
+
+            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
+            Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        public void SubscribeTypeString_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg implements IMessageHandler<TMessage> more than once => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsTodo()
+        public void SubscribeTypeString_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg implements IAsyncMessageHandler<TMessage> more than once => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeAsyncHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeImplementsBothSyncAndAsync_ThrowsTodo()
+        public void SubscribeTypeString_TypeImplementsBothSyncAndAsync_ThrowsArgumentException()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg implements both sync and async handler, same or different TMessage => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(BothSyncAndAsyncHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+        }
+
+
+        [Test]
+        public void SubscribeTypeString_SyncTypeAlreadySubscribedToTheSameTopic_ThrowsMqException()
+        {
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler), "some-topic");
+
+            // Act
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloHandler), "some-topic"));
+
+            // Assert
+            Assert.That(ex, Has.Message.StartWith($"Handler type '{typeof(HelloHandler).FullName}' already registered for message type '{typeof(HelloMessage).FullName}' (topic: 'some-topic')."));
         }
 
         [Test]
-        public void SubscribeTypeString_SyncTypeAlreadySubscribedToTheSameTopic_ThrowsTodo()
+        public async Task SubscribeTypeString_SyncTypeAlreadySubscribedButToDifferentTopic_RunsOk()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler), "some-topic");
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
+            subscriber.Subscribe(typeof(HelloHandler), "another-topic");
+            subscriber.Start();
+
+            publisher.Publish(new HelloMessage("Alina"), "another-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
-        }
-
-        [Test]
-        public void SubscribeTypeString_SyncTypeAlreadySubscribedButToDifferentTopic_TodoOk()
-        {
-            // Arrange
-
-            // Act
-
-            // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Alina!"));
+            Assert.That(log, Does.Not.Contain("Hello sync (topic: 'some-topic'), Alina!"));
         }
 
         [Test]
@@ -1218,6 +1487,33 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             publisher.Start();
 
             // Act
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "another-topic");
+            subscriber.Start();
+
+            publisher.Publish(new HelloMessage("Alina"), "another-topic");
+
+            await Task.Delay(300);
+
+            // Assert
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Alina!"));
+            Assert.That(log, Does.Not.Contain("Hello async (topic: 'some-topic'), Alina!"));
+        }
+
+        [Test]
+        public async Task SubscribeTypeString_AsyncTypeAlreadySubscribedButWithoutTopic_SubscribesOk()
+        {
+            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler)); // without topic
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
+
+            // Act
             subscriber.Subscribe(typeof(HelloHandler), "another-topic");
             subscriber.Start();
 
@@ -1228,18 +1524,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Assert
             var log = this.GetLog();
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Alina!"));
-            Assert.That(log, Does.Not.Contain("Hello async (topic: 'another-topic'), Alina!"));
-        }
-
-        [Test]
-        public void SubscribeTypeString_AsyncTypeAlreadySubscribedButWithoutTopic_TodoOk()
-        {
-            // Arrange
-
-            // Act
-
-            // Assert
-            throw new NotImplementedException();
+            Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Alina!"));
         }
 
         [Test]
@@ -1370,18 +1655,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             Assert.That(log, Does.Contain("Hello sync (topic: 'some-topic'), Small Fish!"));
             Assert.That(log, Does.Contain("I hate you sync (topic: 'some-topic'), 'Small Fish'! Exception thrown!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'some-topic'), Small Fish!"));
-        }
-
-        [Test]
-        public void SubscribeTypeString_AsyncHandlerHandleAsyncThrows_Todo()
-        {
-            // Arrange
-
-            // Act
-            // todo - async handler's HandleAsync is throwing => logs, stops loop gracefully.
-
-            // Assert
-            throw new NotImplementedException();
         }
 
         // todo: when topic is present, topicless subscription does not fire (sync or async)
@@ -2121,7 +2394,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void Stop_Disposed_ThrowsTodo()
+        public void Stop_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost")
