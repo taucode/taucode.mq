@@ -54,10 +54,24 @@ namespace TauCode.Lab.Mq.EasyNetQ
             {
                 // got sync handler
                 var subscriptionId = Guid.NewGuid().ToString();
-                var handle = _bus.Subscribe(
-                    subscriptionRequest.MessageType,
-                    subscriptionId,
-                    subscriptionRequest.Handler);
+
+                IDisposable handle;
+
+                if (subscriptionRequest.Topic == null)
+                {
+                    handle = _bus.Subscribe(
+                        subscriptionRequest.MessageType,
+                        subscriptionId,
+                        subscriptionRequest.Handler);
+                }
+                else
+                {
+                    handle = _bus.Subscribe(
+                        subscriptionRequest.MessageType,
+                        subscriptionId,
+                        subscriptionRequest.Handler,
+                        configuration => configuration.WithTopic(subscriptionRequest.Topic));
+                }
 
                 return handle;
             }
@@ -65,10 +79,24 @@ namespace TauCode.Lab.Mq.EasyNetQ
             {
                 // got async handler
                 var subscriptionId = Guid.NewGuid().ToString();
-                var handle = _bus.SubscribeAsync(
-                    subscriptionRequest.MessageType,
-                    subscriptionId,
-                    subscriptionRequest.AsyncHandler);
+
+                IDisposable handle;
+
+                if (subscriptionRequest.Topic == null)
+                {
+                    handle = _bus.SubscribeAsync(
+                        subscriptionRequest.MessageType,
+                        subscriptionId,
+                        subscriptionRequest.AsyncHandler);
+                }
+                else
+                {
+                    handle = _bus.SubscribeAsync(
+                        subscriptionRequest.MessageType,
+                        subscriptionId,
+                        subscriptionRequest.AsyncHandler,
+                        configuration => configuration.WithTopic(subscriptionRequest.Topic));
+                }
 
                 return handle;
             }
@@ -96,7 +124,6 @@ namespace TauCode.Lab.Mq.EasyNetQ
                 _connectionString = value;
             }
         }
-
 
         #endregion
     }

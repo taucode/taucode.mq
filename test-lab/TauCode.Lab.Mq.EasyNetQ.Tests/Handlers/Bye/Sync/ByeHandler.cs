@@ -8,7 +8,13 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Sync
     {
         public override void Handle(ByeMessage message)
         {
-            Log.Information($"Bye sync, {message.Nickname}!");
+            var topicString = " (no topic)";
+            if (message.Topic != null)
+            {
+                topicString = $" (topic: '{message.Topic}')";
+            }
+
+            Log.Information($"Bye sync{topicString}, {message.Nickname}!");
             MessageRepository.Instance.Add(message);
         }
     }

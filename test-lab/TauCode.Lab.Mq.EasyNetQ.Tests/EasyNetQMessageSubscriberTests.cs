@@ -219,7 +219,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain($"Method 'CreateContext' of factory '{typeof(BadContextFactory).FullName}' threw an exception."));
+            Assert.That(log, Does.Contain($"Failed to create context."));
         }
 
         [Test]
@@ -361,7 +361,6 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' threw an exception."));
             Assert.That(log, Does.Contain("Failed to get service."));
         }
 
@@ -779,10 +778,12 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain("Hello sync, Big Fish!"));
-            Assert.That(log, Does.Contain("I hate you sync, 'Big Fish'! Exception thrown!"));
-            Assert.That(log, Does.Contain("Welcome sync, Big Fish!"));
+            Assert.That(log, Does.Contain("Hello sync (no topic), Big Fish!"));
+            Assert.That(log, Does.Contain("I hate you sync (no topic), 'Big Fish'! Exception thrown!"));
+            Assert.That(log, Does.Contain("Welcome sync (no topic), Big Fish!"));
         }
+
+        // todo: context.end() should not be called if handler thrown, faulted or canceled.
 
         [Test]
         public async Task SubscribeType_AsyncHandlerHandleAsyncThrows_LogsException()
@@ -811,21 +812,9 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain("Hello async, Big Fish!"));
-            Assert.That(log, Does.Contain("I hate you async, 'Big Fish'! Exception thrown!"));
-            Assert.That(log, Does.Contain("Welcome async, Big Fish!"));
-        }
-
-        [Test]
-        public void SubscribeType_AsyncHandlerHandleAsyncIsFaulted_Todo()
-        {
-            // Arrange
-
-            // Act
-            // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
-
-            // Assert
-            throw new NotImplementedException();
+            Assert.That(log, Does.Contain("Hello async (no topic), Big Fish!"));
+            Assert.That(log, Does.Contain("I hate you async (no topic), 'Big Fish'! Exception thrown!"));
+            Assert.That(log, Does.Contain("Welcome async (no topic), Big Fish!"));
         }
 
         [Test]
@@ -855,34 +844,50 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Assert
             var log = this.GetLog();
 
-            Assert.That(log, Does.Contain("Hello async, Ira!")); // #0
-            Assert.That(log, Does.Contain("Sorry, I am cancelling async, Ira...")); // #1
-            Assert.That(log, Does.Contain("Sorry, I am faulting async, Ira...")); // #2
-            Assert.That(log, Does.Contain("Welcome async, Ira!")); // #3
+            Assert.That(log, Does.Contain("Hello async (no topic), Ira!")); // #0
+            Assert.That(log, Does.Contain("Sorry, I am cancelling async (no topic), Ira...")); // #1
+            Assert.That(log, Does.Contain("Sorry, I am faulting async (no topic), Ira...")); // #2
+            Assert.That(log, Does.Contain("Welcome async (no topic), Ira!")); // #3
         }
 
         [Test]
-        public void SubscribeType_Started_ThrowsTodo()
+        public void SubscribeType_Started_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
 
             // Act
-            // todo - started, throws
+            subscriber.Start();
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
         }
 
         [Test]
-        public void SubscribeType_Disposed_ThrowsTodo()
+        public void SubscribeType_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler));
 
             // Act
-            // todo - disposed, throws
+            subscriber.Dispose();
+            var ex = Assert.Throws<ObjectDisposedException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("my-subscriber"));
         }
 
         #endregion
@@ -893,12 +898,16 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         public void SubscribeTypeString_SingleSyncHandler_HandlesMessagesWithProperTopic()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - happy path, starts handling messages with proper topic (sync, single handler).
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(AbstractHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' cannot be abstract."));
         }
 
         [Test]
@@ -938,63 +947,84 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeTypeString_TopicIsNullOrEmpty_ThrowsTodo()
+        [TestCase(null)]
+        [TestCase("")]
+        public void SubscribeTypeString_TopicIsNullOrEmpty_ThrowsArgumentException(string badTopic)
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - topic is null or empty => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloHandler), badTopic));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("'topic' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' overload. (Parameter 'topic')"));
+            Assert.That(ex.ParamName, Is.EqualTo("topic"));
         }
 
         [Test]
         public void SubscribeTypeString_TypeIsNull_ThrowsTodo()
         {
-            // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is null => throws
+            var ex = Assert.Throws<ArgumentNullException>(() => subscriber.Subscribe(null, "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsAbstract_ThrowsTodo()
+        public void SubscribeTypeString_TypeIsAbstract_ThrowsArgumentException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is abstract => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(AbstractHandler), "my-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' cannot be abstract."));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsNotClass_ThrowsTodo()
+        public void SubscribeTypeString_TypeIsNotClass_ThrowsArgumentException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is not class => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(StructHandler), "my-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must represent a class."));
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsNotGenericSyncOrAsyncHandler_ThrowsTodo()
+        [TestCase(typeof(NonGenericHandler))]
+        [TestCase(typeof(NotImplementingHandlerInterface))]
+        public void SubscribeTypeString_TypeIsNotGenericSyncOrAsyncHandler_ThrowsArgumentException(Type badHandlerType)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - arg is not (IMessageHandler<TMessage> xor IAsyncMessageHandler<TMessage>) => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ParamName, Is.EqualTo("messageHandlerType"));
+            Assert.That(ex, Has.Message.StartWith("'messageHandlerType' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner."));
         }
 
         [Test]
@@ -1128,36 +1158,77 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeTypeString_SyncTypeAlreadySubscribedButWithoutTopic_TodoOk()
+        public async Task SubscribeTypeString_SyncTypeAlreadySubscribedButWithoutTopic_RunsOk()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler)); // without topic
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
+
+            subscriber.Start();
+
+            var message = new HelloMessage("Marina");
+            publisher.Publish(message, "some-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello sync (topic: 'some-topic'), Marina!"));
+            Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Marina!"));
         }
 
         [Test]
-        public void SubscribeTypeString_AsyncTypeAlreadySubscribedToTheSameTopic_ThrowsTodo()
+        public void SubscribeTypeString_AsyncTypeAlreadySubscribedToTheSameTopic_ThrowsMqException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
             // Act
+            var ex = Assert.Throws<MqException>(() => subscriber.Subscribe(typeof(HelloHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo($"Cannot subscribe synchronous handler '{typeof(HelloHandler).FullName}' to message '{typeof(HelloMessage).FullName}' (topic: 'some-topic') because there are asynchronous handlers existing for that subscription."));
         }
 
         [Test]
-        public void SubscribeTypeString_AsyncTypeAlreadySubscribedButToDifferentTopic_TodoOk()
+        public async Task SubscribeTypeString_AsyncTypeAlreadySubscribedButToDifferentTopic_SubscribesOk()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
+            subscriber.Subscribe(typeof(HelloHandler), "another-topic");
+            subscriber.Start();
+
+            publisher.Publish(new HelloMessage("Alina"), "another-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Alina!"));
+            Assert.That(log, Does.Not.Contain("Hello async (topic: 'another-topic'), Alina!"));
         }
 
         [Test]
@@ -1172,63 +1243,133 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
         }
 
         [Test]
-        public void SubscribeTypeString_TMessageIsAbstract_ThrowsTodo()
+        [TestCase(typeof(AbstractMessageHandler))]
+        [TestCase(typeof(AbstractMessageAsyncHandler))]
+        public void SubscribeTypeString_TMessageIsAbstract_ThrowsArgumentException(Type badHandlerType)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - TMessage is abstract => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType, "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"Cannot handle abstract message type '{typeof(AbstractMessage).FullName}'."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageType"));
         }
 
         [Test]
-        public void SubscribeTypeString_TMessageIsNotClass_ThrowsTodo()
+        [TestCase(typeof(StructMessageHandler))]
+        [TestCase(typeof(StructMessageAsyncHandler))]
+        public void SubscribeTypeString_TMessageIsNotClass_ThrowsArgumentException(Type badHandlerType)
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
 
             // Act
-            // todo - TMessage is not class => throws
+            var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType), "some-topic");
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.StartWith($"Cannot handle non-class message type '{typeof(StructMessage).FullName}'."));
+            Assert.That(ex.ParamName, Is.EqualTo("messageType"));
         }
 
         [Test]
-        public void SubscribeTypeString_TMessageCtorThrows_Todo()
+        public async Task SubscribeTypeString_TMessageCtorThrows_LogsException()
+
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
+
+            var message = new DecayingMessage
+            {
+                DecayedProperty = "fresh",
+            };
+
+            DecayingMessage.IsCtorDecayed = true;
+
+            subscriber.Subscribe(typeof(DecayingMessageHandler), "some-topic");
+            subscriber.Start();
 
             // Act
-            // todo - TMessage is throwing in ctor => todo: wat? will EasyNetQ handle this?
+            publisher.Publish(message, "some-topic");
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Alas Ctor Decayed!"));
         }
 
         [Test]
-        public void SubscribeTypeString_TMessagePropertyThrows_Todo()
+        public async Task SubscribeTypeString_TMessagePropertyThrows_LogsException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            using var bus = RabbitHutch.CreateBus("host=localhost");
+            var message = new DecayingMessage
+            {
+                DecayedProperty = "fresh",
+            };
+
+            DecayingMessage.IsPropertyDecayed = true;
+
+            subscriber.Subscribe(typeof(DecayingMessageHandler), "some-topic");
+            subscriber.Start();
 
             // Act
-            // todo - TMessage is throwing when querying properties => todo: wat? will EasyNetQ handle this?
+            bus.Publish(message, "some-topic");
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Alas Property Decayed!"));
         }
 
+
+        // todo: review ut-s of entire 'Bundle.Handle', 'Bundle.AsyncHandle' loops. If an exception was thrown at any step, we must give the chance to other handlers. 
+        // todo: they are not guilty that one of them failed.
+
         [Test]
-        public void SubscribeTypeString_SyncHandlerHandleThrows_Todo()
+        public async Task SubscribeTypeString_SyncHandlerThrows_RestDoRun()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(
+                new GoodContextFactory(),
+                "host=localhost");
+
+            subscriber.Subscribe(typeof(HelloHandler), "some-topic"); // #0 will handle
+            subscriber.Subscribe(typeof(FishHaterHandler), "some-topic"); // #1 will fail
+            subscriber.Subscribe(typeof(WelcomeHandler), "some-topic"); // #2 will handle
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
+
+            var message = new HelloMessage("Small Fish");
 
             // Act
-            // todo - sync handler's Handle is throwing => logs, stops loop gracefully.
+            publisher.Publish(message, "some-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Hello sync (topic: 'some-topic'), Small Fish!"));
+            Assert.That(log, Does.Contain("I hate you sync (topic: 'some-topic'), 'Small Fish'! Exception thrown!"));
+            Assert.That(log, Does.Contain("Welcome sync (topic: 'some-topic'), Small Fish!"));
         }
 
         [Test]
@@ -1243,54 +1384,113 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             throw new NotImplementedException();
         }
 
+        // todo: when topic is present, topicless subscription does not fire (sync or async)
+
+
+        // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
         [Test]
-        public void SubscribeTypeString_AsyncHandlerHandleAsyncIsFaulted_Todo()
+        public async Task SubscribeTypeString_AsyncHandlerFaulted_LogsException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(FaultingHelloAsyncHandler), "some-topic");
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
+            publisher.Publish(new HelloMessage("Ania"), "some-topic");
+
+            await Task.Delay(300);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+            Assert.That(log, Does.Contain("Sorry, I am faulting async (topic: 'some-topic'), Ania..."));
+            Assert.That(log, Does.Not.Contain("Context ended."));
         }
 
         // todo: sync handler throwing => rest of them working.
 
+        //SubscribeType_AsyncHandlerCanceledOrFaulted_RestDoRun
         [Test]
-        public async Task SubscribeTypeString_AsyncHandlerHandleAsyncIsCanceled_Todo()
+        public async Task SubscribeTypeString_AsyncHandlerCanceledOrFaulted_RestDoRun()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic"); // #0 will say 'hello'
+            subscriber.Subscribe(typeof(CancelingHelloAsyncHandler), "some-topic"); // #1 will cancel with message
+            subscriber.Subscribe(typeof(FaultingHelloAsyncHandler), "some-topic"); // #2 will fault with message
+            subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"); // #3 will say 'welcome', regardless of #1 canceled and #2 faulted.
+
+            subscriber.Start();
+
+            using var publisher = new EasyNetQMessagePublisher("host=localhost");
+            publisher.Start();
 
             // Act
-            // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
+            publisher.Publish(new HelloMessage("Ira"), "some-topic");
+
+            await Task.Delay(200);
 
             // Assert
-            throw new NotImplementedException();
+            var log = this.GetLog();
+
+            Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Ira!")); // #0
+            Assert.That(log, Does.Contain("Sorry, I am cancelling async (topic: 'some-topic'), Ira...")); // #1
+            Assert.That(log, Does.Contain("Sorry, I am faulting async (topic: 'some-topic'), Ira...")); // #2
+            Assert.That(log, Does.Contain("Welcome async (topic: 'some-topic'), Ira!")); // #3
         }
 
         [Test]
-        public void SubscribeTypeString_Started_ThrowsTodo()
+        public void SubscribeTypeString_Started_ThrowsInappropriateWorkerStateException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
             // Act
-            // todo - started, throws
+            subscriber.Start();
+            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+
         }
 
         [Test]
-        public void SubscribeTypeString_Disposed_ThrowsTodo()
+        public void SubscribeTypeString_Disposed_ThrowsObjectDisposedException()
         {
             // Arrange
+            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-subscriber"
+            };
+
+            subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
             // Act
-            // todo - disposed, throws
+            subscriber.Dispose();
+            var ex = Assert.Throws<ObjectDisposedException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
 
             // Assert
-            throw new NotImplementedException();
+            Assert.That(ex.ObjectName, Is.EqualTo("my-subscriber"));
         }
 
         #endregion
@@ -1743,11 +1943,11 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Assert
             var log = this.GetLog();
 
-            Assert.That(log, Does.Contain("Hello sync, Ira!"));
-            Assert.That(log, Does.Contain("Welcome sync, Ira!"));
+            Assert.That(log, Does.Contain("Hello sync (no topic), Ira!"));
+            Assert.That(log, Does.Contain("Welcome sync (no topic), Ira!"));
 
-            Assert.That(log, Does.Contain("Bye async, Olia!"));
-            Assert.That(log, Does.Contain("Be back async, Olia!"));
+            Assert.That(log, Does.Contain("Bye async (no topic), Olia!"));
+            Assert.That(log, Does.Contain("Be back async (no topic), Olia!"));
         }
 
         [Test]
@@ -1827,11 +2027,11 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
             // Assert
             var log = this.GetLog();
 
-            Assert.That(log, Does.Contain("Hello sync, Manuela!"));
-            Assert.That(log, Does.Contain("Welcome sync, Manuela!"));
+            Assert.That(log, Does.Contain("Hello sync (no topic), Manuela!"));
+            Assert.That(log, Does.Contain("Welcome sync (no topic), Manuela!"));
 
-            Assert.That(log, Does.Contain("Bye async, Alex!"));
-            Assert.That(log, Does.Contain("Be back async, Alex!"));
+            Assert.That(log, Does.Contain("Bye async (no topic), Alex!"));
+            Assert.That(log, Does.Contain("Be back async (no topic), Alex!"));
         }
 
         [Test]
@@ -1897,7 +2097,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain($"Async handler '{typeof(HelloAsyncHandler)}' got canceled."));
+            Assert.That(log, Does.Contain($"A task was canceled."));
         }
 
         [Test]
@@ -1979,7 +2179,7 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests
 
             // Assert
             var log = this.GetLog();
-            Assert.That(log, Does.Contain($"Async handler '{typeof(HelloAsyncHandler)}' got canceled."));
+            Assert.That(log, Does.Contain($"A task was canceled."));
         }
 
         [Test]

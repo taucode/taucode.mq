@@ -10,8 +10,14 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Async
     {
         public override async Task HandleAsync(HelloMessage message, CancellationToken cancellationToken)
         {
+            var topicString = " (no topic)";
+            if (message.Topic != null)
+            {
+                topicString = $" (topic: '{message.Topic}')";
+            }
+
             await Task.Delay(20, cancellationToken);
-            throw new NotSupportedException($"Sorry, I am faulting async, {message.Name}...");
+            throw new NotSupportedException($"Sorry, I am faulting async{topicString}, {message.Name}...");
         }
     }
 }

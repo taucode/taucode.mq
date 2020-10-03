@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Async;
@@ -32,12 +33,12 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Contexts
 
         public void Begin()
         {
-            // idle
+            Log.Debug("Context began.");
         }
 
         public void End()
         {
-            // idle
+            Log.Debug("Context ended.");
         }
 
         public object GetService(Type serviceType)

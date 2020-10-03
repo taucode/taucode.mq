@@ -9,12 +9,18 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Sync
     {
         public override void Handle(HelloMessage message)
         {
-            if (message.Name.Contains("fish", StringComparison.InvariantCultureIgnoreCase))
+            var topicString = " (no topic)";
+            if (message.Topic != null)
             {
-                throw new Exception($"I hate you sync, '{message.Name}'! Exception thrown!");
+                topicString = $" (topic: '{message.Topic}')";
             }
 
-            Log.Information($"Not fish - then hi sync, {message.Name}!");
+            if (message.Name.Contains("fish", StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new Exception($"I hate you sync{topicString}, '{message.Name}'! Exception thrown!");
+            }
+
+            Log.Information($"Not fish - then hi sync{topicString}, {message.Name}!");
             MessageRepository.Instance.Add(message);
         }
     }

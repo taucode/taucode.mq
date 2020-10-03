@@ -10,9 +10,15 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Bye.Async
     {
         public override async Task HandleAsync(ByeMessage message, CancellationToken cancellationToken)
         {
+            var topicString = " (no topic)";
+            if (message.Topic != null)
+            {
+                topicString = $" (topic: '{message.Topic}')";
+            }
+
             await Task.Delay(message.MillisecondsTimeout, cancellationToken);
 
-            Log.Information($"Be back async, {message.Nickname}!");
+            Log.Information($"Be back async{topicString}, {message.Nickname}!");
             MessageRepository.Instance.Add(message);
         }
     }

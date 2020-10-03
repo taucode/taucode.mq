@@ -8,7 +8,13 @@ namespace TauCode.Lab.Mq.EasyNetQ.Tests.Handlers.Hello.Sync
     {
         public override void Handle(HelloMessage message)
         {
-            Log.Information($"Hello sync, {message.Name}!");
+            var topicString = " (no topic)";
+            if (message.Topic != null)
+            {
+                topicString = $" (topic: '{message.Topic}')";
+            }
+
+            Log.Information($"Hello sync{topicString}, {message.Name}!");
             MessageRepository.Instance.Add(message);
         }
     }

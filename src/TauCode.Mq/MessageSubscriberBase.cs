@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
+using TauCode.Working.Exceptions;
 
 namespace TauCode.Mq
 {
@@ -35,12 +36,14 @@ namespace TauCode.Mq
             {
                 if (messageType.IsAbstract)
                 {
-                    throw new ArgumentException($"Cannot handle abstract message type '{messageType.FullName}'.", nameof(messageType));
+                    throw new ArgumentException($"Cannot handle abstract message type '{messageType.FullName}'.",
+                        nameof(messageType));
                 }
 
                 if (!messageType.IsClass)
                 {
-                    throw new ArgumentException($"Cannot handle non-class message type '{messageType.FullName}'.", nameof(messageType));
+                    throw new ArgumentException($"Cannot handle non-class message type '{messageType.FullName}'.",
+                        nameof(messageType));
                 }
 
                 this.MessageType = messageType;
@@ -98,100 +101,61 @@ namespace TauCode.Mq
 
             #region Private
 
-            private THandlerInterfaceType CreateContextAndHandler<THandlerInterfaceType>(
-                Type messageHandlerType,
-                int index,
-                out IMessageHandlerContext context)
+            private IMessageHandlerContext CreateContext()
             {
-                #region trying to create context
-
-                try
-                {
-                    context = _factory.CreateContext();
-                }
-                catch (Exception ex)
-                {
-                    throw new HandleException(
-                        $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' threw an exception.",
-                        ex,
-                        messageHandlerType,
-                        index);
-                }
+                var context = _factory.CreateContext();
 
                 if (context == null)
                 {
-                    throw new HandleException(
-                        $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' returned 'null'.",
-                        null,
-                        messageHandlerType,
-                        index);
+                    throw new MqException(
+                        $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' returned 'null'.");
                 }
 
-                #endregion
+                return context;
+            }
 
-                #region trying to begin context
-
-                try
+            private static string StringToMessagePart(string s)
+            {
+                if (s == null)
                 {
-                    context.Begin();
-                }
-                catch (Exception ex)
-                {
-                    throw new HandleException(
-                        $"Method 'Begin' of context '{context.GetType().FullName}' threw an exception.",
-                        ex,
-                        messageHandlerType,
-                        index);
+                    return "null";
                 }
 
-                #endregion
+                return $"'{s}'";
+            }
 
-                object service;
+            private string GetHandleFailureMessage(Type messageHandlerType, IMessage message, int handlerIndex)
+            {
+                var sb = new StringBuilder();
+                sb.Append(
+                    $"Handler '{messageHandlerType}' failed (Index: {handlerIndex} of {_messageHandlerTypes.Count}). ");
+                sb.Append(
+                    $"Message: ['{message.GetType().FullName}', Topic: {StringToMessagePart(message.Topic)}, CorrelationId: {StringToMessagePart(message.CorrelationId)}, CreatedAt: {message.CreatedAt}]");
 
-                #region trying to get service which would be the handler
+                return sb.ToString();
+            }
 
-                try
-                {
-                    service = context.GetService(messageHandlerType);
-                }
-                catch (Exception ex)
-                {
-                    throw new HandleException(
-                        $"Method 'GetService' of context '{context.GetType().FullName}' threw an exception.",
-                        ex,
-                        messageHandlerType,
-                        index);
-                }
+            private THandlerInterfaceType CreateHandler<THandlerInterfaceType>(
+                IMessageHandlerContext context,
+                Type messageHandlerType)
+            {
+                context.Begin();
 
-                #endregion
-
-                #region check service is not null
+                var service = context.GetService(messageHandlerType);
 
                 if (service == null)
                 {
-                    throw new HandleException(
-                        $"Method 'GetService' of context '{context.GetType().FullName}' returned 'null'.",
-                        null,
-                        messageHandlerType,
-                        index);
+                    throw new MqException(
+                        $"Method 'GetService' of context '{context.GetType().FullName}' returned 'null'.");
                 }
-
-                #endregion
-
-                #region check service is of proper type
 
                 if (service.GetType() != messageHandlerType)
                 {
-                    throw new HandleException(
-                        $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.",
-                        null,
-                        messageHandlerType,
-                        index);
+                    throw new MqException(
+                        $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.");
                 }
 
-                #endregion
-
-                var handler = (THandlerInterfaceType)service;
+                var handler = (THandlerInterfaceType) service;
                 return handler;
             }
 
@@ -200,67 +164,22 @@ namespace TauCode.Mq
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
                     var messageHandlerType = _messageHandlerTypes[i];
-                    IMessageHandlerContext context = null;
 
                     try
                     {
-                        // mocking the using(...) construct
-                        try
-                        {
-                            // creating context and handler
-                            var handler = this.CreateContextAndHandler<IMessageHandler>(
-                                messageHandlerType,
-                                i,
-                                out context);
-
-                            // invoke handler
-                            try
-                            {
-                                handler.Handle(message);
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new HandleException(
-                                    $"Method 'Handle' threw an exception.",
-                                    ex,
-                                    messageHandlerType,
-                                    i);
-                            }
-
-                            // end context
-                            try
-                            {
-                                context.End();
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new HandleException(
-                                    $"Method 'End' of context '{context.GetType().FullName}' threw an exception.",
-                                    ex,
-                                    messageHandlerType,
-                                    i);
-                            }
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                context?.Dispose();
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new HandleException(
-                                    $"Method 'Dispose' of context '{context?.GetType().FullName}' threw an exception.",
-                                    ex,
-                                    messageHandlerType,
-                                    i);
-                            }
-                        }
+                        using var context = this.CreateContext();
+                        var handler = this.CreateHandler<IMessageHandler>(context, messageHandlerType);
+                        handler.Handle(message);
+                        context.End();
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex,
-                            $"One of the handlers failed for message of type '{message.GetType().FullName}'."); // todo: correlation id, createdAt, etc.
+                        Log.Error(
+                            ex,
+                            GetHandleFailureMessage(
+                                messageHandlerType,
+                                (IMessage) message,
+                                i));
                     }
                 }
             }
@@ -270,88 +189,23 @@ namespace TauCode.Mq
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
                     var messageHandlerType = _messageHandlerTypes[i];
-                    IMessageHandlerContext context = null;
 
                     try
                     {
-                        // mocking the using(...) construct
-                        try
-                        {
-                            // creating context and handler
-                            var handler = this.CreateContextAndHandler<IAsyncMessageHandler>(
-                                messageHandlerType,
-                                i,
-                                out context);
-
-                            // get token
-                            CancellationToken token;
-                            try
-                            {
-                                token = _tokenGetter();
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new HandleException(
-                                    $"Failed to get cancellation token for async handler.",
-                                    ex,
-                                    messageHandlerType,
-                                    i);
-                            }
-
-                            // invoke handler
-                            try
-                            {
-                                await handler.HandleAsync(message, token);
-                            }
-                            catch (TaskCanceledException ex)
-                            {
-                                // It is not necessarily an error, e.g. subscriber might be stopped.
-                                Log.Information(ex, $"Async handler '{handler.GetType().FullName}' got canceled.");
-
-                                // the loop will continue. other handlers gotta get their chance, therefore let's continue the loop.
-                            }
-                            catch (Exception ex)
-                            {
-                                // this handler has faulted. but we gonna give a chance to remaining ones.
-                                // so don't throw here, just log the exception and continue the loop.
-
-                                Log.Error(ex, $"Async handler '{handler.GetType().FullName}' faulted.");
-                            }
-
-                            // end context
-                            try
-                            {
-                                context.End();
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new HandleException(
-                                    $"Method 'End' of context '{context.GetType().FullName}' threw an exception.",
-                                    ex,
-                                    messageHandlerType,
-                                    i);
-                            }
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                context?.Dispose();
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new HandleException(
-                                    $"Method 'Dispose' of context '{context?.GetType().FullName}' threw an exception.",
-                                    ex,
-                                    messageHandlerType,
-                                    i);
-                            }
-                        }
+                        using var context = this.CreateContext();
+                        var handler = this.CreateHandler<IAsyncMessageHandler>(context, messageHandlerType);
+                        var token = _tokenGetter();
+                        await handler.HandleAsync(message, token);
+                        context.End();
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex,
-                            $"One of the handlers failed for message of type '{message.GetType().FullName}'."); // todo: correlation id, createdAt, etc.
+                        Log.Error(
+                            ex,
+                            GetHandleFailureMessage(
+                                messageHandlerType,
+                                (IMessage) message,
+                                i));
                     }
                 }
             }
@@ -378,6 +232,7 @@ namespace TauCode.Mq
                     {
                         throw new NotImplementedException();
                     }
+
                     sb.Append(").");
 
                     throw new MqException(sb.ToString());
@@ -450,7 +305,16 @@ namespace TauCode.Mq
         {
             if (this.State != WorkerState.Stopped)
             {
-                throw new NotImplementedException();
+                throw new InappropriateWorkerStateException(this.State);
+            }
+        }
+
+        private void CheckNotDisposed()
+        {
+            if (this.IsDisposed)
+            {
+                var name = this.Name ?? this.GetType().FullName;
+                throw new ObjectDisposedException(name);
             }
         }
 
@@ -517,6 +381,96 @@ namespace TauCode.Mq
             }
         }
 
+        private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed)
+        {
+            this.CheckNotDisposed();
+            this.CheckStopped();
+
+            if (messageHandlerType == null)
+            {
+                throw new ArgumentNullException(nameof(messageHandlerType));
+            }
+
+            if (string.IsNullOrEmpty(topic) && !emptyTopicIsAllowed)
+            {
+                throw new ArgumentException(
+                    $"'{nameof(topic)}' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' overload.",
+                    nameof(topic));
+            }
+
+            var info = this.BuildMessageHandlerInfo(messageHandlerType, topic);
+            var bundle = _bundles.GetValueOrDefault(info.Tag);
+
+            if (bundle == null)
+            {
+                Func<CancellationToken> tokenGetter = null;
+                if (info.IsAsync)
+                {
+                    tokenGetter = () =>
+                        _tokenSource?.Token
+                        ??
+                        throw new MqException("Could not get cancellation token for message handling.");
+                }
+
+                bundle = new Bundle(
+                    this.ContextFactory,
+                    tokenGetter,
+                    info.MessageType,
+                    topic,
+                    info.Tag);
+
+                _bundles.Add(bundle.Tag, bundle);
+            }
+            else
+            {
+                if (bundle.IsAsync() && !info.IsAsync)
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("Cannot subscribe synchronous handler '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' to message '");
+                    sb.Append(bundle.MessageType.FullName);
+                    sb.Append("' (");
+                    if (bundle.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        sb.Append($"topic: '{bundle.Topic}'");
+                    }
+
+                    sb.Append(") because there are asynchronous handlers existing for that subscription.");
+
+                    throw new MqException(sb.ToString());
+                }
+
+                if (!bundle.IsAsync() && info.IsAsync)
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("Cannot subscribe asynchronous handler '");
+                    sb.Append(messageHandlerType.FullName);
+                    sb.Append("' to message '");
+                    sb.Append(bundle.MessageType.FullName);
+                    sb.Append("' (");
+                    if (bundle.Topic == null)
+                    {
+                        sb.Append("no topic");
+                    }
+                    else
+                    {
+                        sb.Append($"topic: '{bundle.Topic}'");
+                    }
+
+                    sb.Append(") because there are synchronous handlers existing for that subscription.");
+
+                    throw new MqException(sb.ToString());
+                }
+            }
+
+            bundle.AddHandlerType(messageHandlerType);
+        }
+
         #endregion
 
         #region Abstract
@@ -571,102 +525,11 @@ namespace TauCode.Mq
 
         public IMessageHandlerContextFactory ContextFactory { get; }
 
-        public void Subscribe(Type messageHandlerType)
-        {
-            if (messageHandlerType == null)
-            {
-                throw new ArgumentNullException(nameof(messageHandlerType));
-            }
+        public void Subscribe(Type messageHandlerType) =>
+            this.SubscribePriv(messageHandlerType, null, true);
 
-            this.CheckStopped();
-
-            var info = this.BuildMessageHandlerInfo(messageHandlerType, null);
-            var bundle = _bundles.GetValueOrDefault(info.Tag);
-
-            if (bundle == null)
-            {
-                Func<CancellationToken> tokenGetter = null;
-                if (info.IsAsync)
-                {
-                    tokenGetter = () =>
-                        _tokenSource?.Token
-                        ??
-                        throw new MqException("Could not get cancellation token for message handling.");
-                }
-
-                bundle = new Bundle(
-                    this.ContextFactory,
-                    tokenGetter,
-                    info.MessageType,
-                    null,
-                    info.Tag);
-
-                _bundles.Add(bundle.Tag, bundle);
-            }
-            else
-            {
-                if (bundle.IsAsync() && !info.IsAsync)
-                {
-                    var sb = new StringBuilder();
-                    sb.Append("Cannot subscribe synchronous handler '");
-                    sb.Append(messageHandlerType.FullName);
-                    sb.Append("' to message '");
-                    sb.Append(bundle.MessageType.FullName);
-                    sb.Append("' (");
-                    if (bundle.Topic == null)
-                    {
-                        sb.Append("no topic");
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
-                    }
-                    sb.Append(") because there are asynchronous handlers existing for that subscription.");
-
-                    throw new MqException(sb.ToString());
-                }
-
-                if (!bundle.IsAsync() && info.IsAsync)
-                {
-                    var sb = new StringBuilder();
-                    sb.Append("Cannot subscribe asynchronous handler '");
-                    sb.Append(messageHandlerType.FullName);
-                    sb.Append("' to message '");
-                    sb.Append(bundle.MessageType.FullName);
-                    sb.Append("' (");
-                    if (bundle.Topic == null)
-                    {
-                        sb.Append("no topic");
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
-                    }
-                    sb.Append(") because there are synchronous handlers existing for that subscription.");
-
-                    throw new MqException(sb.ToString());
-                }
-            }
-
-            bundle.AddHandlerType(messageHandlerType);
-        }
-
-        public void Subscribe(Type messageHandlerType, string topic)
-        {
-            if (messageHandlerType == null)
-            {
-                throw new ArgumentNullException(nameof(messageHandlerType));
-            }
-
-            if (string.IsNullOrEmpty(topic))
-            {
-                throw new ArgumentException(
-                    $"'{nameof(topic)}' cannot be null or empty. If you need a topicless subscription, use the 'Subscribe(Type messageHandlerType)' overload.",
-                    nameof(topic));
-            }
-
-            throw new NotImplementedException();
-        }
+        public void Subscribe(Type messageHandlerType, string topic) =>
+            this.SubscribePriv(messageHandlerType, topic, false);
 
         public IReadOnlyList<SubscriptionInfo> GetSubscriptions()
         {
