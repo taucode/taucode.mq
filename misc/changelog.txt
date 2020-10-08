@@ -1,3 +1,7 @@
 2020-10-04
 ==========
     1. Complete refactoring.
+
+2020-10-08
+==========
+    1. Took stuff like IMessageHandler from TauCode.Mq.Abstractions.
