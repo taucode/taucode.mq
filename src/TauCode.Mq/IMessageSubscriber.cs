@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using TauCode.Working;
+using TauCode.Working.Labor;
 
+// todo clean
 namespace TauCode.Mq
 {
-    public interface IMessageSubscriber : IWorker
+    public interface IMessageSubscriber : /*IWorker*/ ILaborer
     {
         IMessageHandlerContextFactory ContextFactory { get; }
 

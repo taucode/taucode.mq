@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
+using TauCode.Working.Labor;
 
+// todo clean
 namespace TauCode.Mq
 {
-    public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
+    public abstract class MessageSubscriberBase : /*WorkerBase*/ SimpleLaborerBase, IMessageSubscriber
     {
         #region Nested
 
@@ -155,7 +156,7 @@ namespace TauCode.Mq
                         $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.");
                 }
 
-                var handler = (THandlerInterfaceType) service;
+                var handler = (THandlerInterfaceType)service;
                 return handler;
             }
 
@@ -178,7 +179,7 @@ namespace TauCode.Mq
                             ex,
                             GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage) message,
+                                (IMessage)message,
                                 i));
                     }
                 }
@@ -204,7 +205,7 @@ namespace TauCode.Mq
                             ex,
                             GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage) message,
+                                (IMessage)message,
                                 i));
                     }
                 }
@@ -291,6 +292,7 @@ namespace TauCode.Mq
         #region Constructor
 
         protected MessageSubscriberBase(IMessageHandlerContextFactory contextFactory)
+            : base(false)
         {
             this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _bundles = new Dictionary<string, Bundle>();
@@ -303,9 +305,9 @@ namespace TauCode.Mq
 
         private void CheckStopped()
         {
-            if (this.State != WorkerState.Stopped)
+            if (this.State != /*WorkerState*/LaborerState.Stopped)
             {
-                throw new InappropriateWorkerStateException(this.State);
+                throw new /*InappropriateWorkerStateException*/ InvalidOperationException(/*this.State*/"Message subscriber is not stopped.");
             }
         }
 

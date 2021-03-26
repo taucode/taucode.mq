@@ -1,9 +1,10 @@
 ﻿using TauCode.Mq.Abstractions;
-using TauCode.Working;
+using TauCode.Working.Labor;
 
+// todo clean
 namespace TauCode.Mq
 {
-    public interface IMessagePublisher : IWorker
+    public interface IMessagePublisher : /*IWorker*/ ILaborer
     {
         void Publish(IMessage message);
 

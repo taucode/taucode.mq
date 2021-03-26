@@ -1,19 +1,26 @@
 ﻿using System;
 using TauCode.Mq.Abstractions;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
+using TauCode.Working.Labor;
+using TauCode.Working.Labor.Exceptions;
 
+// todo clean up
 namespace TauCode.Mq
 {
-    public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
+    public abstract class MessagePublisherBase : /*WorkerBase*/ SimpleLaborerBase, IMessagePublisher
     {
+        protected MessagePublisherBase()
+            : base(false)
+        {
+        }
+
         #region Private
 
         private void CheckStarted()
         {
-            if (this.State != WorkerState.Running)
+            if (this.State != /*WorkerState*/LaborerState.Running)
             {
-                throw new InappropriateWorkerStateException(this.State);
+                throw new /*InappropriateWorkerStateException*/ InvalidOperationException(/*this.State*/"Message publisher is not started.");
             }
         }
 
