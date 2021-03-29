@@ -1,12 +1,18 @@
-﻿using System;
-using Serilog;
-using TauCode.Mq.Abstractions;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Messages;
 
 namespace TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Hello.Sync
 {
     public class FishHaterHandler : MessageHandlerBase<HelloMessage>
     {
+        private readonly ILogger _logger;
+
+        public FishHaterHandler(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public override void Handle(HelloMessage message)
         {
             var topicString = " (no topic)";
@@ -20,7 +26,9 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Hello.Sync
                 throw new Exception($"I hate you sync{topicString}, '{message.Name}'! Exception thrown!");
             }
 
-            Log.Information($"Not fish - then hi sync{topicString}, {message.Name}!");
+            _logger.LogInformation($"Not fish - then hi sync{topicString}, {message.Name}!");
+            //Log.Information($"Not fish - then hi sync{topicString}, {message.Name}!");
+
             MessageRepository.Instance.Add(message);
         }
     }

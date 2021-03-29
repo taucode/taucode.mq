@@ -1,5 +1,4 @@
 ﻿using Serilog;
-using TauCode.Mq.Abstractions;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Messages;
 
 namespace TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Bye.Sync
@@ -15,6 +14,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Bye.Sync
             }
 
             Log.Information($"Bye sync{topicString}, {message.Nickname}!");
+
             MessageRepository.Instance.Add(message);
         }
     }

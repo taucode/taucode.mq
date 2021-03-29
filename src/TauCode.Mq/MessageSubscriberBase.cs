@@ -1,4 +1,4 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +24,7 @@ namespace TauCode.Mq
             string Tag { get; }
             Action<object> Handler { get; }
             Func<object, Task> AsyncHandler { get; }
-            IReadOnlyList<Type> MessageHandlerTypes { get; }
+            IReadOnlyList<Type> MessageHandlerTypes { get; } // todo: not used.
         }
 
         private readonly struct MessageHandlerInfo
@@ -32,7 +32,7 @@ namespace TauCode.Mq
             internal MessageHandlerInfo(
                 Type messageType,
                 bool isAsync,
-                Type messageHandlerType,
+                Type messageHandlerType, // todo: never used.
                 string tag)
             {
                 if (messageType.IsAbstract)
@@ -49,13 +49,13 @@ namespace TauCode.Mq
 
                 this.MessageType = messageType;
                 this.IsAsync = isAsync;
-                this.MessageHandlerType = messageHandlerType;
+                //this.MessageHandlerType = messageHandlerType; 
                 this.Tag = tag;
             }
 
             internal Type MessageType { get; }
             internal bool IsAsync { get; }
-            internal Type MessageHandlerType { get; }
+            //internal Type MessageHandlerType { get; } // todo: why used it before?!
             internal string Tag { get; }
         }
 
@@ -63,6 +63,7 @@ namespace TauCode.Mq
         {
             #region Fields
 
+            private readonly ILogger _logger;
             private readonly List<Type> _messageHandlerTypes;
             private readonly IMessageHandlerContextFactory _factory;
             private readonly Func<CancellationToken> _tokenGetter;
@@ -72,12 +73,14 @@ namespace TauCode.Mq
             #region Constructor
 
             internal Bundle(
+                ILogger logger,
                 IMessageHandlerContextFactory factory,
                 Func<CancellationToken> tokenGetter,
                 Type messageType,
                 string topic,
                 string tag)
             {
+                _logger = logger;
                 _factory = factory;
                 _tokenGetter = tokenGetter;
                 this.MessageType = messageType;
@@ -175,12 +178,19 @@ namespace TauCode.Mq
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(
+                        _logger?.LogError(
                             ex,
                             GetHandleFailureMessage(
                                 messageHandlerType,
                                 (IMessage)message,
                                 i));
+
+                        //Log.Error(
+                        //    ex,
+                        //    GetHandleFailureMessage(
+                        //        messageHandlerType,
+                        //        (IMessage)message,
+                        //        i));
                     }
                 }
             }
@@ -201,12 +211,19 @@ namespace TauCode.Mq
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(
+                        _logger?.LogError(
                             ex,
                             GetHandleFailureMessage(
                                 messageHandlerType,
                                 (IMessage)message,
                                 i));
+
+                        //Log.Error(
+                        //    ex,
+                        //    GetHandleFailureMessage(
+                        //        messageHandlerType,
+                        //        (IMessage)message,
+                        //        i));
                     }
                 }
             }
@@ -383,7 +400,7 @@ namespace TauCode.Mq
             }
         }
 
-        private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed)
+        private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed) // todo: emptyTopicIsAllowed - what for?
         {
             this.CheckNotDisposed();
             this.CheckStopped();
@@ -415,6 +432,7 @@ namespace TauCode.Mq
                 }
 
                 bundle = new Bundle(
+                    this.Logger,
                     this.ContextFactory,
                     tokenGetter,
                     info.MessageType,

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Bye.Sync;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Hello.Sync;
 
@@ -6,6 +7,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Contexts
 {
     public class BadContext : IMessageHandlerContext
     {
+        private readonly ILogger _logger;
+
         private readonly bool _throwOnBegin;
         private readonly bool _throwOnEnd;
 
@@ -16,6 +19,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Contexts
         private readonly bool _throwOnDispose;
 
         public BadContext(
+            ILogger logger,
             bool throwOnBegin,
             bool throwOnEnd,
             bool throwOnGetService,
@@ -23,6 +27,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Contexts
             bool returnsWrongService,
             bool throwOnDispose)
         {
+            _logger = logger;
+
             _throwOnBegin = throwOnBegin;
             _throwOnEnd = throwOnEnd;
 
@@ -60,7 +66,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Contexts
                     return new ByeHandler();
                 }
 
-                return new HelloHandler();
+                return new HelloHandler(_logger);
             }
 
             throw new NotSupportedException($"Service of type '{serviceType.FullName}' not supported.");

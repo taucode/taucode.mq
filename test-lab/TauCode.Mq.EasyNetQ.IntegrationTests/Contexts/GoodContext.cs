@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Serilog;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Bye.Async;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Bye.Sync;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Hello.Async;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Hello.Sync;
 
+// todo clean
 namespace TauCode.Mq.EasyNetQ.IntegrationTests.Contexts
 {
     public class GoodContext : IMessageHandlerContext
@@ -30,22 +31,30 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Contexts
             }
             .ToHashSet();
 
+        private readonly ILogger _logger;
+
+        public GoodContext(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public void Begin()
         {
-            Log.Debug("Context began.");
+            _logger.LogDebug("Context began.");
+            //Log.Debug("Context began.");
         }
 
         public object GetService(Type serviceType)
         {
             if (SupportedHandlerTypes.Contains(serviceType))
             {
-                var ctor = serviceType.GetConstructor(Type.EmptyTypes);
+                var ctor = serviceType.GetConstructor(new[] { typeof(ILogger) });
                 if (ctor == null)
                 {
-                    throw new NotSupportedException($"Type '{serviceType.FullName}' has no parameterless constructor.");
+                    throw new NotSupportedException($"Type '{serviceType.FullName}' has no ctor(ILogger).");
                 }
 
-                var service = ctor.Invoke(new object[] { });
+                var service = ctor.Invoke(new object[] { _logger });
                 return service;
             }
 
@@ -54,7 +63,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.Contexts
 
         public void End()
         {
-            Log.Debug("Context ended.");
+            _logger.LogDebug("Context ended.");
+            //Log.Debug("Context ended.");
         }
 
         public void Dispose()

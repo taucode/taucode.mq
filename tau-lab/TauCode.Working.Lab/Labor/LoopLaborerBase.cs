@@ -132,61 +132,71 @@ namespace TauCode.Working.Labor
 
         private async Task LoopRoutine()
         {
-            lock (_loopIsInitedLock)
+            try
             {
-                lock (_initLoopLock)
+                lock (_loopIsInitedLock)
                 {
-                    Monitor.Pulse(_initLoopLock);
+                    lock (_initLoopLock)
+                    {
+                        Monitor.Pulse(_initLoopLock);
+                    }
+
+                    Monitor.Wait(_loopIsInitedLock);
                 }
 
-                Monitor.Wait(_loopIsInitedLock);
-            }
+                var goOn = true;
 
-            var goOn = true;
-
-            var handleArray = new[]
-            {
-                _controlSignal.Token.WaitHandle,
-                _abortVacationSignal,
-            };
-
-            while (goOn)
-            {
-                var state = this.State;
-
-                switch (state)
+                var handleArray = new[]
                 {
-                    case LaborerState.Running:
-                        TimeSpan vacationLength;
+                    _controlSignal.Token.WaitHandle,
+                    _abortVacationSignal,
+                };
 
-                        try
-                        {
-                            vacationLength = await this.DoLabor(_controlSignal.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
-                        {
-                            this.GetSafeLogger().LogError(ex, $"Exception occurred. Laborer name: '{this.Name}'.");
-                            await Task.Delay(this.ErrorTimeout, _controlSignal.Token); // todo: can throw 'OperationCanceledException', ut it.
+                while (goOn)
+                {
+                    var state = this.State;
 
-                            continue;
-                        }
+                    switch (state)
+                    {
+                        case LaborerState.Running:
+                            TimeSpan vacationLength;
 
-                        vacationLength = TimeSpanExtensions.MinMax(TimeQuantum, VeryLongVacation, vacationLength);
-                        WaitHandle.WaitAny(handleArray, vacationLength);
-                        _controlSignal.Token.ThrowIfCancellationRequested();
+                            try
+                            {
+                                vacationLength = await this.DoLabor(_controlSignal.Token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                throw; // todo: consider checking _controlSignal.IsCancellationRequested
+                            }
+                            catch (Exception ex)
+                            {
+                                this.GetSafeLogger().LogError(ex, $"Exception occurred. Laborer name: '{this.Name}'.");
+                                await Task.Delay(this.ErrorTimeout, _controlSignal.Token); // todo: can throw 'OperationCanceledException', ut it.
 
-                        break;
+                                continue;
+                            }
 
-                    case LaborerState.Stopping:
-                    case LaborerState.Pausing:
-                        goOn = false;
-                        break;
+                            vacationLength = TimeSpanExtensions.MinMax(TimeQuantum, VeryLongVacation, vacationLength);
+                            WaitHandle.WaitAny(handleArray, vacationLength);
+                            _controlSignal.Token.ThrowIfCancellationRequested();
+
+                            break;
+
+                        case LaborerState.Stopping:
+                        case LaborerState.Pausing:
+                            goOn = false;
+                            break;
+                    }
                 }
             }
+            catch (Exception e)
+            {
+                //Console.WriteLine(e);
+                throw;
+            }
+
+
         }
 
         #endregion

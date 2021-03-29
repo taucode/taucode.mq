@@ -8,6 +8,6 @@ namespace TauCode.Mq
     {
         void Publish(IMessage message);
 
-        void Publish(IMessage message, string topic);
+        void Publish(IMessage message, string topic); // todo: need this? message contains Topic itself.
     }
 }

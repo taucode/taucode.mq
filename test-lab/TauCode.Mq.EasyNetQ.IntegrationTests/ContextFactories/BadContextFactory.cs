@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Contexts;
 
 namespace TauCode.Mq.EasyNetQ.IntegrationTests.ContextFactories
 {
     public class BadContextFactory : IMessageHandlerContextFactory
     {
+        private readonly ILogger _logger;
+
         private readonly bool _throwsOnCreateContext;
         private readonly bool _returnsNullOnCreateContext;
 
@@ -18,6 +21,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.ContextFactories
         private readonly bool _contextThrowsOnDispose;
 
         public BadContextFactory(
+            ILogger logger,
             bool throwsOnCreateContext,
             bool returnsNullOnCreateContext,
             bool contextThrowsOnBegin,
@@ -27,6 +31,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.ContextFactories
             bool contextReturnsWrongServiceOnGetService,
             bool contextThrowsOnDispose)
         {
+            _logger = logger;
+
             _throwsOnCreateContext = throwsOnCreateContext;
             _returnsNullOnCreateContext = returnsNullOnCreateContext;
 
@@ -53,6 +59,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.ContextFactories
             }
 
             return new BadContext(
+                _logger,
                 _contextThrowsOnBegin,
                 _contextThrowsOnEnd,
                 _contextThrowsOnGetService,

@@ -1,8 +1,7 @@
-﻿using System;
-using EasyNetQ.NonGeneric;
+﻿using EasyNetQ.NonGeneric;
+using System;
 using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
-using TauCode.Working;
 using TauCode.Working.Labor;
 using IBus = EasyNetQ.IBus;
 using RabbitHutch = EasyNetQ.RabbitHutch;
@@ -54,7 +53,7 @@ namespace TauCode.Mq.EasyNetQ
             _bus.Publish(message.GetType(), message);
         }
 
-        protected override void PublishImpl(IMessage message, string topic)
+        protected override void PublishImpl(IMessage message, string topic) // todo: get rid of. message contains topic.
         {
             _bus.Publish(message.GetType(), message, topic);
         }

@@ -270,7 +270,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 },
                 "some-topic");
 
-            await Task.Delay(100);
+            await Task.Delay(500);
 
             name1 = name;
             nameWithTopic1 = nameWithTopic;
@@ -280,7 +280,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 Name = "deserea",
             });
 
-            await Task.Delay(100);
+            await Task.Delay(500);
 
             name2 = name;
             nameWithTopic2 = nameWithTopic;
