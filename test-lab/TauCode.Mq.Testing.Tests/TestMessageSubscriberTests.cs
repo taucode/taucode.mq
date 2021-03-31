@@ -2186,13 +2186,13 @@ namespace TauCode.Mq.Testing.Tests
         [Test]
         public async Task Stop_Started_StopsAndCancelsCurrentAsyncTasks()
         {
-            throw new NotImplementedException();
-
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory())
             {
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Start();
 
@@ -2276,10 +2276,9 @@ namespace TauCode.Mq.Testing.Tests
         [Test]
         public async Task Dispose_Started_DisposesAndCancelsCurrentAsyncTasks()
         {
-            throw new NotImplementedException(); // todo
-
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory());
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Start();
