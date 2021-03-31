@@ -38,6 +38,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.EasyNetQ", "tau-
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Infrastructure.Lab", "tau-lab\TauCode.Infrastructure.Lab\TauCode.Infrastructure.Lab.csproj", "{CBCC4A45-3AFD-42C4-B128-1CEADB5F60FB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.Testing", "tau-lab\TauCode.Mq.Testing\TauCode.Mq.Testing.csproj", "{F67ABDDB-40A1-4EB6-BEC8-C2C130B4DBC0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TauCode.Mq.Testing.Tests", "test-lab\TauCode.Mq.Testing.Tests\TauCode.Mq.Testing.Tests.csproj", "{58D53D1E-0BE9-44E9-975C-7B68CBB25660}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +68,14 @@ Global
 		{CBCC4A45-3AFD-42C4-B128-1CEADB5F60FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBCC4A45-3AFD-42C4-B128-1CEADB5F60FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBCC4A45-3AFD-42C4-B128-1CEADB5F60FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F67ABDDB-40A1-4EB6-BEC8-C2C130B4DBC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F67ABDDB-40A1-4EB6-BEC8-C2C130B4DBC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F67ABDDB-40A1-4EB6-BEC8-C2C130B4DBC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F67ABDDB-40A1-4EB6-BEC8-C2C130B4DBC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58D53D1E-0BE9-44E9-975C-7B68CBB25660}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58D53D1E-0BE9-44E9-975C-7B68CBB25660}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58D53D1E-0BE9-44E9-975C-7B68CBB25660}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58D53D1E-0BE9-44E9-975C-7B68CBB25660}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,6 +86,8 @@ Global
 		{91D35CDC-EFF4-4F60-9D24-29816AF78CEB} = {BCB66089-A298-42F6-9092-9A3652B3C400}
 		{925B1960-0C99-4EB1-BE52-616EA5FB53E9} = {C47695C7-5663-47DF-BFC5-D36623227EDA}
 		{CBCC4A45-3AFD-42C4-B128-1CEADB5F60FB} = {C47695C7-5663-47DF-BFC5-D36623227EDA}
+		{F67ABDDB-40A1-4EB6-BEC8-C2C130B4DBC0} = {C47695C7-5663-47DF-BFC5-D36623227EDA}
+		{58D53D1E-0BE9-44E9-975C-7B68CBB25660} = {BCB66089-A298-42F6-9092-9A3652B3C400}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CA6859C8-B1CF-4CDF-A5FE-24E4FF8F85B8}
