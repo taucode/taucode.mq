@@ -1,10 +1,12 @@
 ﻿using EasyNetQ;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NUnit.Framework;
 using Serilog;
+using Serilog.Extensions.Logging;
 using System;
-using System.Text;
 using System.Threading.Tasks;
-using TauCode.Extensions;
+using TauCode.Infrastructure.Lab;
 using TauCode.Mq.EasyNetQ.IntegrationTests.BadHandlers;
 using TauCode.Mq.EasyNetQ.IntegrationTests.ContextFactories;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Contexts;
@@ -16,33 +18,40 @@ using TauCode.Mq.EasyNetQ.IntegrationTests.Messages;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
-// todo: check that topic, correlationId are preserved.
-
+// todo: check that <topic>, <correlationId> are preserved.
+// todo clean
 namespace TauCode.Mq.EasyNetQ.IntegrationTests
 {
     [TestFixture]
     public class EasyNetQMessageSubscriberTests
     {
-        private StringWriterWithEncoding _log;
+        private StringLoggerLab _logger;
 
         [SetUp]
         public void SetUp()
         {
             MessageRepository.Instance.Clear();
 
-            _log = new StringWriterWithEncoding(Encoding.UTF8);
+            _logger = new StringLoggerLab();
+
+            var collection = new LoggerProviderCollection();
 
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.TextWriter(_log)
+                .WriteTo.Providers(collection)
                 .MinimumLevel
                 .Debug()
                 .CreateLogger();
+
+            var providerMock = new Mock<ILoggerProvider>();
+            providerMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(_logger);
+
+            collection.AddProvider(providerMock.Object);
 
             DecayingMessage.IsPropertyDecayed = false;
             DecayingMessage.IsCtorDecayed = false;
         }
 
-        private string GetLog() => _log.ToString();
+        private string CurrentLog => _logger.ToString();
 
         #region ctor
 
@@ -199,6 +208,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false);
 
             using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -215,7 +226,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Failed to create context."));
         }
 
@@ -234,6 +245,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false);
 
             using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -250,7 +263,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Method 'CreateContext' of factory '{typeof(BadContextFactory).FullName}' returned 'null'."));
         }
 
@@ -271,6 +284,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false);
 
             using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -287,7 +302,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Failed to begin."));
         }
 
@@ -306,6 +321,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false);
 
             using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -322,7 +339,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Failed to end."));
         }
 
@@ -341,6 +358,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false);
 
             using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -357,7 +376,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Failed to get service."));
         }
 
@@ -376,6 +395,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false);
 
             using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -392,7 +413,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' returned 'null'."));
         }
 
@@ -411,6 +432,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false);
 
             using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -427,7 +450,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' returned wrong service of type '{typeof(ByeHandler).FullName}'."));
         }
 
@@ -458,7 +481,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
@@ -493,7 +516,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
@@ -528,7 +551,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
@@ -563,7 +586,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome async (topic: 'topic1'), Lesia!"));
@@ -807,7 +830,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Ctor Decayed!"));
         }
 
@@ -835,7 +858,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Property Decayed!"));
         }
 
@@ -846,6 +869,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
                 "host=localhost");
+            subscriber.Logger = _logger;
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
@@ -865,7 +889,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (no topic), Big Fish!"));
             Assert.That(log, Does.Contain("I hate you sync (no topic), 'Big Fish'! Exception thrown!"));
             Assert.That(log, Does.Contain("Welcome sync (no topic), Big Fish!"));
@@ -882,6 +906,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
                 "host=localhost");
+            subscriber.Logger = _logger;
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
@@ -901,7 +926,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello async (no topic), Big Fish!"));
             Assert.That(log, Does.Contain("I hate you async (no topic), 'Big Fish'! Exception thrown!"));
             Assert.That(log, Does.Contain("Welcome async (no topic), Big Fish!"));
@@ -916,6 +941,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 ConnectionString = "host=localhost",
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloAsyncHandler)); // #0 will say 'hello'
             subscriber.Subscribe(typeof(CancelingHelloAsyncHandler)); // #1 will cancel with message
@@ -932,7 +958,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (no topic), Ira!")); // #0
             Assert.That(log, Does.Contain("Sorry, I am cancelling async (no topic), Ira...")); // #1
@@ -957,7 +983,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Subscribe'. Worker state is 'Running'. Worker name is 'my-subscriber'."));
         }
 
         [Test]
@@ -1007,7 +1033,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic2'), Lesia!"));
 
@@ -1039,7 +1065,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic2'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic2'), Lesia!"));
@@ -1071,7 +1097,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic2'), Lesia!"));
 
@@ -1103,7 +1129,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic2'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome async (topic: 'topic2'), Lesia!"));
@@ -1230,7 +1256,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Not.Contain("Hello async (topic: 'another-topic'), Nika!"));
@@ -1258,7 +1284,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
@@ -1301,7 +1327,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Not.Contain("Hello sync (topic: 'another-topic'), Nika!"));
@@ -1328,7 +1354,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
@@ -1418,7 +1444,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Alina!"));
             Assert.That(log, Does.Not.Contain("Hello sync (topic: 'some-topic'), Alina!"));
         }
@@ -1447,7 +1473,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'some-topic'), Marina!"));
             Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Marina!"));
@@ -1492,7 +1518,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Alina!"));
             Assert.That(log, Does.Not.Contain("Hello async (topic: 'some-topic'), Alina!"));
         }
@@ -1519,7 +1545,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Alina!"));
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Alina!"));
         }
@@ -1587,7 +1613,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Ctor Decayed!"));
         }
 
@@ -1615,7 +1641,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Property Decayed!"));
         }
 
@@ -1630,6 +1656,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
                 "host=localhost");
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloHandler), "some-topic"); // #0 will handle
             subscriber.Subscribe(typeof(FishHaterHandler), "some-topic"); // #1 will fail
@@ -1648,7 +1675,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (topic: 'some-topic'), Small Fish!"));
             Assert.That(log, Does.Contain("I hate you sync (topic: 'some-topic'), 'Small Fish'! Exception thrown!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'some-topic'), Small Fish!"));
@@ -1667,6 +1694,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 ConnectionString = "host=localhost",
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(FaultingHelloAsyncHandler), "some-topic");
             subscriber.Start();
@@ -1680,7 +1708,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Sorry, I am faulting async (topic: 'some-topic'), Ania..."));
             Assert.That(log, Does.Not.Contain("Context ended."));
         }
@@ -1697,6 +1725,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 ConnectionString = "host=localhost",
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic"); // #0 will say 'hello'
             subscriber.Subscribe(typeof(CancelingHelloAsyncHandler), "some-topic"); // #1 will cancel with message
@@ -1714,7 +1743,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Ira!")); // #0
             Assert.That(log, Does.Contain("Sorry, I am cancelling async (topic: 'some-topic'), Ira...")); // #1
@@ -1739,7 +1768,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Subscribe'. Worker state is 'Running'. Worker name is 'my-subscriber'."));
 
         }
 
@@ -2211,7 +2240,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (no topic), Ira!"));
             Assert.That(log, Does.Contain("Welcome sync (no topic), Ira!"));
@@ -2295,7 +2324,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (no topic), Manuela!"));
             Assert.That(log, Does.Contain("Welcome sync (no topic), Manuela!"));
@@ -2348,6 +2377,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Start();
 
@@ -2359,14 +2390,14 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             });
 
             // Act
-            await Task.Delay(200); // let 'HelloAsyncHandler' start.
+            await Task.Delay(500); // let 'HelloAsyncHandler' start.
 
             subscriber.Stop(); // should cancel 'HelloAsyncHandler'
 
             await Task.Delay(100);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"A task was canceled."));
         }
 
@@ -2387,7 +2418,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Stop'. Worker state is 'Stopped'. Worker name is 'sub'."));
         }
 
         [Test]
@@ -2430,6 +2461,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Start();
 
@@ -2448,7 +2481,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             await Task.Delay(100);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"A task was canceled."));
         }
 
