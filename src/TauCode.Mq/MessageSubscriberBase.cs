@@ -1,4 +1,4 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
 
+// todo clean
 namespace TauCode.Mq
 {
     public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
@@ -63,29 +63,35 @@ namespace TauCode.Mq
             #region Fields
 
             private readonly List<Type> _messageHandlerTypes;
-            private readonly IMessageHandlerContextFactory _factory;
-            private readonly Func<CancellationToken> _tokenGetter;
+            //private readonly IMessageHandlerContextFactory _factory;
+            //private readonly Func<CancellationToken> _tokenGetter;
+            private readonly MessageSubscriberBase _host;
 
             #endregion
 
             #region Constructor
 
             internal Bundle(
-                IMessageHandlerContextFactory factory,
-                Func<CancellationToken> tokenGetter,
+                //IMessageHandlerContextFactory factory,
+                //Func<CancellationToken> tokenGetter,
+                MessageSubscriberBase host,
                 Type messageType,
                 string topic,
-                string tag)
+                string tag,
+                bool isAsync)
             {
-                _factory = factory;
-                _tokenGetter = tokenGetter;
+                _host = host;
+                //_factory = factory;
+                //_tokenGetter = tokenGetter;
                 this.MessageType = messageType;
                 this.Topic = topic;
                 this.Tag = tag;
 
                 _messageHandlerTypes = new List<Type>();
 
-                var isAsync = _tokenGetter != null;
+                this.IsAsync = isAsync;
+
+                //var isAsync = _tokenGetter != null;
 
                 if (isAsync)
                 {
@@ -103,12 +109,13 @@ namespace TauCode.Mq
 
             private IMessageHandlerContext CreateContext()
             {
-                var context = _factory.CreateContext();
+                //var context = _factory.CreateContext();
+                var context = _host.ContextFactory.CreateContext();
 
                 if (context == null)
                 {
                     throw new MqException(
-                        $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' returned 'null'.");
+                        $"Method 'CreateContext' of factory '{_host.ContextFactory.GetType().FullName}' returned 'null'.");
                 }
 
                 return context;
@@ -155,14 +162,21 @@ namespace TauCode.Mq
                         $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.");
                 }
 
-                var handler = (THandlerInterfaceType) service;
+                var handler = (THandlerInterfaceType)service;
                 return handler;
             }
 
-            private void Handle(object message)
+            private void Handle(object message) // todo todo0: IMessage message?
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
+                    if (_host.State != WorkerState.Running)
+                    {
+                        // todo todo0: log info about subscriber was stopped
+                        // todo: subscriber wast stopped, and then started back. handler is still running. consider using Subscriber Generations (+ut)
+                        break;
+                    }
+
                     var messageHandlerType = _messageHandlerTypes[i];
 
                     try
@@ -174,38 +188,54 @@ namespace TauCode.Mq
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(
-                            ex,
-                            GetHandleFailureMessage(
+                        var logger = _host.Logger;
+                        if (logger != null)
+                        {
+                            var logMessage = GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage) message,
-                                i));
+                                (IMessage)message,
+                                i);
+
+                            logger.LogError(ex, logMessage);
+                        }
                     }
                 }
             }
 
-            private async Task HandleAsync(object message)
+            private async Task HandleAsync(object message) // todo todo0: IMessage message?
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
+                    if (_host.State != WorkerState.Running)
+                    {
+                        // todo todo0: log info about subscriber was stopped
+                        break;
+                    }
+
                     var messageHandlerType = _messageHandlerTypes[i];
+
+                    var token = _host.GetCancellationToken();
 
                     try
                     {
                         using var context = this.CreateContext();
                         var handler = this.CreateHandler<IAsyncMessageHandler>(context, messageHandlerType);
-                        var token = _tokenGetter();
+                        //var token = _tokenGetter();
                         await handler.HandleAsync(message, token);
                         context.End();
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(
-                            ex,
-                            GetHandleFailureMessage(
+                        var logger = _host.Logger;
+                        if (logger != null)
+                        {
+                            var logMessage = GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage) message,
-                                i));
+                                (IMessage)message,
+                                i);
+
+                            logger.LogError(ex, logMessage);
+                        }
                     }
                 }
             }
@@ -241,7 +271,9 @@ namespace TauCode.Mq
                 _messageHandlerTypes.Add(messageHandlerType);
             }
 
-            internal bool IsAsync() => _tokenGetter != null;
+            internal bool IsAsync { get; }
+
+            //internal bool IsAsync() => _tokenGetter != null;
 
             #endregion
 
@@ -301,11 +333,13 @@ namespace TauCode.Mq
 
         #region Private
 
-        private void CheckStopped()
+        private void CheckStopped(string operation)
         {
-            if (this.State != WorkerState.Stopped)
+            var state = this.State;
+
+            if (state != WorkerState.Stopped)
             {
-                throw new InappropriateWorkerStateException(this.State);
+                throw this.CreateInvalidOperationException(operation, state);
             }
         }
 
@@ -384,7 +418,7 @@ namespace TauCode.Mq
         private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed)
         {
             this.CheckNotDisposed();
-            this.CheckStopped();
+            this.CheckStopped(nameof(Subscribe));
 
             if (messageHandlerType == null)
             {
@@ -403,27 +437,29 @@ namespace TauCode.Mq
 
             if (bundle == null)
             {
-                Func<CancellationToken> tokenGetter = null;
-                if (info.IsAsync)
-                {
-                    tokenGetter = () =>
-                        _tokenSource?.Token
-                        ??
-                        throw new MqException("Could not get cancellation token for message handling.");
-                }
+                //Func<CancellationToken> tokenGetter = null;
+                //if (info.IsAsync)
+                //{
+                //    tokenGetter = () =>
+                //        _tokenSource?.Token
+                //        ??
+                //        throw new MqException("Could not get cancellation token for message handling.");
+                //}
 
                 bundle = new Bundle(
-                    this.ContextFactory,
-                    tokenGetter,
+                    //this.ContextFactory,
+                    //tokenGetter,
+                    this,
                     info.MessageType,
                     topic,
-                    info.Tag);
+                    info.Tag,
+                    info.IsAsync);
 
                 _bundles.Add(bundle.Tag, bundle);
             }
             else
             {
-                if (bundle.IsAsync() && !info.IsAsync)
+                if (bundle.IsAsync && !info.IsAsync)
                 {
                     var sb = new StringBuilder();
                     sb.Append("Cannot subscribe synchronous handler '");
@@ -445,7 +481,7 @@ namespace TauCode.Mq
                     throw new MqException(sb.ToString());
                 }
 
-                if (!bundle.IsAsync() && info.IsAsync)
+                if (!bundle.IsAsync && info.IsAsync)
                 {
                     var sb = new StringBuilder();
                     sb.Append("Cannot subscribe asynchronous handler '");
@@ -517,6 +553,15 @@ namespace TauCode.Mq
         protected override void OnDisposed()
         {
             _bundles.Clear();
+        }
+
+        #endregion
+
+        #region Protected
+
+        protected virtual CancellationToken GetCancellationToken()
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

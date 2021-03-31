@@ -1,7 +1,6 @@
 ﻿using System;
 using TauCode.Mq.Abstractions;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
 
 namespace TauCode.Mq
 {
@@ -9,11 +8,13 @@ namespace TauCode.Mq
     {
         #region Private
 
-        private void CheckStarted()
+        private void CheckStarted(string operation)
         {
-            if (this.State != WorkerState.Running)
+            var state = this.State;
+
+            if (state != WorkerState.Running)
             {
-                throw new InappropriateWorkerStateException(this.State);
+                throw this.CreateInvalidOperationException(operation, state);
             }
         }
 
@@ -82,7 +83,7 @@ namespace TauCode.Mq
             CheckMessage(message);
 
             this.CheckNotDisposed();
-            this.CheckStarted();
+            this.CheckStarted(nameof(Publish));
 
             this.PublishImpl(message);
         }
@@ -101,7 +102,7 @@ namespace TauCode.Mq
             message.Topic = topic;
 
             this.CheckNotDisposed();
-            this.CheckStarted();
+            this.CheckStarted(nameof(Publish));
 
             this.PublishImpl(message, topic);
         }
