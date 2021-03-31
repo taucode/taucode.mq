@@ -7,6 +7,7 @@ using TauCode.Mq.EasyNetQ.IntegrationTests.Messages;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
+// todo: instead of '_ThrowsMqException' => '_ThrowsInvalidOperationException' etc.
 namespace TauCode.Mq.EasyNetQ.IntegrationTests
 {
     [TestFixture]
@@ -269,7 +270,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 },
                 "some-topic");
 
-            await Task.Delay(100);
+            await Task.Delay(500);
 
             name1 = name;
             nameWithTopic1 = nameWithTopic;
@@ -279,7 +280,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 Name = "deserea",
             });
 
-            await Task.Delay(100);
+            await Task.Delay(500);
 
             name2 = name;
             nameWithTopic2 = nameWithTopic;
@@ -364,7 +365,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Publish'. Worker state is 'Stopped'."));
         }
 
         [Test]

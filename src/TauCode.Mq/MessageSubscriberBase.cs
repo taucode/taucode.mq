@@ -209,15 +209,15 @@ namespace TauCode.Mq
                     if (_host.State != WorkerState.Running)
                     {
                         // todo todo0: log info about subscriber was stopped
+                        // todo: subscriber wast stopped, and then started back. handler is still running. consider using Subscriber Generations (+ut)
                         break;
                     }
 
                     var messageHandlerType = _messageHandlerTypes[i];
 
-                    var token = _host.GetCancellationToken();
-
                     try
                     {
+                        var token = _host.GetHandlerCancellationToken();
                         using var context = this.CreateContext();
                         var handler = this.CreateHandler<IAsyncMessageHandler>(context, messageHandlerType);
                         //var token = _tokenGetter();
@@ -317,6 +317,8 @@ namespace TauCode.Mq
         private readonly List<IDisposable> _subscriptionHandles;
 
         private CancellationTokenSource _tokenSource;
+        private readonly object _tokenSourceLock;
+
 
         #endregion
 
@@ -327,6 +329,8 @@ namespace TauCode.Mq
             this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _bundles = new Dictionary<string, Bundle>();
             _subscriptionHandles = new List<IDisposable>();
+
+            _tokenSourceLock = new object();
         }
 
         #endregion
@@ -415,6 +419,7 @@ namespace TauCode.Mq
             }
         }
 
+        // todo: deal with this 'emptyTopicIsAllowed'
         private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed)
         {
             this.CheckNotDisposed();
@@ -507,6 +512,19 @@ namespace TauCode.Mq
             bundle.AddHandlerType(messageHandlerType);
         }
 
+        private CancellationToken GetHandlerCancellationToken()
+        {
+            lock (_tokenSourceLock)
+            {
+                if (_tokenSource == null)
+                {
+                    throw this.CreateInvalidOperationException(nameof(GetHandlerCancellationToken), this.State);
+                }
+
+                return _tokenSource.Token;
+            }
+        }
+
         #endregion
 
         #region Abstract
@@ -525,7 +543,10 @@ namespace TauCode.Mq
         {
             this.InitImpl();
 
-            _tokenSource = new CancellationTokenSource();
+            lock (_tokenSourceLock)
+            {
+                _tokenSource = new CancellationTokenSource();
+            }
 
             foreach (var subscriptionRequest in _bundles.Values)
             {
@@ -549,8 +570,13 @@ namespace TauCode.Mq
             _subscriptionHandles.Clear();
 
             _tokenSource.Cancel();
-            _tokenSource.Dispose();
-            _tokenSource = null;
+
+            lock (_tokenSourceLock)
+            {
+                _tokenSource.Dispose();
+                _tokenSource = null;
+            }
+
 
             this.ShutdownImpl();
         }
@@ -586,15 +612,6 @@ namespace TauCode.Mq
         }
 
         public override bool IsPausingSupported => false;
-
-        #endregion
-
-        #region Protected
-
-        protected virtual CancellationToken GetCancellationToken()
-        {
-            throw new NotImplementedException();
-        }
 
         #endregion
 

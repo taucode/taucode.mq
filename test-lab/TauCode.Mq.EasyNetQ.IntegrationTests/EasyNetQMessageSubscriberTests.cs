@@ -2255,7 +2255,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Start());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Start'. Worker state is 'Running'. Worker name is 'my-subscriber'."));
         }
 
         [Test]
@@ -2340,7 +2340,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Stop'. Worker state is 'Stopped'. Worker name is 'sub'."));
         }
 
         [Test]
