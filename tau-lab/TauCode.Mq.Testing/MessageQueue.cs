@@ -13,9 +13,10 @@ namespace TauCode.Mq.Testing
             _media = media;
         }
 
-        protected override async Task DoAssignment(MessagePackage assignment, CancellationToken cancellationToken)
+        protected override Task DoAssignment(MessagePackage assignment, CancellationToken cancellationToken)
         {
-            await _media.DispatchMessagePackage(assignment);
+            Task.Run(() => _media.DispatchMessagePackage(assignment));
+            return Task.CompletedTask;
         }
     }
 }

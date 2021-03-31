@@ -53,7 +53,7 @@ namespace TauCode.Mq.EasyNetQ
             _bus.Publish(message.GetType(), message);
         }
 
-        protected override void PublishImpl(IMessage message, string topic)
+        protected override void PublishImpl(IMessage message, string topic) // todo: get rid of. message contains topic.
         {
             _bus.Publish(message.GetType(), message, topic);
         }
