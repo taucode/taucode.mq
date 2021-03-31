@@ -1,11 +1,11 @@
-﻿using Newtonsoft.Json;
-using NUnit.Framework;
-using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
+using NUnit.Framework;
 using Serilog;
 using Serilog.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 using TauCode.Infrastructure.Lab;
 using TauCode.Mq.Testing.Tests.Messages;
 using TauCode.Working;
@@ -135,7 +135,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage()));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Publish'. Worker state is 'Stopped'."));
         }
 
         [Test]
@@ -273,7 +273,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Publish'. Worker state is 'Stopped'."));
         }
 
         [Test]
@@ -608,7 +608,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Start());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Start'. Worker state is 'Running'. Worker name is 'my-publisher'."));
         }
 
         [Test]
@@ -664,7 +664,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Stop());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Stop'. Worker state is 'Stopped'. Worker name is 'my-publisher'."));
         }
 
         [Test]
@@ -701,7 +701,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Stop());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Stop'. Worker state is 'Stopped'. Worker name is 'my-publisher'."));
         }
 
         [Test]

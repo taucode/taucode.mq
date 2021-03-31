@@ -136,6 +136,8 @@ namespace TauCode.Mq.Testing.Tests
                 false);
 
             using IMessageSubscriber subscriber = new TestMessageSubscriber(_media, factory);
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -172,6 +174,7 @@ namespace TauCode.Mq.Testing.Tests
             {
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloHandler));
 
@@ -243,6 +246,8 @@ namespace TauCode.Mq.Testing.Tests
                 false);
 
             using IMessageSubscriber subscriber = new TestMessageSubscriber(_media, factory);
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -276,6 +281,8 @@ namespace TauCode.Mq.Testing.Tests
                 false);
 
             using IMessageSubscriber subscriber = new TestMessageSubscriber(_media, factory);
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -309,6 +316,8 @@ namespace TauCode.Mq.Testing.Tests
                 false);
 
             using IMessageSubscriber subscriber = new TestMessageSubscriber(_media, factory);
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -342,6 +351,8 @@ namespace TauCode.Mq.Testing.Tests
                 false);
 
             using IMessageSubscriber subscriber = new TestMessageSubscriber(_media, factory);
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -742,6 +753,7 @@ namespace TauCode.Mq.Testing.Tests
         {
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory());
+            subscriber.Logger = _logger;
 
             var message = new HelloMessage
             {
@@ -777,8 +789,7 @@ namespace TauCode.Mq.Testing.Tests
             {
                 Name = "my-subscriber"
             };
-
-            
+            subscriber.Logger = _logger;
 
             var message = new HelloMessage
             {
@@ -810,6 +821,7 @@ namespace TauCode.Mq.Testing.Tests
             {
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloAsyncHandler)); // #0 will say 'hello'
             subscriber.Subscribe(typeof(CancelingHelloAsyncHandler)); // #1 will cancel with message
@@ -848,7 +860,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Subscribe'. Worker state is 'Running'. Worker name is 'my-subscriber'."));
         }
 
         [Test]
@@ -1496,6 +1508,7 @@ namespace TauCode.Mq.Testing.Tests
         {
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory());
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloHandler), "some-topic"); // #0 will handle
             subscriber.Subscribe(typeof(FishHaterHandler), "some-topic"); // #1 will fail
@@ -1532,6 +1545,7 @@ namespace TauCode.Mq.Testing.Tests
             {
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(FaultingHelloAsyncHandler), "some-topic");
             subscriber.Start();
@@ -1560,6 +1574,7 @@ namespace TauCode.Mq.Testing.Tests
             {
                 Name = "my-subscriber"
             };
+            subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic"); // #0 will say 'hello'
             subscriber.Subscribe(typeof(CancelingHelloAsyncHandler), "some-topic"); // #1 will cancel with message
@@ -1601,7 +1616,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Subscribe'. Worker state is 'Running'. Worker name is 'my-subscriber'."));
 
         }
 
@@ -2085,7 +2100,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Start());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Start'. Worker state is 'Running'. Worker name is 'my-subscriber'."));
         }
 
         [Test]
@@ -2165,7 +2180,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Stop'. Worker state is 'Stopped'. Worker name is 'my-subscriber'."));
         }
 
         [Test]
@@ -2216,7 +2231,7 @@ namespace TauCode.Mq.Testing.Tests
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
-            Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Stop'. Worker state is 'Stopped'. Worker name is 'my-subscriber'."));
         }
 
         [Test]
