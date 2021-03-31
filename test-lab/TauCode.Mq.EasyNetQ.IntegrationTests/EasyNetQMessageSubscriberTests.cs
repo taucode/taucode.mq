@@ -1111,7 +1111,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var message = new HelloMessage("Lesia");
             publisher.Publish(message, "topic2");
 
-            await Task.Delay(300);
+            await Task.Delay(500);
 
             // Assert
             var log = this.CurrentLog;
@@ -1671,7 +1671,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             // Act
             publisher.Publish(message, "some-topic");
-            await Task.Delay(300);
+            await Task.Delay(500);
 
             // Assert
             var log = this.CurrentLog;
