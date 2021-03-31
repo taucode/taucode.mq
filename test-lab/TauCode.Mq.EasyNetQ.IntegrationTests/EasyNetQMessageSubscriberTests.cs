@@ -15,7 +15,6 @@ using TauCode.Mq.EasyNetQ.IntegrationTests.Handlers.Hello.Sync;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Messages;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
 
 // todo: check that topic, correlationId are preserved.
 
@@ -955,7 +954,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             // Act
             subscriber.Start();
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
@@ -1737,7 +1736,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             // Act
             subscriber.Start();
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
@@ -2253,7 +2252,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Start());
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Start());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
@@ -2338,7 +2337,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             };
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Stop());
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
@@ -2385,7 +2384,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Stop();
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Stop());
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
