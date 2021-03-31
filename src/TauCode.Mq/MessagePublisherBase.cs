@@ -68,11 +68,47 @@ namespace TauCode.Mq
             this.InitImpl();
         }
 
+        protected override void OnStarted()
+        {
+            // idle
+        }
+
         protected override void OnStopping()
         {
             this.ShutdownImpl();
         }
 
+        protected override void OnStopped()
+        {
+            // idle
+        }
+
+        protected override void OnPausing()
+        {
+            // idle
+        }
+
+        protected override void OnPaused()
+        {
+            // idle
+        }
+
+        protected override void OnResuming()
+        {
+            // idle
+        }
+
+        protected override void OnResumed()
+        {
+            // idle
+        }
+
+        protected override void OnDisposed()
+        {
+            // idle
+        }
+
+        public override bool IsPausingSupported => false;
 
         #endregion
 

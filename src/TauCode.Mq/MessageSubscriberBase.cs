@@ -534,6 +534,11 @@ namespace TauCode.Mq
             }
         }
 
+        protected override void OnStarted()
+        {
+            // idle
+        }
+
         protected override void OnStopping()
         {
             foreach (var subscriptionHandle in _subscriptionHandles)
@@ -550,10 +555,37 @@ namespace TauCode.Mq
             this.ShutdownImpl();
         }
 
+        protected override void OnStopped()
+        {
+            // idle
+        }
+
+        protected override void OnPausing()
+        {
+            // idle
+        }
+
+        protected override void OnPaused()
+        {
+            // idle
+        }
+
+        protected override void OnResuming()
+        {
+            // idle
+        }
+
+        protected override void OnResumed()
+        {
+            // idle
+        }
+
         protected override void OnDisposed()
         {
             _bundles.Clear();
         }
+
+        public override bool IsPausingSupported => false;
 
         #endregion
 
