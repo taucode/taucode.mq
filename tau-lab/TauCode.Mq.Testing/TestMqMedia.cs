@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace TauCode.Mq.Testing
 {
@@ -50,13 +50,16 @@ namespace TauCode.Mq.Testing
         private readonly MessageQueue _messageQueue;
         private readonly object _lock;
         private readonly Dictionary<string, MediaSubscription> _subscriptions;
+        private readonly ILogger _logger;
 
         #endregion
 
         #region Constructor
 
-        public TestMqMedia()
+        public TestMqMedia(ILogger logger)
         {
+            _logger = logger;
+
             _lock = new object();
             _subscriptions = new Dictionary<string, MediaSubscription>();
             _messageQueue = new MessageQueue(this);
@@ -120,7 +123,7 @@ namespace TauCode.Mq.Testing
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Handler threw an exception.");
+                    _logger?.LogError(ex, "Handler threw an exception.");
                 }
             }
 
@@ -133,7 +136,7 @@ namespace TauCode.Mq.Testing
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Handler threw an exception.");
+                    _logger?.LogError(ex, "Handler threw an exception.");
                 }
             }
         }

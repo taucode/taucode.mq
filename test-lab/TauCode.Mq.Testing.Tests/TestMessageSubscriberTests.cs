@@ -1,9 +1,11 @@
-﻿using NUnit.Framework;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
+using NUnit.Framework;
 using Serilog;
+using Serilog.Extensions.Logging;
 using System;
-using System.Text;
 using System.Threading.Tasks;
-using TauCode.Extensions;
+using TauCode.Infrastructure.Lab;
 using TauCode.Mq.Exceptions;
 using TauCode.Mq.Testing.Tests.BadHandlers;
 using TauCode.Mq.Testing.Tests.ContextFactories;
@@ -14,7 +16,6 @@ using TauCode.Mq.Testing.Tests.Handlers.Hello.Async;
 using TauCode.Mq.Testing.Tests.Handlers.Hello.Sync;
 using TauCode.Mq.Testing.Tests.Messages;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
 
 // todo: check that topic, correlationId are preserved.
 
@@ -23,23 +24,29 @@ namespace TauCode.Mq.Testing.Tests
     [TestFixture]
     public class TestMessageSubscriberTests
     {
+        private StringLoggerLab _logger;
         private ITestMqMedia _media;
-        private StringWriterWithEncoding _log;
 
         [SetUp]
         public void SetUp()
         {
-            _media = new TestMqMedia();
-
             MessageRepository.Instance.Clear();
 
-            _log = new StringWriterWithEncoding(Encoding.UTF8);
+            _logger = new StringLoggerLab();
+            _media = new TestMqMedia(_logger);
+
+            var collection = new LoggerProviderCollection();
 
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.TextWriter(_log)
+                .WriteTo.Providers(collection)
                 .MinimumLevel
                 .Debug()
                 .CreateLogger();
+
+            var providerMock = new Mock<ILoggerProvider>();
+            providerMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(_logger);
+
+            collection.AddProvider(providerMock.Object);
 
             DecayingMessage.IsPropertyDecayed = false;
             DecayingMessage.IsCtorDecayed = false;
@@ -51,7 +58,7 @@ namespace TauCode.Mq.Testing.Tests
             _media.Dispose();
         }
 
-        private string GetLog() => _log.ToString();
+        private string CurrentLog => _logger.ToString();
 
         #region ctor
 
@@ -143,7 +150,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Failed to create context."));
         }
 
@@ -180,7 +187,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Method 'CreateContext' of factory '{typeof(BadContextFactory).FullName}' returned 'null'."));
         }
 
@@ -201,6 +208,8 @@ namespace TauCode.Mq.Testing.Tests
                 false);
 
             using IMessageSubscriber subscriber = new TestMessageSubscriber(_media, factory);
+            subscriber.Logger = _logger;
+
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
@@ -215,7 +224,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Failed to begin."));
         }
 
@@ -248,7 +257,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Failed to end."));
         }
 
@@ -281,7 +290,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Failed to get service."));
         }
 
@@ -314,7 +323,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' returned 'null'."));
         }
 
@@ -347,7 +356,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(500);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"Method 'GetService' of context '{typeof(BadContext).FullName}' returned wrong service of type '{typeof(ByeHandler).FullName}'."));
         }
 
@@ -376,7 +385,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
@@ -408,7 +417,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
@@ -441,7 +450,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic1'), Lesia!"));
@@ -474,7 +483,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic1'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome async (topic: 'topic1'), Lesia!"));
@@ -695,7 +704,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Ctor Decayed!"));
         }
 
@@ -724,7 +733,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Property Decayed!"));
         }
 
@@ -750,7 +759,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (no topic), Big Fish!"));
             Assert.That(log, Does.Contain("I hate you sync (no topic), 'Big Fish'! Exception thrown!"));
             Assert.That(log, Does.Contain("Welcome sync (no topic), Big Fish!"));
@@ -787,7 +796,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello async (no topic), Big Fish!"));
             Assert.That(log, Does.Contain("I hate you async (no topic), 'Big Fish'! Exception thrown!"));
             Assert.That(log, Does.Contain("Welcome async (no topic), Big Fish!"));
@@ -815,7 +824,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (no topic), Ira!")); // #0
             Assert.That(log, Does.Contain("Sorry, I am cancelling async (no topic), Ira...")); // #1
@@ -836,7 +845,7 @@ namespace TauCode.Mq.Testing.Tests
 
             // Act
             subscriber.Start();
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler)));
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
@@ -889,7 +898,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic2'), Lesia!"));
 
@@ -922,7 +931,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic2'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic2'), Lesia!"));
@@ -951,7 +960,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic2'), Lesia!"));
 
@@ -981,7 +990,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'topic2'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome async (topic: 'topic2'), Lesia!"));
@@ -1094,7 +1103,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Not.Contain("Hello async (topic: 'another-topic'), Nika!"));
@@ -1119,7 +1128,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
@@ -1166,7 +1175,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Not.Contain("Hello sync (topic: 'another-topic'), Nika!"));
@@ -1195,7 +1204,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Nika!"));
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Nika!"));
@@ -1290,7 +1299,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Alina!"));
             Assert.That(log, Does.Not.Contain("Hello sync (topic: 'some-topic'), Alina!"));
         }
@@ -1317,7 +1326,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (topic: 'some-topic'), Marina!"));
             Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Marina!"));
@@ -1358,7 +1367,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Alina!"));
             Assert.That(log, Does.Not.Contain("Hello async (topic: 'some-topic'), Alina!"));
         }
@@ -1383,7 +1392,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (topic: 'another-topic'), Alina!"));
             Assert.That(log, Does.Contain("Hello async (topic: 'another-topic'), Alina!"));
         }
@@ -1448,7 +1457,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Ctor Decayed!"));
         }
 
@@ -1474,7 +1483,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Alas Property Decayed!"));
         }
 
@@ -1505,7 +1514,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Hello sync (topic: 'some-topic'), Small Fish!"));
             Assert.That(log, Does.Contain("I hate you sync (topic: 'some-topic'), 'Small Fish'! Exception thrown!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'some-topic'), Small Fish!"));
@@ -1536,7 +1545,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(300);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain("Sorry, I am faulting async (topic: 'some-topic'), Ania..."));
             Assert.That(log, Does.Not.Contain("Context ended."));
         }
@@ -1568,7 +1577,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Ira!")); // #0
             Assert.That(log, Does.Contain("Sorry, I am cancelling async (topic: 'some-topic'), Ira...")); // #1
@@ -1589,7 +1598,7 @@ namespace TauCode.Mq.Testing.Tests
 
             // Act
             subscriber.Start();
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Subscribe(typeof(WelcomeAsyncHandler), "some-topic"));
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
@@ -2052,7 +2061,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (no topic), Ira!"));
             Assert.That(log, Does.Contain("Welcome sync (no topic), Ira!"));
@@ -2073,7 +2082,7 @@ namespace TauCode.Mq.Testing.Tests
             subscriber.Start();
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Start());
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Start());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
@@ -2113,7 +2122,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(200);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
 
             Assert.That(log, Does.Contain("Hello sync (no topic), Manuela!"));
             Assert.That(log, Does.Contain("Welcome sync (no topic), Manuela!"));
@@ -2153,7 +2162,7 @@ namespace TauCode.Mq.Testing.Tests
             };
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Stop());
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
@@ -2162,6 +2171,8 @@ namespace TauCode.Mq.Testing.Tests
         [Test]
         public async Task Stop_Started_StopsAndCancelsCurrentAsyncTasks()
         {
+            throw new NotImplementedException();
+
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory())
             {
@@ -2185,7 +2196,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(100);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"A task was canceled."));
         }
 
@@ -2202,7 +2213,7 @@ namespace TauCode.Mq.Testing.Tests
             subscriber.Stop();
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => subscriber.Stop());
+            var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
@@ -2250,6 +2261,8 @@ namespace TauCode.Mq.Testing.Tests
         [Test]
         public async Task Dispose_Started_DisposesAndCancelsCurrentAsyncTasks()
         {
+            throw new NotImplementedException(); // todo
+
             // Arrange
             using var subscriber = new TestMessageSubscriber(_media, new GoodContextFactory());
 
@@ -2271,7 +2284,7 @@ namespace TauCode.Mq.Testing.Tests
             await Task.Delay(100);
 
             // Assert
-            var log = this.GetLog();
+            var log = this.CurrentLog;
             Assert.That(log, Does.Contain($"A task was canceled."));
         }
 

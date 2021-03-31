@@ -2,21 +2,40 @@
 using NUnit.Framework;
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Serilog;
+using Serilog.Extensions.Logging;
+using TauCode.Infrastructure.Lab;
 using TauCode.Mq.Testing.Tests.Messages;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
 
 namespace TauCode.Mq.Testing.Tests
 {
     [TestFixture]
     public class TestMessagePublisherTests
     {
+        private StringLoggerLab _logger;
         private ITestMqMedia _media;
 
         [SetUp]
         public void SetUp()
         {
-            _media = new TestMqMedia();
+            _logger = new StringLoggerLab();
+            _media = new TestMqMedia(_logger);
+
+            var collection = new LoggerProviderCollection();
+
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Providers(collection)
+                .MinimumLevel
+                .Debug()
+                .CreateLogger();
+
+            var providerMock = new Mock<ILoggerProvider>();
+            providerMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(_logger);
+
+            collection.AddProvider(providerMock.Object);
         }
 
         [TearDown]
@@ -113,7 +132,7 @@ namespace TauCode.Mq.Testing.Tests
             using var publisher = new TestMessagePublisher(_media);
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Publish(new HelloMessage()));
+            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage()));
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
@@ -251,7 +270,7 @@ namespace TauCode.Mq.Testing.Tests
             using var publisher = new TestMessagePublisher(_media);
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
+            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
@@ -586,7 +605,7 @@ namespace TauCode.Mq.Testing.Tests
             publisher.Start();
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Start());
+            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Start());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Running)."));
@@ -642,7 +661,7 @@ namespace TauCode.Mq.Testing.Tests
             };
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Stop());
+            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Stop());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
@@ -679,7 +698,7 @@ namespace TauCode.Mq.Testing.Tests
             publisher.Stop();
 
             // Act
-            var ex = Assert.Throws<InappropriateWorkerStateException>(() => publisher.Stop());
+            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Stop());
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Inappropriate worker state (Stopped)."));
