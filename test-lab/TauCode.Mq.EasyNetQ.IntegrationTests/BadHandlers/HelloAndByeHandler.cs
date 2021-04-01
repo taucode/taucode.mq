@@ -16,7 +16,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests.BadHandlers
             throw new NotSupportedException();
         }
 
-        public void Handle(object message)
+        public void Handle(IMessage message)
         {
             throw new NotSupportedException();
         }

@@ -9,7 +9,7 @@ namespace TauCode.Mq
     {
         public abstract Task HandleAsync(TMessage message, CancellationToken cancellationToken);
 
-        public Task HandleAsync(object message, CancellationToken cancellationToken)
+        public Task HandleAsync(IMessage message, CancellationToken cancellationToken)
         {
             return this.HandleAsync((TMessage)message, cancellationToken);
         }

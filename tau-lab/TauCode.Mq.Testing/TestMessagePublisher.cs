@@ -1,6 +1,7 @@
 ﻿using System;
 using TauCode.Mq.Abstractions;
 
+// todo clean
 namespace TauCode.Mq.Testing
 {
     public class TestMessagePublisher : MessagePublisherBase
@@ -37,10 +38,10 @@ namespace TauCode.Mq.Testing
             _media.Publish(message.GetType(), message);
         }
 
-        protected override void PublishImpl(IMessage message, string topic)
-        {
-            _media.Publish(message.GetType(), message, topic);
-        }
+        //protected override void PublishImpl(IMessage message, string topic)
+        //{
+        //    _media.Publish(message.GetType(), message, topic);
+        //}
 
         #endregion
     }

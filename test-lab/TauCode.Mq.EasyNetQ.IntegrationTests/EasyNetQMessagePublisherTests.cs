@@ -8,6 +8,7 @@ using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
 // todo: instead of '_ThrowsMqException' => '_ThrowsInvalidOperationException' etc.
+// todo clean
 namespace TauCode.Mq.EasyNetQ.IntegrationTests
 {
     [TestFixture]
@@ -82,7 +83,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void ConnectionString_StartedThenSet_ThrowsMqException()
+        public void ConnectionString_StartedThenSet_ThrowsException()
         {
             // Arrange
             using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
@@ -100,7 +101,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void ConnectionString_DisposedThenSet_ThrowsObjectDisposedException()
+        public void ConnectionString_DisposedThenSet_ThrowsException()
         {
             // Arrange
             using IEasyNetQMessagePublisher messagePublisher = new EasyNetQMessagePublisher();
@@ -123,118 +124,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         #region Publish(IMessage)
 
         [Test]
-        public void PublishIMessage_ValidStateAndArgument_PublishesAndProperSubscriberHandles()
-        {
-            // Arrange
-
-            // Act
-
-            // Assert
-            Assert.Pass($"See '{nameof(PublishIMessageString_ValidStateAndArguments_PublishesAndProperSubscriberHandles)}', both methods are UT'ed there.");
-        }
-
-        [Test]
-        public void PublishIMessage_ArgumentIsNull_ThrowsArgumentNullException()
-        {
-            // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
-            publisher.Start();
-
-            // Act
-            var ex = Assert.Throws<ArgumentNullException>(() => publisher.Publish(null));
-
-            // Assert
-            Assert.That(ex.ParamName, Is.EqualTo("message"));
-        }
-
-        [Test]
-        public void PublishIMessage_ArgumentIsNotClass_ThrowsArgumentException()
-        {
-            // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
-            publisher.Start();
-
-            // Act
-            var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new StructMessage()));
-
-            // Assert
-            Assert.That(ex,
-                Has.Message.StartWith(
-                    $"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
-            Assert.That(ex.ParamName, Is.EqualTo("message"));
-        }
-
-        [Test]
-        public void PublishIMessage_ArgumentPropertyThrows_ThrowsJsonSerializationException()
-        {
-            // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
-            publisher.Start();
-
-            // Act
-            var ex = Assert.Throws<JsonSerializationException>(() =>
-            {
-                publisher.Publish(new ThrowPropertyMessage
-                {
-                    BadProperty = "bad",
-                });
-            });
-
-            // Assert
-            Assert.That(ex.InnerException, Is.TypeOf<NotSupportedException>());
-            Assert.That(ex.InnerException, Has.Message.EqualTo("Property is bad!"));
-        }
-
-        [Test]
-        public void PublishIMessage_NotStarted_ThrowsMqException()
-        {
-            // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
-
-            // Act
-            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage()));
-
-            // Assert
-            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Publish'. Worker state is 'Stopped'."));
-        }
-
-        [Test]
-        public void PublishIMessage_Disposed_ThrowsObjectDisposedException()
-        {
-            // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
-
-            publisher.Dispose();
-
-            // Act
-            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Publish(new HelloMessage()));
-
-            // Assert
-            Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
-        }
-
-        #endregion
-
-        #region Publish(IMessage, string)
-
-        [Test]
-        public async Task PublishIMessageString_ValidStateAndArguments_PublishesAndProperSubscriberHandles()
+        public async Task Publish_ValidStateAndArguments_PublishesAndProperSubscriberHandles()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -264,13 +154,14 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 configuration => configuration.WithTopic("some-topic"));
 
             // Act
-            publisher.Publish(new HelloMessage
+            publisher.Publish(
+                new HelloMessage
                 {
                     Name = "mia",
-                },
-                "some-topic");
+                    Topic = "some-topic",
+                });
 
-            await Task.Delay(500);
+            await Task.Delay(1500);
 
             name1 = name;
             nameWithTopic1 = nameWithTopic;
@@ -280,7 +171,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 Name = "deserea",
             });
 
-            await Task.Delay(500);
+            await Task.Delay(1500);
 
             name2 = name;
             nameWithTopic2 = nameWithTopic;
@@ -294,7 +185,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void PublishIMessageString_MessageIsNull_ThrowsArgumentNullException()
+        public void Publish_ArgumentIsNull_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -304,14 +195,14 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            var ex = Assert.Throws<ArgumentNullException>(() => publisher.Publish(null, "some-topic"));
+            var ex = Assert.Throws<ArgumentNullException>(() => publisher.Publish(null));
 
             // Assert
             Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
         [Test]
-        public void PublishIMessageString_MessageIsNotClass_ThrowsArgumentException()
+        public void Publish_ArgumentIsNotClassNoTopic_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -331,9 +222,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        [TestCase(null)]
-        [TestCase("")]
-        public void PublishIMessageString_TopicIsNullOrEmpty_ThrowsTodo(string badTopic)
+        public void Publish_ArgumentIsNotClassWithTopic_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -343,17 +232,44 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new HelloMessage(), badTopic));
+            var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new StructMessage
+            {
+                Topic = "some-topic",
+            }));
 
             // Assert
             Assert.That(ex,
                 Has.Message.StartWith(
-                    "'topic' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload."));
-            Assert.That(ex.ParamName, Is.EqualTo("topic"));
+                    $"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
+            Assert.That(ex.ParamName, Is.EqualTo("message"));
         }
 
         [Test]
-        public void PublishIMessageString_NotStarted_ThrowsMqException()
+        public void Publish_ArgumentPropertyThrows_ThrowsException()
+        {
+            // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+            publisher.Start();
+
+            // Act
+            var ex = Assert.Throws<JsonSerializationException>(() =>
+            {
+                publisher.Publish(new ThrowPropertyMessage
+                {
+                    BadProperty = "bad",
+                });
+            });
+
+            // Assert
+            Assert.That(ex.InnerException, Is.TypeOf<NotSupportedException>());
+            Assert.That(ex.InnerException, Has.Message.EqualTo("Property is bad!"));
+        }
+
+        [Test]
+        public void Publish_NoTopicNotStarted_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -362,14 +278,34 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             };
 
             // Act
-            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage(), "some-topic"));
+            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage()));
 
             // Assert
             Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Publish'. Worker state is 'Stopped'."));
         }
 
         [Test]
-        public void PublishIMessageString_Disposed_ThrowsObjectDisposedException()
+        public void Publish_WithTopicNotStarted_ThrowsException()
+        {
+            // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost"
+            };
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(
+                new HelloMessage
+                {
+                    Topic = "some-topic",
+                }));
+
+            // Assert
+            Assert.That(ex, Has.Message.EqualTo("Cannot perform operation 'Publish'. Worker state is 'Stopped'."));
+        }
+        
+        [Test]
+        public void Publish_NoTopicDisposed_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -381,7 +317,29 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Dispose();
 
             // Act
-            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Publish(new HelloMessage(), "my-topic"));
+            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Publish(new HelloMessage()));
+
+            // Assert
+            Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));
+        }
+
+        [Test]
+        public void Publish_WithTopicDisposed_ThrowsException()
+        {
+            // Arrange
+            using var publisher = new EasyNetQMessagePublisher
+            {
+                ConnectionString = "host=localhost",
+                Name = "my-publisher"
+            };
+
+            publisher.Dispose();
+
+            // Act
+            var ex = Assert.Throws<ObjectDisposedException>(() => publisher.Publish(new HelloMessage
+            {
+                Topic = "my-topic",
+            }));
 
             // Assert
             Assert.That(ex.ObjectName, Is.EqualTo("my-publisher"));

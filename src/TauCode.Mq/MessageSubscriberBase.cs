@@ -21,8 +21,8 @@ namespace TauCode.Mq
             Type MessageType { get; }
             string Topic { get; }
             string Tag { get; }
-            Action<object> Handler { get; }
-            Func<object, Task> AsyncHandler { get; }
+            Action<IMessage> Handler { get; }
+            Func<IMessage, Task> AsyncHandler { get; }
             IReadOnlyList<Type> MessageHandlerTypes { get; }
         }
 
@@ -166,7 +166,7 @@ namespace TauCode.Mq
                 return handler;
             }
 
-            private void Handle(object message) // todo todo0: IMessage message?
+            private void Handle(IMessage message) // todo todo0: IMessage message?
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
@@ -193,7 +193,7 @@ namespace TauCode.Mq
                         {
                             var logMessage = GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage)message,
+                                (IMessage)message, // todo excessive
                                 i);
 
                             logger.LogError(ex, logMessage);
@@ -202,7 +202,7 @@ namespace TauCode.Mq
                 }
             }
 
-            private async Task HandleAsync(object message) // todo todo0: IMessage message?
+            private async Task HandleAsync(IMessage message) // todo todo0: IMessage message?
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
@@ -302,8 +302,8 @@ namespace TauCode.Mq
             public Type MessageType { get; }
             public string Topic { get; }
             public string Tag { get; }
-            public Action<object> Handler { get; }
-            public Func<object, Task> AsyncHandler { get; }
+            public Action<IMessage> Handler { get; }
+            public Func<IMessage, Task> AsyncHandler { get; }
             public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes.ToList();
 
             #endregion
@@ -569,7 +569,7 @@ namespace TauCode.Mq
 
             _subscriptionHandles.Clear();
 
-            _tokenSource.Cancel();
+            _tokenSource.Cancel(); // todo: Resharper multi-threading issue here (lock)
 
             lock (_tokenSourceLock)
             {

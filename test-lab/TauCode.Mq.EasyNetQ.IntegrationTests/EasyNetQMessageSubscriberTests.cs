@@ -25,6 +25,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
     [TestFixture]
     public class EasyNetQMessageSubscriberTests
     {
+        private const string DEFAULT_CONNECTION_STRING = "host=localhost";
+
         private StringLoggerLab _logger;
 
         [SetUp]
@@ -52,6 +54,26 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         private string CurrentLog => _logger.ToString();
+
+        private IMessageSubscriber CreateMessageSubscriber(
+            IMessageHandlerContextFactory factory,
+            string connectionString = null)
+        {
+            connectionString ??= DEFAULT_CONNECTION_STRING;
+            var subscriber = new EasyNetQMessageSubscriber(factory, connectionString);
+            subscriber.Logger = _logger;
+            return subscriber;
+        }
+
+        private IMessageSubscriber CreateMessageSubscriber<TFactory>(
+            string connectionString = null) where TFactory : IMessageHandlerContextFactory, new()
+        {
+            var factory = new TFactory();
+            connectionString ??= DEFAULT_CONNECTION_STRING;
+            var subscriber = new EasyNetQMessageSubscriber(factory, connectionString);
+            subscriber.Logger = _logger;
+            return subscriber;
+        }
 
         #region ctor
 
@@ -475,7 +497,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Lesia")
+            {
+                Topic = "topic1",
+            });
             publisher.Publish(new HelloMessage("Olia"));
 
             await Task.Delay(300);
@@ -488,7 +513,6 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             Assert.That(log, Does.Contain("Hello sync (no topic), Olia!"));
             Assert.That(log, Does.Not.Contain("Welcome sync (no topic), Olia!"));
-
         }
 
         [Test]
@@ -510,7 +534,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Lesia")
+            {
+                Topic = "topic1",
+            });
             publisher.Publish(new HelloMessage("Olia"));
 
             await Task.Delay(300);
@@ -545,7 +572,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Lesia")
+            {
+                Topic = "topic1",
+            });
             publisher.Publish(new HelloMessage("Olia"));
 
             await Task.Delay(300);
@@ -558,7 +588,6 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             Assert.That(log, Does.Contain("Hello async (no topic), Olia!"));
             Assert.That(log, Does.Not.Contain("Welcome sync (no topic), Olia!"));
-
         }
 
         [Test]
@@ -580,7 +609,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            publisher.Publish(new HelloMessage("Lesia"), "topic1");
+            publisher.Publish(new HelloMessage("Lesia")
+            {
+                Topic = "topic1"
+            });
             publisher.Publish(new HelloMessage("Olia"));
 
             await Task.Delay(300);
@@ -852,7 +884,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             subscriber.Subscribe(typeof(DecayingMessageHandler));
             subscriber.Start();
-            
+
             // Act
             bus.Publish(message);
             await Task.Delay(300);
@@ -1014,10 +1046,12 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_SingleSyncHandler_HandlesMessagesWithProperTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            //using var subscriber = new EasyNetQMessageSubscriber(
+            //    new GoodContextFactory(),
+            //    "host=localhost");
 
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
+            
             subscriber.Subscribe(typeof(HelloHandler), "topic1");
             subscriber.Subscribe(typeof(HelloHandler), "topic2");
 
@@ -1027,10 +1061,13 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            var message = new HelloMessage("Lesia");
-            publisher.Publish(message, "topic2");
+            var message = new HelloMessage("Lesia")
+            {
+                Topic = "topic2",
+            };
+            publisher.Publish(message);
 
-            await Task.Delay(300);
+            await Task.Delay(1300);
 
             // Assert
             var log = this.CurrentLog;
@@ -1059,14 +1096,17 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            var message = new HelloMessage("Lesia");
-            publisher.Publish(message, "topic2");
+            var message = new HelloMessage("Lesia")
+            {
+                Topic = "topic2",
+            };
+            publisher.Publish(message);
 
             await Task.Delay(300);
 
             // Assert
             var log = this.CurrentLog;
-            
+
             Assert.That(log, Does.Contain("Hello sync (topic: 'topic2'), Lesia!"));
             Assert.That(log, Does.Contain("Welcome sync (topic: 'topic2'), Lesia!"));
 
@@ -1091,8 +1131,11 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            var message = new HelloMessage("Lesia");
-            publisher.Publish(message, "topic2");
+            var message = new HelloMessage("Lesia")
+            {
+                Topic = "topic2",
+            };
+            publisher.Publish(message);
 
             await Task.Delay(300);
 
@@ -1123,8 +1166,11 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            var message = new HelloMessage("Lesia");
-            publisher.Publish(message, "topic2");
+            var message = new HelloMessage("Lesia")
+            {
+                Topic = "topic2",
+            };
+            publisher.Publish(message);
 
             await Task.Delay(300);
 
@@ -1251,7 +1297,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Subscribe(typeof(HelloHandler), "another-topic");
             subscriber.Start();
 
-            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+            publisher.Publish(new HelloMessage("Nika")
+            {
+                Topic = "another-topic",
+            });
 
             await Task.Delay(300);
 
@@ -1279,7 +1328,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Subscribe(typeof(HelloHandler), "another-topic");
             subscriber.Start();
 
-            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+            publisher.Publish(new HelloMessage("Nika")
+            {
+                Topic = "another-topic",
+            });
 
             await Task.Delay(300);
 
@@ -1322,7 +1374,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Subscribe(typeof(HelloAsyncHandler), "another-topic");
             subscriber.Start();
 
-            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+            publisher.Publish(new HelloMessage("Nika")
+            {
+                Topic = "another-topic",
+            });
 
             await Task.Delay(300);
 
@@ -1349,7 +1404,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Subscribe(typeof(HelloAsyncHandler), "another-topic");
             subscriber.Start();
 
-            publisher.Publish(new HelloMessage("Nika"), "another-topic");
+            publisher.Publish(new HelloMessage("Nika")
+            {
+                Topic = "another-topic",
+            });
 
             await Task.Delay(300);
 
@@ -1439,7 +1497,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Subscribe(typeof(HelloHandler), "another-topic");
             subscriber.Start();
 
-            publisher.Publish(new HelloMessage("Alina"), "another-topic");
+            publisher.Publish(new HelloMessage("Alina")
+            {
+                Topic = "another-topic",
+            });
 
             await Task.Delay(300);
 
@@ -1467,8 +1528,11 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             subscriber.Start();
 
-            var message = new HelloMessage("Marina");
-            publisher.Publish(message, "some-topic");
+            var message = new HelloMessage("Marina")
+            {
+                Topic = "some-topic",
+            };
+            publisher.Publish(message);
 
             await Task.Delay(300);
 
@@ -1479,6 +1543,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Marina!"));
         }
 
+        // todo: _ThrowsException, that's it.
         [Test]
         public void SubscribeTypeString_AsyncTypeAlreadySubscribedToTheSameTopic_ThrowsMqException()
         {
@@ -1513,7 +1578,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Subscribe(typeof(HelloAsyncHandler), "another-topic");
             subscriber.Start();
 
-            publisher.Publish(new HelloMessage("Alina"), "another-topic");
+            publisher.Publish(new HelloMessage("Alina")
+            {
+                Topic = "another-topic",
+            });
 
             await Task.Delay(300);
 
@@ -1540,7 +1608,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Subscribe(typeof(HelloHandler), "another-topic");
             subscriber.Start();
 
-            publisher.Publish(new HelloMessage("Alina"), "another-topic");
+            publisher.Publish(new HelloMessage("Alina")
+            {
+                Topic = "another-topic",
+            });
 
             await Task.Delay(300);
 
@@ -1588,7 +1659,6 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
         [Test]
         public async Task SubscribeTypeString_TMessageCtorThrows_LogsException()
-
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -1601,6 +1671,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             var message = new DecayingMessage
             {
                 DecayedProperty = "fresh",
+                Topic = "some-topic",
             };
 
             DecayingMessage.IsCtorDecayed = true;
@@ -1609,7 +1680,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             // Act
-            publisher.Publish(message, "some-topic");
+            publisher.Publish(message);
             await Task.Delay(300);
 
             // Assert
@@ -1667,10 +1738,13 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var publisher = new EasyNetQMessagePublisher("host=localhost");
             publisher.Start();
 
-            var message = new HelloMessage("Small Fish");
+            var message = new HelloMessage("Small Fish")
+            {
+                Topic = "some-topic",
+            };
 
             // Act
-            publisher.Publish(message, "some-topic");
+            publisher.Publish(message);
 
             await Task.Delay(300);
 
@@ -1681,7 +1755,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             Assert.That(log, Does.Contain("Welcome sync (topic: 'some-topic'), Small Fish!"));
         }
 
-        // todo: when topic is present, topicless subscription does not fire (sync or async)
+        // todo: when topic is present, topicless subscription does not fire (sync or async) - [2021-03-31] Is it so? I think now that vice versa
 
 
         // todo - async handler's HandleAsync is faulted => logs, stops loop gracefully.
@@ -1703,9 +1777,12 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            publisher.Publish(new HelloMessage("Ania"), "some-topic");
+            publisher.Publish(new HelloMessage("Ania")
+            {
+                Topic = "some-topic",
+            });
 
-            await Task.Delay(300);
+            await Task.Delay(500);
 
             // Assert
             var log = this.CurrentLog;
@@ -1738,9 +1815,12 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             publisher.Start();
 
             // Act
-            publisher.Publish(new HelloMessage("Ira"), "some-topic");
+            publisher.Publish(new HelloMessage("Ira")
+            {
+                Topic = "some-topic",
+            });
 
-            await Task.Delay(200);
+            await Task.Delay(500);
 
             // Assert
             var log = this.CurrentLog;

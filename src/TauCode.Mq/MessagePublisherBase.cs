@@ -2,6 +2,7 @@
 using TauCode.Mq.Abstractions;
 using TauCode.Working;
 
+// todo clean
 namespace TauCode.Mq
 {
     public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
@@ -34,10 +35,10 @@ namespace TauCode.Mq
                 throw new ArgumentNullException(nameof(message));
             }
 
-            if (message.Topic != null)
-            {
-                throw MqHelper.TopicMustBeNullException(); // todo ut this
-            }
+            //if (message.Topic != null)
+            //{
+            //    throw MqHelper.TopicMustBeNullException(); // todo ut this
+            //}
 
             var type = message.GetType();
 
@@ -57,7 +58,7 @@ namespace TauCode.Mq
 
         protected abstract void PublishImpl(IMessage message);
 
-        protected abstract void PublishImpl(IMessage message, string topic);
+        //protected abstract void PublishImpl(IMessage message, string topic);
 
         #endregion
 
@@ -124,24 +125,24 @@ namespace TauCode.Mq
             this.PublishImpl(message);
         }
 
-        public void Publish(IMessage message, string topic)
-        {
-            CheckMessage(message);
+        //public void Publish(IMessage message, string topic)
+        //{
+        //    CheckMessage(message);
             
-            if (string.IsNullOrEmpty(topic))
-            {
-                throw new ArgumentException(
-                    $"'{nameof(topic)}' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload.",
-                    nameof(topic));
-            }
+        //    if (string.IsNullOrEmpty(topic))
+        //    {
+        //        throw new ArgumentException(
+        //            $"'{nameof(topic)}' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload.",
+        //            nameof(topic));
+        //    }
 
-            message.Topic = topic;
+        //    message.Topic = topic;
 
-            this.CheckNotDisposed();
-            this.CheckStarted(nameof(Publish));
+        //    this.CheckNotDisposed();
+        //    this.CheckStarted(nameof(Publish));
 
-            this.PublishImpl(message, topic);
-        }
+        //    this.PublishImpl(message, topic);
+        //}
 
         #endregion
     }

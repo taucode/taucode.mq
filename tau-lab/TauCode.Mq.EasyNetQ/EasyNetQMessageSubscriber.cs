@@ -1,8 +1,11 @@
-﻿using System;
-using EasyNetQ;
+﻿using EasyNetQ;
 using EasyNetQ.NonGeneric;
+using System;
+using System.Threading.Tasks;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
+
+using ITauMessage = TauCode.Mq.Abstractions.IMessage;
 
 namespace TauCode.Mq.EasyNetQ
 {
@@ -58,17 +61,21 @@ namespace TauCode.Mq.EasyNetQ
 
                 if (subscriptionRequest.Topic == null)
                 {
+                    void EasyNetQHandler(object messageObject) => subscriptionRequest.Handler((ITauMessage)messageObject);
+
                     handle = _bus.Subscribe(
                         subscriptionRequest.MessageType,
                         subscriptionId,
-                        subscriptionRequest.Handler);
+                        EasyNetQHandler);
                 }
                 else
                 {
+                    void EasyNetQHandler(object messageObject) => subscriptionRequest.Handler((ITauMessage)messageObject);
+
                     handle = _bus.Subscribe(
                         subscriptionRequest.MessageType,
                         subscriptionId,
-                        subscriptionRequest.Handler,
+                        EasyNetQHandler,
                         configuration => configuration.WithTopic(subscriptionRequest.Topic));
                 }
 
@@ -83,17 +90,21 @@ namespace TauCode.Mq.EasyNetQ
 
                 if (subscriptionRequest.Topic == null)
                 {
+                    async Task EasyNetQHandler(object messageObject) => await subscriptionRequest.AsyncHandler((ITauMessage)messageObject);
+
                     handle = _bus.SubscribeAsync(
                         subscriptionRequest.MessageType,
                         subscriptionId,
-                        subscriptionRequest.AsyncHandler);
+                        EasyNetQHandler);
                 }
                 else
                 {
+                    async Task EasyNetQHandler(object messageObject) => await subscriptionRequest.AsyncHandler((ITauMessage)messageObject);
+
                     handle = _bus.SubscribeAsync(
                         subscriptionRequest.MessageType,
                         subscriptionId,
-                        subscriptionRequest.AsyncHandler,
+                        EasyNetQHandler,
                         configuration => configuration.WithTopic(subscriptionRequest.Topic));
                 }
 
