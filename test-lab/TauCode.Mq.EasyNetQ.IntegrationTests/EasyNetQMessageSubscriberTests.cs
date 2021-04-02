@@ -57,21 +57,30 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
         private IMessageSubscriber CreateMessageSubscriber(
             IMessageHandlerContextFactory factory,
+            string name = null,
             string connectionString = null)
         {
             connectionString ??= DefaultConnectionString;
-            var subscriber = new EasyNetQMessageSubscriber(factory, connectionString);
-            subscriber.Logger = _logger;
+            var subscriber = new EasyNetQMessageSubscriber(factory, connectionString)
+            {
+                Name = name,
+                Logger = _logger
+            };
+
             return subscriber;
         }
 
         private IMessageSubscriber CreateMessageSubscriber<TFactory>(
+            string name = null,
             string connectionString = null) where TFactory : IMessageHandlerContextFactory, new()
         {
             var factory = new TFactory();
             connectionString ??= DefaultConnectionString;
-            var subscriber = new EasyNetQMessageSubscriber(factory, connectionString);
-            subscriber.Logger = _logger;
+            var subscriber = new EasyNetQMessageSubscriber(factory, connectionString)
+            {
+                Name = name,
+                Logger = _logger
+            };
             return subscriber;
         }
 
@@ -2433,11 +2442,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Stop_JustCreated_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             // Act
             var ex = Assert.Throws<InvalidOperationException>(() => subscriber.Stop());
@@ -2450,8 +2455,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task Stop_Started_StopsAndCancelsCurrentAsyncTasks()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Start();
@@ -2479,11 +2483,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Stop_Stopped_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             subscriber.Start();
             subscriber.Stop();
@@ -2499,10 +2499,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Stop_Disposed_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost")
-            {
-                Name = "sub",
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             subscriber.Dispose();
 
@@ -2521,7 +2518,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Dispose_JustCreated_Disposes()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             subscriber.Dispose();
@@ -2534,7 +2531,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task Dispose_Started_DisposesAndCancelsCurrentAsyncTasks()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
             subscriber.Logger = _logger;
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
@@ -2560,10 +2557,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Disposes_Stopped_Disposes()
+        public void Dispose_Stopped_Disposes()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
             subscriber.Start();
             subscriber.Stop();
 
@@ -2575,10 +2572,10 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Disposes_Disposed_DoesNothing()
+        public void Dispose_Disposed_DoesNothing()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
             subscriber.Dispose();
 
             // Act
