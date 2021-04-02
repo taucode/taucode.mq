@@ -7,13 +7,30 @@ using TauCode.Mq.EasyNetQ.IntegrationTests.Messages;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
-// todo: instead of '_ThrowsMqException' => '_ThrowsInvalidOperationException' etc.
 // todo clean
 namespace TauCode.Mq.EasyNetQ.IntegrationTests
 {
     [TestFixture]
     public class EasyNetQMessagePublisherTests
     {
+        private const string DefaultConnectionString = "host=localhost";
+
+        private IMessagePublisher CreateMessagePublisher(string connectionString = null, string name = null)
+        {
+            var messagePublisher = new EasyNetQMessagePublisher();
+            if (connectionString != null)
+            {
+                messagePublisher.ConnectionString = connectionString;
+            }
+
+            if (name != null)
+            {
+                messagePublisher.Name = name;
+            }
+
+            return messagePublisher;
+        }
+
         #region ctor
 
         [Test]
@@ -126,11 +143,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public async Task Publish_ValidStateAndArguments_PublishesAndProperSubscriberHandles()
         {
-            // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher(DefaultConnectionString);
+
             publisher.Start();
 
             string name = null;
@@ -676,7 +690,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(null)]
         [TestCase("")]
-        public void Start_ConnectionStringIsNullOrEmpty_ThrowsMqException(string badConnectionString)
+        public void Start_ConnectionStringIsNullOrEmpty_ThrowsException(string badConnectionString)
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -692,7 +706,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Start_Started_ThrowsInappropriateWorkerStateException()
+        public void Start_Started_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -731,7 +745,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Start_Disposed_ThrowsObjectDisposedException()
+        public void Start_Disposed_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -753,7 +767,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         #region Stop()
 
         [Test]
-        public void Stop_JustCreated_ThrowsInappropriateWorkerStateException()
+        public void Stop_JustCreated_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -789,7 +803,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Stop_Stopped_ThrowsInappropriateWorkerStateException()
+        public void Stop_Stopped_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher
@@ -809,7 +823,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Stop_Disposed_ThrowsObjectDisposedException()
+        public void Stop_Disposed_ThrowsException()
         {
             // Arrange
             using var publisher = new EasyNetQMessagePublisher

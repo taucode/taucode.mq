@@ -25,7 +25,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
     [TestFixture]
     public class EasyNetQMessageSubscriberTests
     {
-        private const string DEFAULT_CONNECTION_STRING = "host=localhost";
+        private const string DefaultConnectionString = "host=localhost";
 
         private StringLoggerLab _logger;
 
@@ -59,7 +59,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             IMessageHandlerContextFactory factory,
             string connectionString = null)
         {
-            connectionString ??= DEFAULT_CONNECTION_STRING;
+            connectionString ??= DefaultConnectionString;
             var subscriber = new EasyNetQMessageSubscriber(factory, connectionString);
             subscriber.Logger = _logger;
             return subscriber;
@@ -69,7 +69,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             string connectionString = null) where TFactory : IMessageHandlerContextFactory, new()
         {
             var factory = new TFactory();
-            connectionString ??= DEFAULT_CONNECTION_STRING;
+            connectionString ??= DefaultConnectionString;
             var subscriber = new EasyNetQMessageSubscriber(factory, connectionString);
             subscriber.Logger = _logger;
             return subscriber;
@@ -92,7 +92,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void ConstructorOneArgument_ArgumentIsNull_ThrowsArgumentNullException()
+        public void ConstructorOneArgument_ArgumentIsNull_ThrowsException()
         {
             // Arrange
 
@@ -119,7 +119,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void ConstructorTwoArguments_FactoryArgumentIsNull_ThrowsArgumentNullException()
+        public void ConstructorTwoArguments_FactoryArgumentIsNull_ThrowsException()
         {
             // Arrange
 
@@ -173,7 +173,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void ConnectionString_StartedThenSet_ThrowsMqException()
+        public void ConnectionString_StartedThenSet_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
@@ -191,7 +191,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void ConnectionString_DisposedThenSet_ThrowsObjectDisposedException()
+        public void ConnectionString_DisposedThenSet_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -216,7 +216,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         #region ContextFactory
 
         [Test]
-        public async Task ContextFactory_ThrowsOnCreateContext_LogsException()
+        public async Task ContextFactory_ThrowsException()
         {
             // Arrange
             IMessageHandlerContextFactory factory = new BadContextFactory(
@@ -631,7 +631,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeIsNull_ThrowsArgumentNullException()
+        public void SubscribeType_TypeIsNull_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -646,7 +646,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeIsAbstract_ThrowsArgumentException()
+        public void SubscribeType_TypeIsAbstract_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -662,7 +662,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeIsNotClass_ThrowsArgumentException()
+        public void SubscribeType_TypeIsNotClass_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -680,7 +680,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(typeof(NonGenericHandler))]
         [TestCase(typeof(NotImplementingHandlerInterface))]
-        public void SubscribeType_TypeIsNotGenericSyncOrAsyncHandler_ThrowsArgumentException(Type badHandlerType)
+        public void SubscribeType_TypeIsNotGenericSyncOrAsyncHandler_ThrowsException(Type badHandlerType)
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -696,7 +696,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeIsSyncAfterAsync_ThrowsMqException()
+        public void SubscribeType_TypeIsSyncAfterAsync_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -711,7 +711,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeIsAsyncAfterSync_ThrowsMqException()
+        public void SubscribeType_TypeIsAsyncAfterSync_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -726,7 +726,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
+        public void SubscribeType_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -741,7 +741,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
+        public void SubscribeType_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -756,7 +756,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_TypeImplementsBothSyncAndAsync_ThrowsArgumentException()
+        public void SubscribeType_TypeImplementsBothSyncAndAsync_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -771,7 +771,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_SyncTypeAlreadySubscribed_ThrowsMqException()
+        public void SubscribeType_SyncTypeAlreadySubscribed_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -787,7 +787,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_AsyncTypeAlreadySubscribed_ThrowsMqException()
+        public void SubscribeType_AsyncTypeAlreadySubscribed_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -805,7 +805,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(typeof(AbstractMessageHandler))]
         [TestCase(typeof(AbstractMessageAsyncHandler))]
-        public void SubscribeType_TMessageIsAbstract_ThrowsArgumentException(Type badHandlerType)
+        public void SubscribeType_TMessageIsAbstract_ThrowsException(Type badHandlerType)
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -823,7 +823,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(typeof(StructMessageHandler))]
         [TestCase(typeof(StructMessageAsyncHandler))]
-        public void SubscribeType_TMessageIsNotClass_ThrowsArgumentException(Type badHandlerType)
+        public void SubscribeType_TMessageIsNotClass_ThrowsException(Type badHandlerType)
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -999,7 +999,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_Started_ThrowsInappropriateWorkerStateException()
+        public void SubscribeType_Started_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -1019,7 +1019,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeType_Disposed_ThrowsObjectDisposedException()
+        public void SubscribeType_Disposed_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -1045,11 +1045,6 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public async Task SubscribeTypeString_SingleSyncHandler_HandlesMessagesWithProperTopic()
         {
-            // Arrange
-            //using var subscriber = new EasyNetQMessageSubscriber(
-            //    new GoodContextFactory(),
-            //    "host=localhost");
-
             using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
             
             subscriber.Subscribe(typeof(HelloHandler), "topic1");
@@ -1186,7 +1181,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(null)]
         [TestCase("")]
-        public void SubscribeTypeString_TopicIsNullOrEmpty_ThrowsArgumentException(string badTopic)
+        public void SubscribeTypeString_TopicIsNullOrEmpty_ThrowsException(string badTopic)
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1201,7 +1196,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsNull_ThrowsArgumentNullException()
+        public void SubscribeTypeString_TypeIsNull_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1215,7 +1210,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsAbstract_ThrowsArgumentException()
+        public void SubscribeTypeString_TypeIsAbstract_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -1231,7 +1226,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsNotClass_ThrowsArgumentException()
+        public void SubscribeTypeString_TypeIsNotClass_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -1249,7 +1244,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(typeof(NonGenericHandler))]
         [TestCase(typeof(NotImplementingHandlerInterface))]
-        public void SubscribeTypeString_TypeIsNotGenericSyncOrAsyncHandler_ThrowsArgumentException(Type badHandlerType)
+        public void SubscribeTypeString_TypeIsNotGenericSyncOrAsyncHandler_ThrowsException(Type badHandlerType)
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -1265,7 +1260,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsSyncAfterAsyncSameTopic_ThrowsMqException()
+        public void SubscribeTypeString_TypeIsSyncAfterAsyncSameTopic_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1343,7 +1338,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeIsAsyncAfterSyncSameTopic_ThrowsMqException()
+        public void SubscribeTypeString_TypeIsAsyncAfterSyncSameTopic_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1419,7 +1414,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
+        public void SubscribeTypeString_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1434,7 +1429,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsArgumentException()
+        public void SubscribeTypeString_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1449,7 +1444,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_TypeImplementsBothSyncAndAsync_ThrowsArgumentException()
+        public void SubscribeTypeString_TypeImplementsBothSyncAndAsync_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1465,7 +1460,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
 
         [Test]
-        public void SubscribeTypeString_SyncTypeAlreadySubscribedToTheSameTopic_ThrowsMqException()
+        public void SubscribeTypeString_SyncTypeAlreadySubscribedToTheSameTopic_ThrowsException()
         {
             using var subscriber = new EasyNetQMessageSubscriber(
                 new GoodContextFactory(),
@@ -1543,9 +1538,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             Assert.That(log, Does.Contain("Hello async (topic: 'some-topic'), Marina!"));
         }
 
-        // todo: _ThrowsException, that's it.
         [Test]
-        public void SubscribeTypeString_AsyncTypeAlreadySubscribedToTheSameTopic_ThrowsMqException()
+        public void SubscribeTypeString_AsyncTypeAlreadySubscribedToTheSameTopic_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -1624,7 +1618,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(typeof(AbstractMessageHandler))]
         [TestCase(typeof(AbstractMessageAsyncHandler))]
-        public void SubscribeTypeString_TMessageIsAbstract_ThrowsArgumentException(Type badHandlerType)
+        public void SubscribeTypeString_TMessageIsAbstract_ThrowsException(Type badHandlerType)
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -1642,7 +1636,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(typeof(StructMessageHandler))]
         [TestCase(typeof(StructMessageAsyncHandler))]
-        public void SubscribeTypeString_TMessageIsNotClass_ThrowsArgumentException(Type badHandlerType)
+        public void SubscribeTypeString_TMessageIsNotClass_ThrowsException(Type badHandlerType)
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(
@@ -1832,7 +1826,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_Started_ThrowsInappropriateWorkerStateException()
+        public void SubscribeTypeString_Started_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -1853,7 +1847,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void SubscribeTypeString_Disposed_ThrowsObjectDisposedException()
+        public void SubscribeTypeString_Disposed_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -2332,7 +2326,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         [TestCase(null)]
         [TestCase("")]
-        public void Start_ConnectionStringIsNullOrEmpty_ThrowsMqException(string badConnectionString)
+        public void Start_ConnectionStringIsNullOrEmpty_ThrowsException(string badConnectionString)
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -2349,7 +2343,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Start_Started_ThrowsInappropriateWorkerStateException()
+        public void Start_Started_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -2414,7 +2408,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Start_Disposed_ThrowsObjectDisposedException()
+        public void Start_Disposed_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -2436,7 +2430,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         #region Stop()
 
         [Test]
-        public void Stop_JustCreated_ThrowsInappropriateWorkerStateException()
+        public void Stop_JustCreated_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -2482,7 +2476,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Stop_Stopped_ThrowsInappropriateWorkerStateException()
+        public void Stop_Stopped_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
@@ -2502,7 +2496,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         }
 
         [Test]
-        public void Stop_Disposed_ThrowsObjectDisposedException()
+        public void Stop_Disposed_ThrowsException()
         {
             // Arrange
             using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory(), "host=localhost")
