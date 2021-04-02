@@ -2062,9 +2062,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             // Arrange
 
             // Act
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Assert
             Assert.That(subscriber.State, Is.EqualTo(WorkerState.Stopped));
@@ -2074,9 +2072,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_Started_EqualsToStarted()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             subscriber.Start();
@@ -2089,9 +2085,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_Stopped_EqualsToStopped()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
+
             subscriber.Start();
 
             // Act
@@ -2105,7 +2100,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedJustAfterCreation_EqualsToStopped()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory());
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             subscriber.Dispose();
@@ -2118,9 +2113,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedAfterStarted_EqualsToStopped()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
+
             subscriber.Start();
 
             // Act
@@ -2134,9 +2128,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedAfterStopped_EqualsToStopped()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
+
             subscriber.Start();
             subscriber.Stop();
 
@@ -2151,9 +2144,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedAfterDisposed_EqualsToStopped()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
+
             subscriber.Start();
             subscriber.Stop();
             subscriber.Dispose();
@@ -2175,11 +2167,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             // Arrange
 
             // Act
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             // Assert
             Assert.That(subscriber.IsDisposed, Is.False);
@@ -2189,11 +2177,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_Started_EqualsToFalse()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             // Act
             subscriber.Start();
@@ -2206,11 +2190,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_Stopped_EqualsToFalse()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
+
             subscriber.Start();
 
             // Act
@@ -2224,11 +2205,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedJustAfterCreation_EqualsToTrue()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             // Act
             subscriber.Dispose();
@@ -2241,11 +2218,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedAfterStarted_EqualsToTrue()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
+
             subscriber.Start();
 
             // Act
@@ -2259,11 +2233,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedAfterStopped_EqualsToTrue()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
+
             subscriber.Start();
             subscriber.Stop();
 
@@ -2278,11 +2249,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedAfterDisposed_EqualsToTrue()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "sub"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
+
             subscriber.Dispose();
 
             // Act
@@ -2300,11 +2268,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task Start_JustCreated_StartsAndHandlesMessages()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             subscriber.Subscribe(typeof(HelloHandler));
             subscriber.Subscribe(typeof(WelcomeHandler));
@@ -2317,8 +2281,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(new HelloMessage("Ira"));
-            bus.Publish(new ByeMessage("Olia"));
+            await bus.PublishAsync(new HelloMessage("Ira"));
+            await bus.PublishAsync(new ByeMessage("Olia"));
 
             await Task.Delay(200);
 
@@ -2355,11 +2319,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Start_Started_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("my-subscriber");
 
             subscriber.Start();
 
@@ -2374,11 +2334,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task Start_Stopped_StartsAndHandlesMessages()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub");
 
             subscriber.Subscribe(typeof(HelloHandler));
             subscriber.Subscribe(typeof(WelcomeHandler));
@@ -2391,8 +2347,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(new HelloMessage("Ira"));
-            bus.Publish(new ByeMessage("Olia"));
+            await bus.PublishAsync(new HelloMessage("Ira"));
+            await bus.PublishAsync(new ByeMessage("Olia"));
 
             await Task.Delay(200);
 
@@ -2401,8 +2357,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
             subscriber.Start();
 
-            bus.Publish(new HelloMessage("Manuela"));
-            bus.Publish(new ByeMessage("Alex"));
+            await bus.PublishAsync(new HelloMessage("Manuela"));
+            await bus.PublishAsync(new ByeMessage("Alex"));
 
             await Task.Delay(200);
 
@@ -2420,11 +2376,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Start_Disposed_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("my-subscriber");
+            
             subscriber.Dispose();
 
             // Act
@@ -2461,7 +2414,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
-            bus.Publish(new HelloMessage()
+            await bus.PublishAsync(new HelloMessage()
             {
                 Name = "Koika",
                 MillisecondsTimeout = 3000,
@@ -2538,7 +2491,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
-            bus.Publish(new HelloMessage()
+            await bus.PublishAsync(new HelloMessage()
             {
                 Name = "Koika",
                 MillisecondsTimeout = 3000,
