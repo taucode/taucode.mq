@@ -238,8 +238,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false,
                 false);
 
-            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber(factory);
 
             subscriber.Subscribe(typeof(HelloHandler));
 
@@ -248,7 +247,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using IBus bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(
+            await bus.PublishAsync(
                 new HelloMessage
                 {
                     Name = "Geki",
@@ -275,17 +274,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false,
                 false);
 
-            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber(factory);
 
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
 
-            using IBus bus = RabbitHutch.CreateBus("host=localhost");
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(
+            await bus.PublishAsync(
                 new HelloMessage
                 {
                     Name = "Geki",
@@ -314,17 +312,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false,
                 false);
 
-            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber(factory);
 
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
 
-            using IBus bus = RabbitHutch.CreateBus("host=localhost");
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(
+            await bus.PublishAsync(
                 new HelloMessage
                 {
                     Name = "Geki",
@@ -351,17 +348,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false,
                 false);
 
-            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber(factory);
 
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
 
-            using IBus bus = RabbitHutch.CreateBus("host=localhost");
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(
+            await bus.PublishAsync(
                 new HelloMessage
                 {
                     Name = "Geki",
@@ -388,17 +384,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false,
                 false);
 
-            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber(factory);
 
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
 
-            using IBus bus = RabbitHutch.CreateBus("host=localhost");
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(
+            await bus.PublishAsync(
                 new HelloMessage
                 {
                     Name = "Geki",
@@ -425,17 +420,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 false,
                 false);
 
-            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber(factory);
 
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
 
-            using IBus bus = RabbitHutch.CreateBus("host=localhost");
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(
+            await bus.PublishAsync(
                 new HelloMessage
                 {
                     Name = "Geki",
@@ -462,17 +456,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
                 true,
                 false);
 
-            using IMessageSubscriber subscriber = new EasyNetQMessageSubscriber(factory, "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber(factory);
 
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
 
-            using IBus bus = RabbitHutch.CreateBus("host=localhost");
+            using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(
+            await bus.PublishAsync(
                 new HelloMessage
                 {
                     Name = "Geki",
@@ -493,9 +486,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_SingleSyncHandler_HandlesMessagesWithAndWithoutTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler));
             subscriber.Subscribe(typeof(WelcomeHandler), "topic1");
@@ -528,9 +519,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_MultipleSyncHandlers_HandleMessagesWithAndWithoutTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler));
             subscriber.Subscribe(typeof(WelcomeHandler));
@@ -568,9 +557,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_SingleAsyncHandler_HandlesMessagesWithAndWithoutTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Subscribe(typeof(WelcomeHandler), "topic1");
@@ -603,9 +590,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_MultipleAsyncHandlers_HandleMessagesWithAndWithoutTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
             subscriber.Subscribe(typeof(WelcomeAsyncHandler));
@@ -636,16 +621,13 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             Assert.That(log, Does.Contain("Hello async (no topic), Olia!"));
             Assert.That(log, Does.Contain("Welcome async (no topic), Olia!"));
             Assert.That(log, Does.Not.Contain("Hello sync (no topic), Olia!"));
-
         }
 
         [Test]
         public void SubscribeType_TypeIsNull_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentNullException>(() => subscriber.Subscribe(null));
@@ -658,9 +640,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeType_TypeIsAbstract_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(AbstractHandler)));
@@ -674,9 +654,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeType_TypeIsNotClass_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(StructHandler)));
@@ -692,9 +670,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeType_TypeIsNotGenericSyncOrAsyncHandler_ThrowsException(Type badHandlerType)
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
@@ -707,9 +683,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeType_TypeIsSyncAfterAsync_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             subscriber.Subscribe(typeof(HelloAsyncHandler));
@@ -722,9 +696,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeType_TypeIsAsyncAfterSync_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             subscriber.Subscribe(typeof(HelloHandler));
@@ -737,9 +709,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeType_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeHandler)));
@@ -752,9 +722,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeType_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeAsyncHandler)));
@@ -767,9 +735,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeType_TypeImplementsBothSyncAndAsync_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(BothSyncAndAsyncHandler)));
@@ -782,9 +748,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeType_SyncTypeAlreadySubscribed_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler));
 
@@ -798,9 +762,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeType_AsyncTypeAlreadySubscribed_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
 
@@ -817,9 +779,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeType_TMessageIsAbstract_ThrowsException(Type badHandlerType)
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
@@ -835,9 +795,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeType_TMessageIsNotClass_ThrowsException(Type badHandlerType)
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
@@ -851,9 +809,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_TMessageCtorThrows_LogsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
             var message = new DecayingMessage
@@ -867,7 +823,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             // Act
-            bus.Publish(message);
+            await bus.PublishAsync(message);
             await Task.Delay(300);
 
             // Assert
@@ -879,9 +835,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_TMessagePropertyThrows_LogsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
             var message = new DecayingMessage
@@ -895,7 +849,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             // Act
-            bus.Publish(message);
+            await bus.PublishAsync(message);
             await Task.Delay(300);
 
             // Assert
@@ -907,10 +861,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_SyncHandlerHandleThrows_LogsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
@@ -926,7 +877,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             // Act
-            bus.Publish(message);
+            await bus.PublishAsync(message);
             await Task.Delay(300);
 
             // Assert
@@ -944,10 +895,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_AsyncHandlerHandleAsyncThrows_LogsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
@@ -963,7 +911,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             subscriber.Start();
 
             // Act
-            bus.Publish(message);
+            await bus.PublishAsync(message);
             await Task.Delay(300);
 
             // Assert
@@ -977,12 +925,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeType_AsyncHandlerCanceledOrFaulted_RestDoRun()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler)); // #0 will say 'hello'
             subscriber.Subscribe(typeof(CancelingHelloAsyncHandler)); // #1 will cancel with message
@@ -994,7 +937,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
-            bus.Publish(new HelloMessage("Ira"));
+            await bus.PublishAsync(new HelloMessage("Ira"));
 
             await Task.Delay(200);
 
@@ -1011,11 +954,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeType_Started_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("my-subscriber");
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
 
@@ -1031,11 +970,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeType_Disposed_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("my-subscriber");
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
 
@@ -1055,7 +990,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_SingleSyncHandler_HandlesMessagesWithProperTopic()
         {
             using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
-            
+
             subscriber.Subscribe(typeof(HelloHandler), "topic1");
             subscriber.Subscribe(typeof(HelloHandler), "topic2");
 
@@ -1085,9 +1020,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_MultipleSyncHandlers_HandleMessagesWithProperTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler), "topic1");
 
@@ -1121,12 +1054,9 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_SingleAsyncHandler_HandlesMessagesWithProperTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "topic1");
-
             subscriber.Subscribe(typeof(HelloAsyncHandler), "topic2");
 
             subscriber.Start();
@@ -1155,12 +1085,9 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_MultipleAsyncHandlers_HandleMessagesWithProperTopic()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "topic1");
-
             subscriber.Subscribe(typeof(WelcomeAsyncHandler), "topic2");
             subscriber.Subscribe(typeof(HelloAsyncHandler), "topic2");
 
@@ -1192,9 +1119,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [TestCase("")]
         public void SubscribeTypeString_TopicIsNullOrEmpty_ThrowsException(string badTopic)
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloHandler), badTopic));
@@ -1207,9 +1132,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeTypeString_TypeIsNull_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentNullException>(() => subscriber.Subscribe(null, "some-topic"));
@@ -1222,9 +1145,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_TypeIsAbstract_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(AbstractHandler), "my-topic"));
@@ -1238,9 +1159,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_TypeIsNotClass_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(StructHandler), "my-topic"));
@@ -1256,9 +1175,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_TypeIsNotGenericSyncOrAsyncHandler_ThrowsException(Type badHandlerType)
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType));
@@ -1271,9 +1188,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeTypeString_TypeIsSyncAfterAsyncSameTopic_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
@@ -1288,9 +1203,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncHasDifferentTopic_RunsOk()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
@@ -1319,9 +1232,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_TypeIsSyncAfterAsyncButThatAsyncIsTopicless_RunsOk()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler));
 
@@ -1349,9 +1260,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeTypeString_TypeIsAsyncAfterSyncSameTopic_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            // Arrange
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler), "some-topic");
 
@@ -1365,9 +1275,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public async Task SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncHasDifferentTopic_RunsOk()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            // Arrange
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler), "some-topic");
 
@@ -1395,9 +1304,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public async Task SubscribeTypeString_TypeIsAsyncAfterSyncButThatSyncIsTopicless_RunsOk()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            // Arrange
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler));
 
@@ -1425,9 +1333,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeTypeString_TypeImplementsIMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            // Arrange
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeHandler), "some-topic"));
@@ -1440,9 +1347,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeTypeString_TypeImplementsIAsyncMessageHandlerTMessageMoreThanOnce_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            // Arrange
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(HelloAndByeAsyncHandler), "some-topic"));
@@ -1455,9 +1361,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeTypeString_TypeImplementsBothSyncAndAsync_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            // Arrange
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(typeof(BothSyncAndAsyncHandler), "some-topic"));
@@ -1471,9 +1376,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public void SubscribeTypeString_SyncTypeAlreadySubscribedToTheSameTopic_ThrowsException()
         {
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            // Arrange
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler), "some-topic");
 
@@ -1488,9 +1392,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_SyncTypeAlreadySubscribedButToDifferentTopic_RunsOk()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler), "some-topic");
 
@@ -1518,9 +1420,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_SyncTypeAlreadySubscribedButWithoutTopic_RunsOk()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler)); // without topic
 
@@ -1551,9 +1451,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_AsyncTypeAlreadySubscribedToTheSameTopic_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
@@ -1568,9 +1466,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_AsyncTypeAlreadySubscribedButToDifferentTopic_SubscribesOk()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
@@ -1598,9 +1494,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_AsyncTypeAlreadySubscribedButWithoutTopic_SubscribesOk()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler)); // without topic
 
@@ -1630,9 +1524,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_TMessageIsAbstract_ThrowsException(Type badHandlerType)
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType, "some-topic"));
@@ -1648,9 +1540,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_TMessageIsNotClass_ThrowsException(Type badHandlerType)
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => subscriber.Subscribe(badHandlerType), "some-topic");
@@ -1664,9 +1554,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_TMessageCtorThrows_LogsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             using var publisher = new EasyNetQMessagePublisher("host=localhost");
             publisher.Start();
@@ -1695,9 +1583,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_TMessagePropertyThrows_LogsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             using var bus = RabbitHutch.CreateBus("host=localhost");
             var message = new DecayingMessage
@@ -1727,10 +1613,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_SyncHandlerThrows_RestDoRun()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(
-                new GoodContextFactory(),
-                "host=localhost");
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler), "some-topic"); // #0 will handle
             subscriber.Subscribe(typeof(FishHaterHandler), "some-topic"); // #1 will fail
@@ -1766,12 +1649,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_AsyncHandlerFaulted_LogsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(FaultingHelloAsyncHandler), "some-topic");
             subscriber.Start();
@@ -1800,12 +1678,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task SubscribeTypeString_AsyncHandlerCanceledOrFaulted_RestDoRun()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
-            subscriber.Logger = _logger;
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic"); // #0 will say 'hello'
             subscriber.Subscribe(typeof(CancelingHelloAsyncHandler), "some-topic"); // #1 will cancel with message
@@ -1838,11 +1711,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_Started_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("my-subscriber");
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
@@ -1859,11 +1728,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void SubscribeTypeString_Disposed_ThrowsException()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("my-subscriber");
 
             subscriber.Subscribe(typeof(HelloAsyncHandler), "some-topic");
 
@@ -1883,11 +1748,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void GetSubscriptions_JustCreated_ReturnsEmptyArray()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             // Act
             var subscriptions = subscriber.GetSubscriptions();
@@ -1900,11 +1761,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void GetSubscriptions_Running_ReturnsSubscriptions()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler));
             subscriber.Subscribe(typeof(WelcomeHandler));
@@ -1938,11 +1795,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void GetSubscriptions_Stopped_ReturnsSubscriptions()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler));
             subscriber.Subscribe(typeof(WelcomeHandler));
@@ -1977,11 +1830,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public async Task GetSubscriptions_Disposed_ReturnsEmptyArray()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-subscriber"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
             subscriber.Subscribe(typeof(HelloHandler));
             subscriber.Subscribe(typeof(WelcomeHandler));
@@ -2006,11 +1855,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Name_NotDisposed_IsChangedAndCanBeRead()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                Name = "sub_created",
-                ConnectionString = "host=localhost"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("sub_created");
 
             // Act
             var nameCreated = subscriber.Name;
@@ -2035,10 +1880,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Name_Disposed_CanOnlyBeRead()
         {
             // Arrange
-            using var subscriber = new EasyNetQMessageSubscriber(new GoodContextFactory())
-            {
-                Name = "name1"
-            };
+            using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("name1");
 
             // Act
             subscriber.Dispose();
@@ -2377,7 +2219,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         {
             // Arrange
             using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>("my-subscriber");
-            
+
             subscriber.Dispose();
 
             // Act
