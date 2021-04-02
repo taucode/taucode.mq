@@ -15,19 +15,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
     {
         private const string DefaultConnectionString = "host=localhost";
 
-        private IMessagePublisher CreateMessagePublisher(string connectionString = null, string name = null)
+        private IMessagePublisher CreateMessagePublisher(string name = null, string connectionString = null)
         {
-            var messagePublisher = new EasyNetQMessagePublisher();
-            if (connectionString != null)
-            {
-                messagePublisher.ConnectionString = connectionString;
-            }
+            connectionString ??= DefaultConnectionString;
 
-            if (name != null)
+            var messagePublisher = new EasyNetQMessagePublisher
             {
-                messagePublisher.Name = name;
-            }
-
+                Name = name,
+                ConnectionString = connectionString
+            };
+            
             return messagePublisher;
         }
 
@@ -143,7 +140,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         [Test]
         public async Task Publish_ValidStateAndArguments_PublishesAndProperSubscriberHandles()
         {
-            using var publisher = this.CreateMessagePublisher(DefaultConnectionString);
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
 
@@ -159,13 +156,19 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             using var bus = RabbitHutch.CreateBus("host=localhost");
 
             var subId1 = Guid.NewGuid().ToString();
-            using var sub1 = bus.Subscribe<HelloMessage>(subId1, message => name = message.Name);
+            using var sub1 = bus.Subscribe<HelloMessage>(
+                subId1,
+                message => name = message.Name,
+                configuration => configuration
+                    .WithAutoDelete());
 
             var subId2 = Guid.NewGuid().ToString();
             using var sub2 = bus.Subscribe<HelloMessage>(
                 subId2,
                 message => nameWithTopic = message.Name,
-                configuration => configuration.WithTopic("some-topic"));
+                configuration => configuration
+                    .WithTopic("some-topic")
+                    .WithAutoDelete());
 
             // Act
             publisher.Publish(
@@ -202,10 +205,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_ArgumentIsNull_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Start();
 
             // Act
@@ -219,17 +220,16 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_ArgumentIsNotClassNoTopic_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Start();
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => publisher.Publish(new StructMessage()));
 
             // Assert
-            Assert.That(ex,
+            Assert.That(
+                ex,
                 Has.Message.StartWith(
                     $"Cannot publish instance of '{typeof(StructMessage).FullName}'. Message type must be a class."));
             Assert.That(ex.ParamName, Is.EqualTo("message"));
@@ -239,10 +239,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_ArgumentIsNotClassWithTopic_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Start();
 
             // Act
@@ -262,10 +260,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_ArgumentPropertyThrows_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Start();
 
             // Act
@@ -286,10 +282,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_NoTopicNotStarted_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(new HelloMessage()));
@@ -302,10 +295,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_WithTopicNotStarted_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Publish(
@@ -322,11 +312,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_NoTopicDisposed_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher("my-publisher");
 
             publisher.Dispose();
 
@@ -341,11 +327,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Publish_WithTopicDisposed_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher("my-publisher");
 
             publisher.Dispose();
 
@@ -437,11 +419,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_Started_EqualsToRunning()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             publisher.Start();
@@ -454,11 +432,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_Stopped_EqualsToStopped()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
 
@@ -473,11 +447,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedJustAfterCreation_EqualsToStopped()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             publisher.Dispose();
@@ -490,11 +460,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedAfterStarted_EqualsToStopped()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
 
@@ -509,11 +475,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedAfterStopped_EqualsToStopped()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
             publisher.Stop();
@@ -529,11 +491,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void State_DisposedAfterDisposed_EqualsToStopped()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
             publisher.Stop();
@@ -569,10 +527,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_Started_EqualsToFalse()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             publisher.Start();
@@ -585,10 +540,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_Stopped_EqualsToFalse()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Start();
 
             // Act
@@ -602,10 +555,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedJustAfterCreation_EqualsToTrue()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             publisher.Dispose();
@@ -618,10 +568,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedAfterStarted_EqualsToTrue()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Start();
 
             // Act
@@ -635,10 +583,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedAfterStopped_EqualsToTrue()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Start();
             publisher.Stop();
 
@@ -653,10 +599,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void IsDisposed_DisposedAfterDisposed_EqualsToTrue()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
             publisher.Dispose();
 
             // Act
@@ -674,11 +618,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Start_JustCreated_Starts()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             publisher.Start();
@@ -709,11 +649,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Start_Started_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher("my-publisher");
 
             publisher.Start();
 
@@ -728,11 +664,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Start_Stopped_Starts()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
+
 
             publisher.Start();
             publisher.Stop();
@@ -748,11 +681,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Start_Disposed_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher("my-publisher");
+
             publisher.Dispose();
 
             // Act
@@ -770,11 +700,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Stop_JustCreated_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher("my-publisher");
 
             // Act
             var ex = Assert.Throws<InvalidOperationException>(() => publisher.Stop());
@@ -787,11 +713,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Stop_Started_Stops()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
 
@@ -806,11 +728,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Stop_Stopped_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher("my-publisher");
 
             publisher.Start();
             publisher.Stop();
@@ -826,11 +744,8 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Stop_Disposed_ThrowsException()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher("my-publisher");
+
             publisher.Dispose();
 
             // Act
@@ -848,11 +763,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Dispose_JustCreated_Disposes()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             // Act
             publisher.Dispose();
@@ -865,11 +776,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Dispose_Started_Disposes()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
 
@@ -884,11 +791,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Dispose_Stopped_Disposes()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Start();
             publisher.Stop();
@@ -904,11 +807,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
         public void Disposes_Disposed_DoesNothing()
         {
             // Arrange
-            using var publisher = new EasyNetQMessagePublisher
-            {
-                ConnectionString = "host=localhost",
-                Name = "my-publisher"
-            };
+            using var publisher = this.CreateMessagePublisher();
 
             publisher.Dispose();
 

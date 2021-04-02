@@ -220,7 +220,7 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
             Assert.That(subscriber.Name, Is.EqualTo("sub"));
         }
 
-        #endregion
+        #endregion        
 
         #region ContextFactory
 

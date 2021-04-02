@@ -66,7 +66,8 @@ namespace TauCode.Mq.EasyNetQ
                     handle = _bus.Subscribe(
                         subscriptionRequest.MessageType,
                         subscriptionId,
-                        EasyNetQHandler);
+                        EasyNetQHandler,
+                        configuration => configuration.WithAutoDelete());
                 }
                 else
                 {
@@ -76,7 +77,9 @@ namespace TauCode.Mq.EasyNetQ
                         subscriptionRequest.MessageType,
                         subscriptionId,
                         EasyNetQHandler,
-                        configuration => configuration.WithTopic(subscriptionRequest.Topic));
+                        configuration => configuration
+                            .WithTopic(subscriptionRequest.Topic)
+                            .WithAutoDelete());
                 }
 
                 return handle;
@@ -95,7 +98,8 @@ namespace TauCode.Mq.EasyNetQ
                     handle = _bus.SubscribeAsync(
                         subscriptionRequest.MessageType,
                         subscriptionId,
-                        EasyNetQHandler);
+                        EasyNetQHandler,
+                        configuration => configuration.WithAutoDelete());
                 }
                 else
                 {
@@ -105,7 +109,9 @@ namespace TauCode.Mq.EasyNetQ
                         subscriptionRequest.MessageType,
                         subscriptionId,
                         EasyNetQHandler,
-                        configuration => configuration.WithTopic(subscriptionRequest.Topic));
+                        configuration => configuration
+                            .WithTopic(subscriptionRequest.Topic)
+                            .WithAutoDelete());
                 }
 
                 return handle;
