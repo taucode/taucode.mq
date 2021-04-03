@@ -8,7 +8,7 @@ namespace TauCode.Mq
     {
         public abstract void Handle(TMessage message);
 
-        public void Handle(object message)
+        public void Handle(IMessage message)
         {
             if (message == null)
             {

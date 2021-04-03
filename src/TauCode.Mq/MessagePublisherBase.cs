@@ -1,7 +1,6 @@
 ﻿using System;
 using TauCode.Mq.Abstractions;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
 
 namespace TauCode.Mq
 {
@@ -9,11 +8,13 @@ namespace TauCode.Mq
     {
         #region Private
 
-        private void CheckStarted()
+        private void CheckStarted(string operation)
         {
-            if (this.State != WorkerState.Running)
+            var state = this.State;
+
+            if (state != WorkerState.Running)
             {
-                throw new InappropriateWorkerStateException(this.State);
+                throw this.CreateInvalidOperationException(operation, state);
             }
         }
 
@@ -31,11 +32,6 @@ namespace TauCode.Mq
             if (message == null)
             {
                 throw new ArgumentNullException(nameof(message));
-            }
-
-            if (message.Topic != null)
-            {
-                throw MqHelper.TopicMustBeNullException(); // todo ut this
             }
 
             var type = message.GetType();
@@ -56,8 +52,6 @@ namespace TauCode.Mq
 
         protected abstract void PublishImpl(IMessage message);
 
-        protected abstract void PublishImpl(IMessage message, string topic);
-
         #endregion
 
         #region Overridden
@@ -67,11 +61,47 @@ namespace TauCode.Mq
             this.InitImpl();
         }
 
+        protected override void OnStarted()
+        {
+            // idle
+        }
+
         protected override void OnStopping()
         {
             this.ShutdownImpl();
         }
 
+        protected override void OnStopped()
+        {
+            // idle
+        }
+
+        protected override void OnPausing()
+        {
+            // idle
+        }
+
+        protected override void OnPaused()
+        {
+            // idle
+        }
+
+        protected override void OnResuming()
+        {
+            // idle
+        }
+
+        protected override void OnResumed()
+        {
+            // idle
+        }
+
+        protected override void OnDisposed()
+        {
+            // idle
+        }
+
+        public override bool IsPausingSupported => false;
 
         #endregion
 
@@ -82,28 +112,9 @@ namespace TauCode.Mq
             CheckMessage(message);
 
             this.CheckNotDisposed();
-            this.CheckStarted();
+            this.CheckStarted(nameof(Publish));
 
             this.PublishImpl(message);
-        }
-
-        public void Publish(IMessage message, string topic)
-        {
-            CheckMessage(message);
-            
-            if (string.IsNullOrEmpty(topic))
-            {
-                throw new ArgumentException(
-                    $"'{nameof(topic)}' cannot be null or empty. If you need to publish a topicless message, use the 'Publish(IMessage message)' overload.",
-                    nameof(topic));
-            }
-
-            message.Topic = topic;
-
-            this.CheckNotDisposed();
-            this.CheckStarted();
-
-            this.PublishImpl(message, topic);
         }
 
         #endregion

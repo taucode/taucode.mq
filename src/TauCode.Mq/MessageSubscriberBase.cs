@@ -1,4 +1,4 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
-using TauCode.Working.Exceptions;
 
 namespace TauCode.Mq
 {
@@ -21,8 +20,8 @@ namespace TauCode.Mq
             Type MessageType { get; }
             string Topic { get; }
             string Tag { get; }
-            Action<object> Handler { get; }
-            Func<object, Task> AsyncHandler { get; }
+            Action<IMessage> Handler { get; }
+            Func<IMessage, Task> AsyncHandler { get; }
             IReadOnlyList<Type> MessageHandlerTypes { get; }
         }
 
@@ -63,29 +62,27 @@ namespace TauCode.Mq
             #region Fields
 
             private readonly List<Type> _messageHandlerTypes;
-            private readonly IMessageHandlerContextFactory _factory;
-            private readonly Func<CancellationToken> _tokenGetter;
+            private readonly MessageSubscriberBase _host;
 
             #endregion
 
             #region Constructor
 
             internal Bundle(
-                IMessageHandlerContextFactory factory,
-                Func<CancellationToken> tokenGetter,
+                MessageSubscriberBase host,
                 Type messageType,
                 string topic,
-                string tag)
+                string tag,
+                bool isAsync)
             {
-                _factory = factory;
-                _tokenGetter = tokenGetter;
+                _host = host;
                 this.MessageType = messageType;
                 this.Topic = topic;
                 this.Tag = tag;
 
                 _messageHandlerTypes = new List<Type>();
 
-                var isAsync = _tokenGetter != null;
+                this.IsAsync = isAsync;
 
                 if (isAsync)
                 {
@@ -103,12 +100,12 @@ namespace TauCode.Mq
 
             private IMessageHandlerContext CreateContext()
             {
-                var context = _factory.CreateContext();
+                var context = _host.ContextFactory.CreateContext();
 
                 if (context == null)
                 {
                     throw new MqException(
-                        $"Method 'CreateContext' of factory '{_factory.GetType().FullName}' returned 'null'.");
+                        $"Method 'CreateContext' of factory '{_host.ContextFactory.GetType().FullName}' returned 'null'.");
                 }
 
                 return context;
@@ -155,14 +152,21 @@ namespace TauCode.Mq
                         $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.");
                 }
 
-                var handler = (THandlerInterfaceType) service;
+                var handler = (THandlerInterfaceType)service;
                 return handler;
             }
 
-            private void Handle(object message)
+            private void Handle(IMessage message)
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
+                    if (_host.State != WorkerState.Running)
+                    {
+                        // todo todo0: log info about subscriber was stopped
+                        // todo: subscriber wast stopped, and then started back. handler is still running. consider using Subscriber Generations (+ut)
+                        break;
+                    }
+
                     var messageHandlerType = _messageHandlerTypes[i];
 
                     try
@@ -174,38 +178,53 @@ namespace TauCode.Mq
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(
-                            ex,
-                            GetHandleFailureMessage(
+                        var logger = _host.Logger;
+                        if (logger != null)
+                        {
+                            var logMessage = GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage) message,
-                                i));
+                                message,
+                                i);
+
+                            logger.LogError(ex, logMessage);
+                        }
                     }
                 }
             }
 
-            private async Task HandleAsync(object message)
+            private async Task HandleAsync(IMessage message)
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
+                    if (_host.State != WorkerState.Running)
+                    {
+                        // todo todo0: log info about subscriber was stopped
+                        // todo: subscriber wast stopped, and then started back. handler is still running. consider using Subscriber Generations (+ut)
+                        break;
+                    }
+
                     var messageHandlerType = _messageHandlerTypes[i];
 
                     try
                     {
+                        var token = _host.GetHandlerCancellationToken();
                         using var context = this.CreateContext();
                         var handler = this.CreateHandler<IAsyncMessageHandler>(context, messageHandlerType);
-                        var token = _tokenGetter();
                         await handler.HandleAsync(message, token);
                         context.End();
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(
-                            ex,
-                            GetHandleFailureMessage(
+                        var logger = _host.Logger;
+                        if (logger != null)
+                        {
+                            var logMessage = GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage) message,
-                                i));
+                                (IMessage)message,
+                                i);
+
+                            logger.LogError(ex, logMessage);
+                        }
                     }
                 }
             }
@@ -241,7 +260,7 @@ namespace TauCode.Mq
                 _messageHandlerTypes.Add(messageHandlerType);
             }
 
-            internal bool IsAsync() => _tokenGetter != null;
+            internal bool IsAsync { get; }
 
             #endregion
 
@@ -270,8 +289,8 @@ namespace TauCode.Mq
             public Type MessageType { get; }
             public string Topic { get; }
             public string Tag { get; }
-            public Action<object> Handler { get; }
-            public Func<object, Task> AsyncHandler { get; }
+            public Action<IMessage> Handler { get; }
+            public Func<IMessage, Task> AsyncHandler { get; }
             public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes.ToList();
 
             #endregion
@@ -285,6 +304,8 @@ namespace TauCode.Mq
         private readonly List<IDisposable> _subscriptionHandles;
 
         private CancellationTokenSource _tokenSource;
+        private readonly object _tokenSourceLock;
+
 
         #endregion
 
@@ -295,17 +316,21 @@ namespace TauCode.Mq
             this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _bundles = new Dictionary<string, Bundle>();
             _subscriptionHandles = new List<IDisposable>();
+
+            _tokenSourceLock = new object();
         }
 
         #endregion
 
         #region Private
 
-        private void CheckStopped()
+        private void CheckStopped(string operation)
         {
-            if (this.State != WorkerState.Stopped)
+            var state = this.State;
+
+            if (state != WorkerState.Stopped)
             {
-                throw new InappropriateWorkerStateException(this.State);
+                throw this.CreateInvalidOperationException(operation, state);
             }
         }
 
@@ -381,10 +406,11 @@ namespace TauCode.Mq
             }
         }
 
+        // todo: deal with this 'emptyTopicIsAllowed'
         private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed)
         {
             this.CheckNotDisposed();
-            this.CheckStopped();
+            this.CheckStopped(nameof(Subscribe));
 
             if (messageHandlerType == null)
             {
@@ -403,27 +429,18 @@ namespace TauCode.Mq
 
             if (bundle == null)
             {
-                Func<CancellationToken> tokenGetter = null;
-                if (info.IsAsync)
-                {
-                    tokenGetter = () =>
-                        _tokenSource?.Token
-                        ??
-                        throw new MqException("Could not get cancellation token for message handling.");
-                }
-
                 bundle = new Bundle(
-                    this.ContextFactory,
-                    tokenGetter,
+                    this,
                     info.MessageType,
                     topic,
-                    info.Tag);
+                    info.Tag,
+                    info.IsAsync);
 
                 _bundles.Add(bundle.Tag, bundle);
             }
             else
             {
-                if (bundle.IsAsync() && !info.IsAsync)
+                if (bundle.IsAsync && !info.IsAsync)
                 {
                     var sb = new StringBuilder();
                     sb.Append("Cannot subscribe synchronous handler '");
@@ -445,7 +462,7 @@ namespace TauCode.Mq
                     throw new MqException(sb.ToString());
                 }
 
-                if (!bundle.IsAsync() && info.IsAsync)
+                if (!bundle.IsAsync && info.IsAsync)
                 {
                     var sb = new StringBuilder();
                     sb.Append("Cannot subscribe asynchronous handler '");
@@ -471,6 +488,19 @@ namespace TauCode.Mq
             bundle.AddHandlerType(messageHandlerType);
         }
 
+        private CancellationToken GetHandlerCancellationToken()
+        {
+            lock (_tokenSourceLock)
+            {
+                if (_tokenSource == null)
+                {
+                    throw this.CreateInvalidOperationException(nameof(GetHandlerCancellationToken), this.State);
+                }
+
+                return _tokenSource.Token;
+            }
+        }
+
         #endregion
 
         #region Abstract
@@ -489,13 +519,21 @@ namespace TauCode.Mq
         {
             this.InitImpl();
 
-            _tokenSource = new CancellationTokenSource();
+            lock (_tokenSourceLock)
+            {
+                _tokenSource = new CancellationTokenSource();
+            }
 
             foreach (var subscriptionRequest in _bundles.Values)
             {
                 var subscriptionHandle = this.SubscribeImpl(subscriptionRequest);
                 _subscriptionHandles.Add(subscriptionHandle);
             }
+        }
+
+        protected override void OnStarted()
+        {
+            // idle
         }
 
         protected override void OnStopping()
@@ -507,17 +545,54 @@ namespace TauCode.Mq
 
             _subscriptionHandles.Clear();
 
-            _tokenSource.Cancel();
-            _tokenSource.Dispose();
-            _tokenSource = null;
+            CancellationTokenSource tokenSourceToCancel;
+            lock (_tokenSourceLock)
+            {
+                tokenSourceToCancel = _tokenSource;
+            }
+
+            tokenSourceToCancel?.Cancel();
+
+            lock (_tokenSourceLock)
+            {
+                _tokenSource.Dispose();
+                _tokenSource = null;
+            }
 
             this.ShutdownImpl();
+        }
+
+        protected override void OnStopped()
+        {
+            // idle
+        }
+
+        protected override void OnPausing()
+        {
+            // idle
+        }
+
+        protected override void OnPaused()
+        {
+            // idle
+        }
+
+        protected override void OnResuming()
+        {
+            // idle
+        }
+
+        protected override void OnResumed()
+        {
+            // idle
         }
 
         protected override void OnDisposed()
         {
             _bundles.Clear();
         }
+
+        public override bool IsPausingSupported => false;
 
         #endregion
 
