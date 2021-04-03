@@ -220,7 +220,7 @@ namespace TauCode.Mq
                         {
                             var logMessage = GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage)message,
+                                message,
                                 i);
 
                             logger.LogError(ex, logMessage);
