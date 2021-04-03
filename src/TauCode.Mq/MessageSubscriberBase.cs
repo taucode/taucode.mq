@@ -156,7 +156,7 @@ namespace TauCode.Mq
                 return handler;
             }
 
-            private void Handle(IMessage message) // todo todo0: IMessage message?
+            private void Handle(IMessage message)
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
@@ -183,7 +183,7 @@ namespace TauCode.Mq
                         {
                             var logMessage = GetHandleFailureMessage(
                                 messageHandlerType,
-                                (IMessage)message, // todo excessive
+                                message,
                                 i);
 
                             logger.LogError(ex, logMessage);
@@ -545,14 +545,19 @@ namespace TauCode.Mq
 
             _subscriptionHandles.Clear();
 
-            _tokenSource.Cancel(); // todo: Resharper multi-threading issue here (lock)
+            CancellationTokenSource tokenSourceToCancel;
+            lock (_tokenSourceLock)
+            {
+                tokenSourceToCancel = _tokenSource;
+            }
+
+            tokenSourceToCancel?.Cancel();
 
             lock (_tokenSourceLock)
             {
                 _tokenSource.Dispose();
                 _tokenSource = null;
             }
-
 
             this.ShutdownImpl();
         }

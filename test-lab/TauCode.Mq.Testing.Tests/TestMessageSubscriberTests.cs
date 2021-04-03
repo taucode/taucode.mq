@@ -1484,7 +1484,6 @@ namespace TauCode.Mq.Testing.Tests
 
 
         // todo: review ut-s of entire 'Bundle.Handle', 'Bundle.AsyncHandle' loops. If an exception was thrown at any step, we must give the chance to other handlers. 
-        // todo: they are not guilty that one of them failed.
 
         [Test]
         public async Task SubscribeTypeString_SyncHandlerThrows_RestDoRun()
