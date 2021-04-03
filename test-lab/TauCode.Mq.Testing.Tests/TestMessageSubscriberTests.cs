@@ -5,7 +5,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using TauCode.Infrastructure.Lab;
+using TauCode.Infrastructure.Logging;
 using TauCode.Mq.Exceptions;
 using TauCode.Mq.Testing.Tests.BadHandlers;
 using TauCode.Mq.Testing.Tests.ContextFactories;
@@ -24,7 +24,7 @@ namespace TauCode.Mq.Testing.Tests
     [TestFixture]
     public class TestMessageSubscriberTests
     {
-        private StringLoggerLab _logger;
+        private StringLogger _logger;
         private ITestMqMedia _media;
 
         [SetUp]
@@ -32,7 +32,7 @@ namespace TauCode.Mq.Testing.Tests
         {
             MessageRepository.Instance.Clear();
 
-            _logger = new StringLoggerLab();
+            _logger = new StringLogger();
             _media = new TestMqMedia(_logger);
 
             var collection = new LoggerProviderCollection();

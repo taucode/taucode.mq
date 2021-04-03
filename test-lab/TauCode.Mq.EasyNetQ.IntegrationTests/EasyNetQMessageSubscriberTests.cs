@@ -6,7 +6,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using TauCode.Infrastructure.Lab;
+using TauCode.Infrastructure.Logging;
 using TauCode.Mq.EasyNetQ.IntegrationTests.BadHandlers;
 using TauCode.Mq.EasyNetQ.IntegrationTests.ContextFactories;
 using TauCode.Mq.EasyNetQ.IntegrationTests.Contexts;
@@ -27,14 +27,14 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
     {
         private const string DefaultConnectionString = "host=localhost";
 
-        private StringLoggerLab _logger;
+        private StringLogger _logger;
 
         [SetUp]
         public void SetUp()
         {
             MessageRepository.Instance.Clear();
 
-            _logger = new StringLoggerLab();
+            _logger = new StringLogger();
 
             var collection = new LoggerProviderCollection();
 

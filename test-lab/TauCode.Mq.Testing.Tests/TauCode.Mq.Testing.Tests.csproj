@@ -12,12 +12,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="TauCode.Infrastructure" Version="1.3.2.7-dev-2021-04-03-09-16" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\tau-lab\TauCode.Infrastructure.Lab\TauCode.Infrastructure.Lab.csproj" />
     <ProjectReference Include="..\..\tau-lab\TauCode.Mq.Testing\TauCode.Mq.Testing.csproj" />
   </ItemGroup>
 
