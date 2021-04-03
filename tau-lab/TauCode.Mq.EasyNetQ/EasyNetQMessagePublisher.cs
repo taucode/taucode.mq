@@ -6,7 +6,6 @@ using TauCode.Working;
 using IBus = EasyNetQ.IBus;
 using RabbitHutch = EasyNetQ.RabbitHutch;
 
-// todo clean up
 namespace TauCode.Mq.EasyNetQ
 {
     public class EasyNetQMessagePublisher : MessagePublisherBase, IEasyNetQMessagePublisher
@@ -65,12 +64,7 @@ namespace TauCode.Mq.EasyNetQ
                 _bus.Publish(message.GetType(), message, message.Topic);
             }
         }
-
-        //protected override void PublishImpl(IMessage message, string topic) // todo: get rid of. message contains topic.
-        //{
-        //    _bus.Publish(message.GetType(), message, topic);
-        //}
-
+        
         #endregion
 
         #region IEasyNetQMessagePublisher Members

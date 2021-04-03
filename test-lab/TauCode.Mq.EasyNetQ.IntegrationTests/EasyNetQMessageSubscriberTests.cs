@@ -19,7 +19,6 @@ using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
 // todo: check that <topic>, <correlationId> are preserved.
-// todo clean
 namespace TauCode.Mq.EasyNetQ.IntegrationTests
 {
     [TestFixture]
@@ -1673,7 +1672,6 @@ namespace TauCode.Mq.EasyNetQ.IntegrationTests
 
         // todo: sync handler throwing => rest of them working.
 
-        //SubscribeType_AsyncHandlerCanceledOrFaulted_RestDoRun
         [Test]
         public async Task SubscribeTypeString_AsyncHandlerCanceledOrFaulted_RestDoRun()
         {

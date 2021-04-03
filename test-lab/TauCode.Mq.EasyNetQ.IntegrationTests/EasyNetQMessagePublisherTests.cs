@@ -7,7 +7,6 @@ using TauCode.Mq.EasyNetQ.IntegrationTests.Messages;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
-// todo clean
 namespace TauCode.Mq.EasyNetQ.IntegrationTests
 {
     [TestFixture]

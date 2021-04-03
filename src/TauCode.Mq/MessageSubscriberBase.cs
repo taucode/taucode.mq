@@ -9,7 +9,6 @@ using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
-// todo clean
 namespace TauCode.Mq
 {
     public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
@@ -63,8 +62,6 @@ namespace TauCode.Mq
             #region Fields
 
             private readonly List<Type> _messageHandlerTypes;
-            //private readonly IMessageHandlerContextFactory _factory;
-            //private readonly Func<CancellationToken> _tokenGetter;
             private readonly MessageSubscriberBase _host;
 
             #endregion
@@ -72,8 +69,6 @@ namespace TauCode.Mq
             #region Constructor
 
             internal Bundle(
-                //IMessageHandlerContextFactory factory,
-                //Func<CancellationToken> tokenGetter,
                 MessageSubscriberBase host,
                 Type messageType,
                 string topic,
@@ -81,8 +76,6 @@ namespace TauCode.Mq
                 bool isAsync)
             {
                 _host = host;
-                //_factory = factory;
-                //_tokenGetter = tokenGetter;
                 this.MessageType = messageType;
                 this.Topic = topic;
                 this.Tag = tag;
@@ -90,8 +83,6 @@ namespace TauCode.Mq
                 _messageHandlerTypes = new List<Type>();
 
                 this.IsAsync = isAsync;
-
-                //var isAsync = _tokenGetter != null;
 
                 if (isAsync)
                 {
@@ -109,7 +100,6 @@ namespace TauCode.Mq
 
             private IMessageHandlerContext CreateContext()
             {
-                //var context = _factory.CreateContext();
                 var context = _host.ContextFactory.CreateContext();
 
                 if (context == null)
@@ -202,7 +192,7 @@ namespace TauCode.Mq
                 }
             }
 
-            private async Task HandleAsync(IMessage message) // todo todo0: IMessage message?
+            private async Task HandleAsync(IMessage message)
             {
                 for (var i = 0; i < _messageHandlerTypes.Count; i++)
                 {
@@ -220,7 +210,6 @@ namespace TauCode.Mq
                         var token = _host.GetHandlerCancellationToken();
                         using var context = this.CreateContext();
                         var handler = this.CreateHandler<IAsyncMessageHandler>(context, messageHandlerType);
-                        //var token = _tokenGetter();
                         await handler.HandleAsync(message, token);
                         context.End();
                     }
@@ -272,8 +261,6 @@ namespace TauCode.Mq
             }
 
             internal bool IsAsync { get; }
-
-            //internal bool IsAsync() => _tokenGetter != null;
 
             #endregion
 
@@ -442,18 +429,7 @@ namespace TauCode.Mq
 
             if (bundle == null)
             {
-                //Func<CancellationToken> tokenGetter = null;
-                //if (info.IsAsync)
-                //{
-                //    tokenGetter = () =>
-                //        _tokenSource?.Token
-                //        ??
-                //        throw new MqException("Could not get cancellation token for message handling.");
-                //}
-
                 bundle = new Bundle(
-                    //this.ContextFactory,
-                    //tokenGetter,
                     this,
                     info.MessageType,
                     topic,

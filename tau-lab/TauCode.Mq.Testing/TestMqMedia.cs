@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using TauCode.Mq.Abstractions;
 
-// todo clean
 namespace TauCode.Mq.Testing
 {
     public class TestMqMedia : ITestMqMedia
@@ -183,32 +182,6 @@ namespace TauCode.Mq.Testing
             var json = JsonConvert.SerializeObject(message);
             _messageQueue.AddAssignment(new MessagePackage(messageType, json, message.Topic));
         }
-
-        //public void Publish(Type messageType, object message, string topic)
-        //{
-        //    if (messageType == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(messageType));
-        //    }
-
-        //    if (message == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(message));
-        //    }
-
-        //    if (message.GetType() != messageType)
-        //    {
-        //        throw new ArgumentException("Message type mismatch", nameof(message));
-        //    }
-
-        //    if (string.IsNullOrEmpty(topic))
-        //    {
-        //        throw new ArgumentException($"'{nameof(topic)}' cannot be null or empty.", nameof(topic));
-        //    }
-
-        //    var json = JsonConvert.SerializeObject(message);
-        //    _messageQueue.AddAssignment(new MessagePackage(messageType, json, topic));
-        //}
 
         public IDisposable Subscribe(Type messageType, Func<IMessage, Task> handler)
         {

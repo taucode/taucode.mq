@@ -18,7 +18,6 @@ using TauCode.Mq.Testing.Tests.Messages;
 using TauCode.Working;
 
 // todo: check that topic, correlationId are preserved.
-// todo clean
 namespace TauCode.Mq.Testing.Tests
 {
     [TestFixture]
@@ -316,8 +315,6 @@ namespace TauCode.Mq.Testing.Tests
 
             subscriber.Start();
 
-            //using var bus = RabbitHutch.CreateBus("host=localhost");
-
             // Act
             _media.Publish(
                 new HelloMessage
@@ -351,8 +348,6 @@ namespace TauCode.Mq.Testing.Tests
             subscriber.Subscribe(typeof(HelloHandler));
 
             subscriber.Start();
-
-            //using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
             _media.Publish(
@@ -701,7 +696,6 @@ namespace TauCode.Mq.Testing.Tests
             // Arrange
             using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
-            //using var bus = RabbitHutch.CreateBus("host=localhost");
             var message = new DecayingMessage
             {
                 DecayedProperty = "fresh",
@@ -751,8 +745,6 @@ namespace TauCode.Mq.Testing.Tests
         {
             // Arrange
             using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
-
-            //using var bus = RabbitHutch.CreateBus("host=localhost");
 
             var message = new HelloMessage
             {
@@ -1470,7 +1462,6 @@ namespace TauCode.Mq.Testing.Tests
             // Arrange
             using var subscriber = this.CreateMessageSubscriber<GoodContextFactory>();
 
-            //using var bus = RabbitHutch.CreateBus("host=localhost");
             var message = new DecayingMessage
             {
                 DecayedProperty = "fresh",
@@ -1559,7 +1550,6 @@ namespace TauCode.Mq.Testing.Tests
 
         // todo: sync handler throwing => rest of them working.
 
-        //SubscribeType_AsyncHandlerCanceledOrFaulted_RestDoRun
         [Test]
         public async Task SubscribeTypeString_AsyncHandlerCanceledOrFaulted_RestDoRun()
         {
@@ -2005,8 +1995,6 @@ namespace TauCode.Mq.Testing.Tests
             subscriber.Subscribe(typeof(BeBackAsyncHandler));
 
             subscriber.Start();
-
-            //using var bus = RabbitHutch.CreateBus("host=localhost");
 
             // Act
             _media.Publish(new HelloMessage("Ira"));
