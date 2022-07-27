@@ -7,6 +7,7 @@ namespace TauCode.Mq
     {
         public static MqException TopicMustBeNullException()
         {
+// todo: need this bodiega still?
             throw new MqException($"Property '{nameof(IMessage.Topic)}' of the message must be 'null'. Publisher sets its property.");
         }
     }
