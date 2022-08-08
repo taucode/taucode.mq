@@ -1,11 +1,8 @@
-﻿using System;
+﻿namespace TauCode.Mq;
 
-namespace TauCode.Mq
+public interface IMessageHandlerContext : IDisposable
 {
-    public interface IMessageHandlerContext : IDisposable
-    {
-        void Begin();
-        object GetService(Type serviceType);
-        void End();
-    }
+    void Begin();
+    object GetService(Type serviceType);
+    void End();
 }

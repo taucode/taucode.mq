@@ -1,19 +1,18 @@
 ﻿using NUnit.Framework;
 
-namespace TauCode.Mq.Tests
+namespace TauCode.Mq.Tests;
+
+[TestFixture]
+public class MqDummyFixture
 {
-    [TestFixture]
-    public class MqDummyFixture
+    [Test]
+    public void MqDummyTest()
     {
-        [Test]
-        public void MqDummyTest()
-        {
-            // Arrange
+        // Arrange
 
-            // Act
+        // Act
 
-            // Assert
-            Assert.Pass("Added for passing Azure DevOps.");
-        }
+        // Assert
+        Assert.Pass("Added for passing Azure DevOps.");
     }
 }

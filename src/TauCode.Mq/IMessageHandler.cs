@@ -1,9 +1,8 @@
 ﻿using TauCode.Mq.Abstractions;
 
-namespace TauCode.Mq
+namespace TauCode.Mq;
+
+public interface IMessageHandler
 {
-    public interface IMessageHandler
-    {
-        void Handle(IMessage message);
-    }
+    void Handle(IMessage message);
 }
