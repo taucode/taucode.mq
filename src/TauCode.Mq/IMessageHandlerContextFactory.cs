@@ -1,7 +1,6 @@
-﻿namespace TauCode.Mq
+﻿namespace TauCode.Mq;
+
+public interface IMessageHandlerContextFactory
 {
-    public interface IMessageHandlerContextFactory
-    {
-        IMessageHandlerContext CreateContext();
-    }
+    IMessageHandlerContext CreateContext();
 }
