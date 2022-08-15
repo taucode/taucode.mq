@@ -4,7 +4,7 @@ public readonly struct SubscriptionInfo
 {
     internal SubscriptionInfo(
         Type messageType,
-        string topic,
+        string? topic,
         IEnumerable<Type> messageHandlerTypes)
     {
         this.MessageType = messageType;
@@ -13,6 +13,6 @@ public readonly struct SubscriptionInfo
     }
 
     public Type MessageType { get; }
-    public string Topic { get; }
+    public string? Topic { get; }
     public IReadOnlyList<Type> MessageHandlerTypes { get; }
 }

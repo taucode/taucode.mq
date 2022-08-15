@@ -1,9 +1,7 @@
-﻿using TauCode.Mq.Abstractions;
-
-namespace TauCode.Mq;
+﻿namespace TauCode.Mq;
 
 public interface IMessageHandler<in TMessage> : IMessageHandler
-    where TMessage : IMessage
+    where TMessage : class, IMessage
 {
-    void Handle(TMessage message);
+    Task HandleAsync(TMessage message, CancellationToken cancellationToken = default);
 }
