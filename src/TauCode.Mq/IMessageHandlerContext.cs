@@ -2,7 +2,7 @@
 
 public interface IMessageHandlerContext : IDisposable
 {
-    void Begin();
+    Task BeginAsync(CancellationToken cancellationToken); // todo: can return null
     object GetService(Type serviceType);
-    void End();
+    Task EndAsync(CancellationToken cancellationToken); // todo: can return null
 }
