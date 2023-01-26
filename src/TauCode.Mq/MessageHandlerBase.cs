@@ -1,19 +1,30 @@
-﻿using TauCode.Mq.Abstractions;
-
-namespace TauCode.Mq;
+﻿namespace TauCode.Mq;
 
 public abstract class MessageHandlerBase<TMessage> : IMessageHandler<TMessage>
-    where TMessage : IMessage
+    where TMessage : class, IMessage
 {
-    public abstract void Handle(TMessage message);
+    #region Abstract
 
-    public void Handle(IMessage message)
+    protected abstract Task HandleAsyncImpl(TMessage message, CancellationToken cancellationToken = default);
+
+    #endregion
+
+    #region IMessageHandler<TMessage> Members
+
+    public Task HandleAsync(TMessage message, CancellationToken cancellationToken = default)
     {
-        if (message == null)
-        {
-            throw new ArgumentNullException(nameof(message));
-        }
-
-        this.Handle((TMessage)message);
+        ArgumentNullException.ThrowIfNull(message);
+        return this.HandleAsyncImpl(message, cancellationToken);
     }
+
+    #endregion
+
+    #region IMessageHandler Members
+
+    public virtual Task HandleAsync(IMessage message, CancellationToken cancellationToken = default)
+    {
+        return this.HandleAsync((TMessage)message, cancellationToken);
+    }
+
+    #endregion
 }

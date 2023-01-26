@@ -1,10 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Serilog;
 using System.Text;
-using TauCode.Mq.Abstractions;
 using TauCode.Mq.Exceptions;
 using TauCode.Working;
 
 namespace TauCode.Mq;
+
+// todo: cannot pause, resume, etc. same for publisher.
+// todo clean
 
 public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
 {
@@ -13,42 +15,35 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
     protected interface ISubscriptionRequest
     {
         Type MessageType { get; }
-        string Topic { get; }
-        string Tag { get; }
-        Action<IMessage> Handler { get; }
-        Func<IMessage, Task> AsyncHandler { get; }
-        IReadOnlyList<Type> MessageHandlerTypes { get; }
+        string? Topic { get; }
+        Func<IMessage, CancellationToken, Task> AsyncHandler { get; }
     }
 
-    private readonly struct MessageHandlerInfo
+    private readonly struct BundleCreationInfo
     {
-        internal MessageHandlerInfo(
+        internal BundleCreationInfo(
             Type messageType,
-            bool isAsync,
-            Type messageHandlerType,
             string tag)
         {
-            if (messageType.IsAbstract)
-            {
-                throw new ArgumentException($"Cannot handle abstract message type '{messageType.FullName}'.",
-                    nameof(messageType));
-            }
+            // todo clean
+            //if (messageType.IsAbstract)
+            //{
+            //    throw new ArgumentException($"Cannot handle abstract message type '{messageType.FullName}'.",
+            //        nameof(messageType));
+            //}
 
-            if (!messageType.IsClass)
-            {
-                throw new ArgumentException($"Cannot handle non-class message type '{messageType.FullName}'.",
-                    nameof(messageType));
-            }
+            //if (!messageType.IsClass)
+            //{
+            //    throw new ArgumentException(
+            //        $"Cannot handle non-class message type '{messageType.FullName}'.",
+            //        nameof(messageType));
+            //}
 
             this.MessageType = messageType;
-            this.IsAsync = isAsync;
-            this.MessageHandlerType = messageHandlerType;
             this.Tag = tag;
         }
 
         internal Type MessageType { get; }
-        internal bool IsAsync { get; }
-        internal Type MessageHandlerType { get; }
         internal string Tag { get; }
     }
 
@@ -66,9 +61,8 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
         internal Bundle(
             MessageSubscriberBase host,
             Type messageType,
-            string topic,
-            string tag,
-            bool isAsync)
+            string? topic,
+            string tag)
         {
             _host = host;
             this.MessageType = messageType;
@@ -77,16 +71,7 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
 
             _messageHandlerTypes = new List<Type>();
 
-            this.IsAsync = isAsync;
-
-            if (isAsync)
-            {
-                this.AsyncHandler = this.HandleAsync;
-            }
-            else
-            {
-                this.Handler = this.Handle;
-            }
+            this.AsyncHandler = this.HandleAsync;
         }
 
         #endregion
@@ -106,7 +91,7 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
             return context;
         }
 
-        private static string StringToMessagePart(string s)
+        private static string StringToMessagePart(string? s)
         {
             if (s == null)
             {
@@ -127,12 +112,10 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
             return sb.ToString();
         }
 
-        private THandlerInterfaceType CreateHandler<THandlerInterfaceType>(
+        private IMessageHandler CreateHandler(
             IMessageHandlerContext context,
             Type messageHandlerType)
         {
-            context.Begin();
-
             var service = context.GetService(messageHandlerType);
 
             if (service == null)
@@ -147,11 +130,11 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
                     $"Method 'GetService' of context '{context.GetType().FullName}' returned wrong service of type '{service.GetType().FullName}'.");
             }
 
-            var handler = (THandlerInterfaceType)service;
+            var handler = (IMessageHandler)service;
             return handler;
         }
 
-        private void Handle(IMessage message)
+        private async Task HandleAsync(IMessage message, CancellationToken cancellationToken)
         {
             for (var i = 0; i < _messageHandlerTypes.Count; i++)
             {
@@ -166,51 +149,32 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
 
                 try
                 {
-                    using var context = this.CreateContext();
-                    var handler = this.CreateHandler<IMessageHandler>(context, messageHandlerType);
-                    handler.Handle(message);
-                    context.End();
-                }
-                catch (Exception ex)
-                {
-                    var logger = _host.Logger;
-                    if (logger != null)
-                    {
-                        var logMessage = GetHandleFailureMessage(
-                            messageHandlerType,
-                            message,
-                            i);
-
-                        logger.LogError(ex, logMessage);
-                    }
-                }
-            }
-        }
-
-        private async Task HandleAsync(IMessage message)
-        {
-            for (var i = 0; i < _messageHandlerTypes.Count; i++)
-            {
-                if (_host.State != WorkerState.Running)
-                {
-                    // todo todo0: log info about subscriber was stopped
-                    // todo: subscriber wast stopped, and then started back. handler is still running. consider using Subscriber Generations (+ut)
-                    break;
-                }
-
-                var messageHandlerType = _messageHandlerTypes[i];
-
-                try
-                {
+                    // todo: can throw
                     var token = _host.GetHandlerCancellationToken();
+
+                    // todo: can throw
+                    // todo: can return null
                     using var context = this.CreateContext();
-                    var handler = this.CreateHandler<IAsyncMessageHandler>(context, messageHandlerType);
+
+                    // todo: can throw
+                    // todo: can return null
+                    // todo: can return wrong type
+                    var handler = this.CreateHandler(context, messageHandlerType);
+
+                    // todo: can throw
+                    await context.BeginAsync(token);
+
+                    // todo: can throw
                     await handler.HandleAsync(message, token);
-                    context.End();
+
+                    // todo: can throw
+                    await context.EndAsync(token);
+
+                    // todo: context.Dispose() can throw
                 }
                 catch (Exception ex)
                 {
-                    var logger = _host.Logger;
+                    var logger = _host.OriginalLogger; // todo: build own enriched logger form _host's OriginalLogger.
                     if (logger != null)
                     {
                         var logMessage = GetHandleFailureMessage(
@@ -218,7 +182,7 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
                             message,
                             i);
 
-                        logger.LogError(ex, logMessage);
+                        logger.Error(ex, logMessage);
                     }
                 }
             }
@@ -255,13 +219,11 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
             _messageHandlerTypes.Add(messageHandlerType);
         }
 
-        internal bool IsAsync { get; }
-
         #endregion
 
         #region Static
 
-        internal static string BuildTag(Type messageType, string topic)
+        internal static string BuildTag(Type messageType, string? topic)
         {
             var sb = new StringBuilder();
             sb.Append("[");
@@ -282,13 +244,14 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
         #region ISubscriptionRequest Members
 
         public Type MessageType { get; }
-        public string Topic { get; }
+        public string? Topic { get; }
         public string Tag { get; }
-        public Action<IMessage> Handler { get; }
-        public Func<IMessage, Task> AsyncHandler { get; }
-        public IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes.ToList();
+        public Func<IMessage, CancellationToken, Task> AsyncHandler { get; }
 
         #endregion
+
+        // todo region
+        internal IReadOnlyList<Type> MessageHandlerTypes => _messageHandlerTypes.ToList();
     }
 
     #endregion
@@ -298,15 +261,17 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
     private readonly Dictionary<string, Bundle> _bundles;
     private readonly List<IDisposable> _subscriptionHandles;
 
-    private CancellationTokenSource _tokenSource;
+    private CancellationTokenSource? _tokenSource;
     private readonly object _tokenSourceLock;
-
 
     #endregion
 
     #region Constructor
 
-    protected MessageSubscriberBase(IMessageHandlerContextFactory contextFactory)
+    protected MessageSubscriberBase(
+        IMessageHandlerContextFactory contextFactory,
+        ILogger? logger)
+        : base(logger)
     {
         this.ContextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _bundles = new Dictionary<string, Bundle>();
@@ -319,93 +284,87 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
 
     #region Private
 
-    private void CheckStopped(string operation)
-    {
-        var state = this.State;
-
-        if (state != WorkerState.Stopped)
-        {
-            throw this.CreateInvalidOperationException(operation, state);
-        }
-    }
-
-    private void CheckNotDisposed()
-    {
-        if (this.IsDisposed)
-        {
-            var name = this.Name ?? this.GetType().FullName;
-            throw new ObjectDisposedException(name);
-        }
-    }
-
-    private MessageHandlerInfo BuildMessageHandlerInfo(Type messageHandlerType, string topic)
+    private static BundleCreationInfo BuildMessageHandlerInfo(Type messageHandlerType, string? topic)
     {
         if (!messageHandlerType.IsClass)
         {
-            throw new ArgumentException($"'{nameof(messageHandlerType)}' must represent a class.",
+            // todo ut
+            throw new ArgumentException(
+                $"'{nameof(messageHandlerType)}' must represent a class.",
                 nameof(messageHandlerType));
         }
 
         if (messageHandlerType.IsAbstract)
         {
-            throw new ArgumentException($"'{nameof(messageHandlerType)}' cannot be abstract.",
+            // todo ut
+            throw new ArgumentException(
+                $"'{nameof(messageHandlerType)}' cannot be abstract.",
                 nameof(messageHandlerType));
         }
 
-        var syncList = new List<Type>();
-        var asyncList = new List<Type>();
-        Type messageType = null;
-
-        var ifaces = messageHandlerType.GetInterfaces();
-
-        foreach (var iface in ifaces)
+        var interfaces = messageHandlerType.GetInterfaces();
+        if (!interfaces.Contains(typeof(IMessageHandler)))
         {
-            if (iface.IsGenericType)
-            {
-                var genericBase = iface.GetGenericTypeDefinition();
-
-                if (genericBase == typeof(IAsyncMessageHandler<>))
-                {
-                    asyncList.Add(messageHandlerType);
-                    messageType = iface.GetGenericArguments().Single();
-                }
-                else if (genericBase == typeof(IMessageHandler<>))
-                {
-                    syncList.Add(messageHandlerType);
-                    messageType = iface.GetGenericArguments().Single();
-                }
-            }
+            // todo ut
+            throw new ArgumentException(
+                $"'{nameof(messageHandlerType)}' must implement '{typeof(IMessageHandler).FullName}'.",
+                nameof(messageHandlerType));
         }
 
-        if (asyncList.Count == 1 && syncList.Count == 0)
-        {
-            return new MessageHandlerInfo(
-                messageType,
-                true,
-                asyncList.Single(),
-                Bundle.BuildTag(messageType, topic));
-        }
-        else if (syncList.Count == 1 && asyncList.Count == 0)
-        {
-            return new MessageHandlerInfo(
-                messageType,
-                false,
-                syncList.Single(),
-                Bundle.BuildTag(messageType, topic));
-        }
-        else
+        var handlerInterfaces = interfaces
+            .Where(x =>
+                x.IsGenericType &&
+                x.GetGenericTypeDefinition() == typeof(IMessageHandler<>) &&
+                true)
+            .ToList();
+
+        if (handlerInterfaces.Count != 1)
         {
             throw new ArgumentException(
-                $"'{nameof(messageHandlerType)}' must implement either 'IMessageHandler<TMessage>' or 'IAsyncMessageHandler<TMessage>' in a one-time manner.",
-                nameof(messageHandlerType));
+                $"'{nameof(messageHandlerType)}' must implement '{typeof(IMessageHandler).FullName}<TMessage>' once.",
+                nameof(messageHandlerType)); // todo ut: doesn't implement IMessageHandler<TMessage> and implements more than once.
+        }
+
+        var handlerInterface = handlerInterfaces.Single();
+        var messageType = handlerInterface.GetGenericArguments().Single();
+
+        CheckMessageType(messageType);
+
+        var tag = Bundle.BuildTag(messageType, topic);
+
+        var messageHandlerInfo = new BundleCreationInfo(messageType, tag);
+
+        return messageHandlerInfo;
+    }
+
+    private static void CheckMessageType(Type messageType)
+    {
+        if (!messageType.GetInterfaces().Contains(typeof(IMessage)))
+        {
+            // actually, cannot happen, because of generic constraints.
+            throw new ArgumentException(
+                $"'{nameof(messageType)}' must implement '{typeof(IMessage).FullName}'.",
+                nameof(messageType));
+        }
+
+        if (messageType.IsAbstract)
+        {
+            throw new ArgumentException($"Cannot handle abstract message type '{messageType.FullName}'.",
+                nameof(messageType));
+        }
+
+        if (!messageType.IsClass)
+        {
+            throw new ArgumentException(
+                $"Cannot handle non-class message type '{messageType.FullName}'.",
+                nameof(messageType));
         }
     }
 
-    // todo: deal with this 'emptyTopicIsAllowed'
-    private void SubscribePriv(Type messageHandlerType, string topic, bool emptyTopicIsAllowed)
+    private void SubscribeInternal(Type messageHandlerType, string? topic, bool emptyTopicIsAllowed)
     {
         this.CheckNotDisposed();
-        this.CheckStopped(nameof(Subscribe));
+        this.AllowIfStateIs(nameof(Subscribe), WorkerState.Stopped);
 
         if (messageHandlerType == null)
         {
@@ -419,7 +378,7 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
                 nameof(topic));
         }
 
-        var info = this.BuildMessageHandlerInfo(messageHandlerType, topic);
+        var info = BuildMessageHandlerInfo(messageHandlerType, topic);
         var bundle = _bundles.GetValueOrDefault(info.Tag);
 
         if (bundle == null)
@@ -428,56 +387,9 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
                 this,
                 info.MessageType,
                 topic,
-                info.Tag,
-                info.IsAsync);
+                info.Tag);
 
             _bundles.Add(bundle.Tag, bundle);
-        }
-        else
-        {
-            if (bundle.IsAsync && !info.IsAsync)
-            {
-                var sb = new StringBuilder();
-                sb.Append("Cannot subscribe synchronous handler '");
-                sb.Append(messageHandlerType.FullName);
-                sb.Append("' to message '");
-                sb.Append(bundle.MessageType.FullName);
-                sb.Append("' (");
-                if (bundle.Topic == null)
-                {
-                    sb.Append("no topic");
-                }
-                else
-                {
-                    sb.Append($"topic: '{bundle.Topic}'");
-                }
-
-                sb.Append(") because there are asynchronous handlers existing for that subscription.");
-
-                throw new MqException(sb.ToString());
-            }
-
-            if (!bundle.IsAsync && info.IsAsync)
-            {
-                var sb = new StringBuilder();
-                sb.Append("Cannot subscribe asynchronous handler '");
-                sb.Append(messageHandlerType.FullName);
-                sb.Append("' to message '");
-                sb.Append(bundle.MessageType.FullName);
-                sb.Append("' (");
-                if (bundle.Topic == null)
-                {
-                    sb.Append("no topic");
-                }
-                else
-                {
-                    sb.Append($"topic: '{bundle.Topic}'");
-                }
-
-                sb.Append(") because there are synchronous handlers existing for that subscription.");
-
-                throw new MqException(sb.ToString());
-            }
         }
 
         bundle.AddHandlerType(messageHandlerType);
@@ -510,7 +422,7 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
 
     #region Overridden
 
-    protected override void OnStarting()
+    protected override void OnBeforeStarting()
     {
         this.InitImpl();
 
@@ -526,21 +438,16 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
         }
     }
 
-    protected override void OnStarted()
+    protected override void OnAfterStarted()
     {
         // idle
     }
 
-    protected override void OnStopping()
+    protected override void OnBeforeStopping()
     {
-        foreach (var subscriptionHandle in _subscriptionHandles)
-        {
-            subscriptionHandle.Dispose();
-        }
+        #region Let's cancel all running tasks
 
-        _subscriptionHandles.Clear();
-
-        CancellationTokenSource tokenSourceToCancel;
+        CancellationTokenSource? tokenSourceToCancel;
         lock (_tokenSourceLock)
         {
             tokenSourceToCancel = _tokenSource;
@@ -550,39 +457,48 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
 
         lock (_tokenSourceLock)
         {
-            _tokenSource.Dispose();
+            _tokenSource?.Dispose();
             _tokenSource = null;
         }
+
+        #endregion
+
+        foreach (var subscriptionHandle in _subscriptionHandles)
+        {
+            subscriptionHandle.Dispose();
+        }
+
+        _subscriptionHandles.Clear();
 
         this.ShutdownImpl();
     }
 
-    protected override void OnStopped()
+    protected override void OnAfterStopped()
     {
         // idle
     }
 
-    protected override void OnPausing()
+    protected override void OnBeforePausing()
     {
         // idle
     }
 
-    protected override void OnPaused()
+    protected override void OnAfterPaused()
     {
         // idle
     }
 
-    protected override void OnResuming()
+    protected override void OnBeforeResuming()
     {
         // idle
     }
 
-    protected override void OnResumed()
+    protected override void OnAfterResumed()
     {
         // idle
     }
 
-    protected override void OnDisposed()
+    protected override void OnAfterDisposed()
     {
         _bundles.Clear();
     }
@@ -596,10 +512,20 @@ public abstract class MessageSubscriberBase : WorkerBase, IMessageSubscriber
     public IMessageHandlerContextFactory ContextFactory { get; }
 
     public void Subscribe(Type messageHandlerType) =>
-        this.SubscribePriv(messageHandlerType, null, true);
+        this.SubscribeInternal(messageHandlerType, null, true);
+
+    public void Subscribe<TMessageHandler, TMessage>()
+        where TMessageHandler : class, IMessageHandler<TMessage>
+        where TMessage : class, IMessage, new() =>
+        this.SubscribeInternal(typeof(TMessageHandler), null, true);
 
     public void Subscribe(Type messageHandlerType, string topic) =>
-        this.SubscribePriv(messageHandlerType, topic, false);
+        this.SubscribeInternal(messageHandlerType, topic, false);
+
+    public void Subscribe<TMessageHandler, TMessage>(string topic)
+        where TMessageHandler : class, IMessageHandler<TMessage>
+        where TMessage : class, IMessage, new() =>
+        this.SubscribeInternal(typeof(TMessageHandler), topic, false);
 
     public IReadOnlyList<SubscriptionInfo> GetSubscriptions()
     {

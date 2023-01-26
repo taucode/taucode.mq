@@ -1,30 +1,42 @@
-﻿using TauCode.Mq.Abstractions;
+﻿using Serilog;
 using TauCode.Working;
 
 namespace TauCode.Mq;
 
+// todo clean
+
 public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
 {
+    #region ctor
+
+    protected MessagePublisherBase(ILogger? logger)
+        : base(logger)
+    {
+    }
+
+    #endregion
+
     #region Private
 
-    private void CheckStarted(string operation)
-    {
-        var state = this.State;
+    // todo clean
+    //private void CheckStarted(string operation)
+    //{
+    //    var state = this.State;
 
-        if (state != WorkerState.Running)
-        {
-            throw this.CreateInvalidOperationException(operation, state);
-        }
-    }
+    //    if (state != WorkerState.Running)
+    //    {
+    //        throw this.CreateInvalidOperationException(operation, state);
+    //    }
+    //}
 
-    private void CheckNotDisposed()
-    {
-        if (this.IsDisposed)
-        {
-            var name = this.Name ?? this.GetType().FullName;
-            throw new ObjectDisposedException(name);
-        }
-    }
+    //private void CheckNotDisposed()
+    //{
+    //    if (this.IsDisposed)
+    //    {
+    //        var name = this.Name ?? this.GetType().FullName;
+    //        throw new ObjectDisposedException(name);
+    //    }
+    //}
 
     private static void CheckMessage(IMessage message)
     {
@@ -55,47 +67,47 @@ public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
 
     #region Overridden
 
-    protected override void OnStarting()
+    protected override void OnBeforeStarting()
     {
         this.InitImpl();
     }
 
-    protected override void OnStarted()
+    protected override void OnAfterStarted()
     {
         // idle
     }
 
-    protected override void OnStopping()
+    protected override void OnBeforeStopping()
     {
         this.ShutdownImpl();
     }
 
-    protected override void OnStopped()
+    protected override void OnAfterStopped()
     {
         // idle
     }
 
-    protected override void OnPausing()
+    protected override void OnBeforePausing()
     {
         // idle
     }
 
-    protected override void OnPaused()
+    protected override void OnAfterPaused()
     {
         // idle
     }
 
-    protected override void OnResuming()
+    protected override void OnBeforeResuming()
     {
         // idle
     }
 
-    protected override void OnResumed()
+    protected override void OnAfterResumed()
     {
         // idle
     }
 
-    protected override void OnDisposed()
+    protected override void OnAfterDisposed()
     {
         // idle
     }
@@ -111,7 +123,9 @@ public abstract class MessagePublisherBase : WorkerBase, IMessagePublisher
         CheckMessage(message);
 
         this.CheckNotDisposed();
-        this.CheckStarted(nameof(Publish));
+        this.AllowIfStateIs(nameof(Publish), WorkerState.Running);
+
+        //this.CheckStarted(nameof(Publish));
 
         this.PublishImpl(message);
     }

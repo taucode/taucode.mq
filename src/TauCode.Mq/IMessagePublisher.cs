@@ -1,5 +1,4 @@
-﻿using TauCode.Mq.Abstractions;
-using TauCode.Working;
+﻿using TauCode.Working;
 
 namespace TauCode.Mq;
 
